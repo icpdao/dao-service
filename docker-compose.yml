@@ -14,7 +14,7 @@ services:
 
             ICPDAO_GITHUB_APP_CLIENT_ID: xxx
             ICPDAO_GITHUB_APP_CLIENT_SECRET: xxx
-            API_GATEWAY_BASE_PATH: dev/v1/users
+            API_GATEWAY_BASE_PATH: dev/v1/dao
             AWS_AUTHORIZER_ARN: xxx
             ICPDAO_MONGODB_ICPDAO_HOST: mongodb://mongodb:27017/icpdao
         ports:
