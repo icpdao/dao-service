@@ -1,0 +1,68 @@
+org: icpdao
+app: icpdao
+service: dao-service
+
+disabledDeprecations:
+  - CLI_OPTIONS_SCHEMA
+
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: python3.8
+  lambdaHashingVersion: 20201221
+  environment:
+    API_GATEWAY_BASE_PATH: ${env:API_GATEWAY_BASE_PATH}
+    ICPDAO_GITHUB_APP_CLIENT_ID: ${env:ICPDAO_GITHUB_APP_CLIENT_ID}
+    ICPDAO_GITHUB_APP_CLIENT_SECRET: ${env:ICPDAO_GITHUB_APP_CLIENT_SECRET}
+    AWS_AUTHORIZER_ARN: ${env:AWS_AUTHORIZER_ARN}
+    ICPDAO_MONGODB_ICPDAO_HOST: ${env:ICPDAO_MONGODB_ICPDAO_HOST}
+  region: us-east-1
+  stage: ${opt:stage}
+  stackName: icpdao-dao-servcie-${self:provider.stage}
+  apiName: icpdao-dao-servcie-${self:provider.stage}
+  memorySize: 256
+  timeout: 30
+  deploymentBucket:
+    name: icpdao.9527.${self:provider.region}.deploys
+  vpc:
+    securityGroupIds:
+      - sg-1d9d291e
+    subnetIds:
+      - subnet-0d6c61be4990b97cd
+
+functions:
+  app:
+    handler: app.handler
+    events:
+      - http:  
+          path: '{proxy+}'
+          method: ANY
+          cors: true
+          authorizer:
+            arn: ${env:AWS_AUTHORIZER_ARN}
+            managedExternally: false
+            resultTtlInSeconds: 3600
+            identitySource: method.request.header.Authorization
+            type: token
+
+custom:
+  pythonRequirements:
+    dockerizePip: non-linux
+  customDomain:
+    domainName: apis.icpdao.co
+    stage: ${self:provider.stage}
+    basePath: ${env:API_GATEWAY_BASE_PATH}
+    endpointType: 'regional'
+    apiType: rest
+    createRoute53Record: false
+    autoDomain: false
+
+plugins:
+  - serverless-python-requirements
+  - serverless-domain-manager
+
+package:
+  patterns:
+    - '!node_modules/**'
+    - '!package-lock.json'

@@ -1,0 +1,28 @@
+# echo 112.124.219.217 rsa.xiaowhite.com >> /etc/hosts
+version: '2'
+services:
+    api:
+        build:
+          context: ./
+          dockerfile: Dockerfile.deploy
+        tty: true
+        environment:
+            PYTHONIOENCODING: utf-8
+            PYTHONPATH: /work
+            DEPLOY: DEVDOCKER
+            NOSE_NOCAPTURE: 1
+
+            ICPDAO_GITHUB_APP_CLIENT_ID: xxx
+            ICPDAO_GITHUB_APP_CLIENT_SECRET: xxx
+            API_GATEWAY_BASE_PATH: dev/v1/dao
+            AWS_AUTHORIZER_ARN: xxx
+            ICPDAO_MONGODB_ICPDAO_HOST: mongodb://mongodb:27017/icpdao
+        ports:
+            - "8000:8000"
+        links:
+            - mongodb
+        volumes:
+            - "./:/work"
+        command: uvicorn app:app --reload --host 0.0.0.0
+    mongodb:
+        image: mongo:4.4
