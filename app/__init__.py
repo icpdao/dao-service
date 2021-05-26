@@ -14,6 +14,7 @@ if os.environ.get('IS_UNITEST') == 'yes':
     app = FastAPI()
     app.include_router(api_router)
 else:
+    app = FastAPI()
     prefix = os.path.join('/', settings.API_GATEWAY_BASE_PATH)
     app.include_router(api_router, prefix=prefix)
 
@@ -47,7 +48,7 @@ def build_response(status_code, content):
 @app.middleware("http")
 async def add_global_process(request: Request, call_next):
     # aws lambda 环境有 users 前缀
-    path = request.url.path.split('users')[-1]
+    path = request.url.path.split('dao')[-1]
     if path not in UN_NEED_AUTH_PATH:
         if not find_current_user(request):
             return build_response(200, {
