@@ -17,17 +17,14 @@ from app.common.schema.icpdao import UserSchema, DAOSchema, DAOJobConfigSchema
 prefix = '/'
 if os.environ.get('IS_UNITEST') != 'yes':
     prefix = os.path.join('/', settings.API_GATEWAY_BASE_PATH)
+graph_suffix = '/graph'
 
 app = FastAPI()
-app.add_route(prefix, BaseGraphQLApp(
+app.add_route(os.path.join(prefix, graph_suffix), BaseGraphQLApp(
     schema=graphene.Schema(
         query=Query, mutation=Mutations,
         types=[UserSchema, DAOSchema, DAOJobConfigSchema])
 ))
-
-UN_NEED_AUTH_PATH = [
-    '/', ''
-]
 
 class UNAUTHError(Exception):
     pass
@@ -53,7 +50,7 @@ async def add_global_process(request: Request, call_next):
     # aws lambda 环境有 users 前缀
     path = request.url.path.split('dao')[-1]
     user = find_current_user(request)
-    if path not in UN_NEED_AUTH_PATH or request.method != 'GET':
+    if path != graph_suffix or request.method != 'GET':
         if not user:
             return build_response(200, {
                 "success": False,
