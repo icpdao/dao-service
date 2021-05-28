@@ -5,10 +5,10 @@ import settings
 
 from fastapi import FastAPI, Request
 from mangum import Mangum
-from fastapi.responses import JSONResponse
+from fastapi.responses import PlainTextResponse, JSONResponse
 
 from app.common.utils.base_graphql import BaseGraphQLApp
-from app.common.utils.route_helper import find_current_user
+from app.common.utils.route_helper import find_current_user, path_join
 from app.common.models.icpdao import init_mongo
 from app.routes import Query, Mutations
 from app.common.schema.icpdao import UserSchema, DAOSchema, DAOJobConfigSchema
@@ -16,20 +16,22 @@ from app.common.schema.icpdao import UserSchema, DAOSchema, DAOJobConfigSchema
 
 prefix = ''
 if os.environ.get('IS_UNITEST') != 'yes':
-    prefix = os.path.join('/', settings.API_GATEWAY_BASE_PATH)
-graph_suffix = '/graph'
-graph_schema_suffix = '/graph/schema'
+    prefix = settings.API_GATEWAY_BASE_PATH
+graph_route = path_join(prefix, '/graph')
+graph_schema_route = path_join(prefix, '/graph/schema')
 
 graph_schema = graphene.Schema(
     query=Query, mutation=Mutations,
     types=[UserSchema, DAOSchema, DAOJobConfigSchema])
 
 app = FastAPI()
-app.add_route(prefix + graph_suffix, BaseGraphQLApp(
+
+app.add_route(graph_route, BaseGraphQLApp(
     schema=graph_schema
 ))
-app.add_route(prefix + graph_schema_suffix, JSONResponse(
-    status_code=200, content={'schema': str(graph_schema)}
+
+app.add_route(graph_schema_route, PlainTextResponse(
+    status_code=200, content=str(graph_schema)
 ), methods=['GET'])
 
 

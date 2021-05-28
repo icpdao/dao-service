@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app import app, graph_suffix
+from app import app, graph_route
 from app.common.models.icpdao.user import User, UserStatus
 from app.common.models.icpdao.dao import DAO, DAOJobConfig, DAOFollow
 
@@ -47,7 +47,7 @@ class Base:
 
     def graph_query(self, user_id, query):
         return self.client.post(
-            graph_suffix, headers={'user_id': str(user_id)},
+            graph_route, headers={'user_id': str(user_id)},
             json={
                 'query': query,
                 'variables': None
