@@ -3,3 +3,5 @@
 requests==2.25.1
 mangum==0.11.0
 python-dotenv==0.17.1
+uvicorn
+pytest
