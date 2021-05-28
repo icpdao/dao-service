@@ -30,10 +30,6 @@ app.add_route(graph_route, BaseGraphQLApp(
     schema=graph_schema
 ))
 
-app.add_route(graph_schema_route, PlainTextResponse(
-    status_code=200, content=str(graph_schema)
-), methods=['GET'])
-
 
 class UNAUTHError(Exception):
     pass
@@ -56,15 +52,7 @@ def build_response(status_code, content):
 
 @app.middleware("http")
 async def add_global_process(request: Request, call_next):
-    user = find_current_user(request)
-
-    if request.method == 'POST' and not user:
-        return build_response(200, {
-            "success": False,
-            "errorCode": "401",
-            "errorMessage": 'UNAUTHError',
-        })
-
+    find_current_user(request)
     try:
         response = await call_next(request)
     except Exception as ex:
