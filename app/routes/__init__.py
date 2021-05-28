@@ -39,13 +39,19 @@ class Query(ObjectType):
 
     @staticmethod
     def resolve_dao_job_config(root, info, dao_id):
-        # FIXME: access need ?
+        # FIXME: owner access need ?
+        current_user = get_current_user_by_graphql(info)
+        if not current_user:
+            raise PermissionError('NOT LOGIN')
         # check_is_dao_owner(get_current_user_by_graphql(info), dao_id=dao_id)
         record = DAOJobConfigModel.objects(dao_id=dao_id).first()
         return record
 
     @staticmethod
     def resolve_dao(root, info, id):
+        current_user = get_current_user_by_graphql(info)
+        if not current_user:
+            raise PermissionError('NOT LOGIN')
         return DAO({'id': id})
 
 
