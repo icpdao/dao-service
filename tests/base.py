@@ -1,21 +1,56 @@
 from fastapi.testclient import TestClient
 
 from app import app
-from app.common.models.icpdao.user import User
-from app.common.models.icpdao.user_github_token import UserGithubToken
-from app.common.models.icpdao.icppership import Icppership
+from app.common.models.icpdao.user import User, UserStatus
+from app.common.models.icpdao.dao import DAO, DAOJobConfig, DAOFollow
 
 
-class Base():
+class Base:
     client = TestClient(app)
 
-    def clear_db(self):
+    @classmethod
+    def setup_class(cls):
+        cls.clear_db()
+
+    @classmethod
+    def teardown_class(cls):
+        cls.clear_db()
+
+    @classmethod
+    def clear_db(cls):
         User.drop_collection()
-        UserGithubToken.drop_collection()
-        Icppership.drop_collection()
+        DAOFollow.drop_collection()
+        DAOJobConfig.drop_collection()
+        DAO.drop_collection()
 
-    def create_icpper_user(self, code='user'):
-        # TODO
+    @staticmethod
+    def create_icpper_user(nickname='test_icpper'):
+        record = User(
+            nickname=nickname,
+            github_login='test_github_login',
+            status=UserStatus.ICPPER.value,
+            avatar='test_avatar'
+        )
+        record.save()
+        return record
 
-    def create_normal_user(self, code='user'):
-        # TODO
+    @staticmethod
+    def create_normal_user(nickname='test_user'):
+        record = User(
+            nickname=nickname,
+            github_login='test_github_login',
+            status=UserStatus.NORMAL.value,
+            avatar='test_avatar'
+        )
+        record.save()
+        return record
+
+    def graph_query(self, user_id, query):
+        return self.client.post(
+            '/', headers={'user_id': str(user_id)},
+            json={
+                'query': query,
+                'variables': None
+            }
+        )
+

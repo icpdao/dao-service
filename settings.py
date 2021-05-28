@@ -1,5 +1,9 @@
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 ICPDAO_GITHUB_APP_CLIENT_ID = os.environ['ICPDAO_GITHUB_APP_CLIENT_ID']
 ICPDAO_GITHUB_APP_CLIENT_SECRET = os.environ['ICPDAO_GITHUB_APP_CLIENT_SECRET']
 

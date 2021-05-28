@@ -1,29 +1,32 @@
 import os
 
+import graphene
 import settings
 
 from fastapi import FastAPI, Request
 from mangum import Mangum
 from fastapi.responses import JSONResponse
 
+from app.common.utils.base_graphql import BaseGraphQLApp
 from app.common.utils.route_helper import find_current_user
-from app.routes import api_router
 from app.common.models.icpdao import init_mongo
+from app.routes import Query, Mutations
+from app.common.schema.icpdao import UserSchema, DAOSchema, DAOJobConfigSchema
 
-if os.environ.get('IS_UNITEST') == 'yes':
-    app = FastAPI()
-    app.include_router(api_router)
-else:
-    app = FastAPI()
+
+prefix = '/'
+if os.environ.get('IS_UNITEST') != 'yes':
     prefix = os.path.join('/', settings.API_GATEWAY_BASE_PATH)
-    app.include_router(api_router, prefix=prefix)
 
+app = FastAPI()
+app.add_route(prefix, BaseGraphQLApp(
+    schema=graphene.Schema(
+        query=Query, mutation=Mutations,
+        types=[UserSchema, DAOSchema, DAOJobConfigSchema])
+))
 
 UN_NEED_AUTH_PATH = [
-    '/openapi.json',
-    '/docs',
-    '/redoc',
-    '/github/auth_callback'
+    '/', ''
 ]
 
 class UNAUTHError(Exception):
@@ -49,14 +52,15 @@ def build_response(status_code, content):
 async def add_global_process(request: Request, call_next):
     # aws lambda 环境有 users 前缀
     path = request.url.path.split('dao')[-1]
-    if path not in UN_NEED_AUTH_PATH:
-        if not find_current_user(request):
+    user = find_current_user(request)
+    if path not in UN_NEED_AUTH_PATH or request.method != 'GET':
+        if not user:
             return build_response(200, {
                 "success": False,
                 "errorCode": "401",
                 "errorMessage": 'UNAUTHError',
             })
-        
+
     try:
         response = await call_next(request)
     except Exception as ex:
@@ -80,3 +84,8 @@ init_mongo({
         'alias': 'icpdao',
     }
 })
+
+
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(app='app:app', port=8087, reload=True)
