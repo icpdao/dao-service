@@ -12,6 +12,8 @@ from app.common.utils.route_helper import get_current_user_by_graphql
 class UpdateDAOJobConfig(Mutation):
     class Arguments:
         dao_id = String(required=True)
+        time_zone = Int()
+        time_zone_region = String()
         deadline_day = Int()
         deadline_time = Int()
         pair_begin_day = Int()

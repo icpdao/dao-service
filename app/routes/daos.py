@@ -64,6 +64,7 @@ class CreateDAO(Mutation):
         desc = String(required=True)
         logo = String(required=True)
         time_zone = Int(required=True)
+        time_zone_region = String(required=True)
 
     dao = Field(DAOSchema)
 
@@ -78,5 +79,7 @@ class CreateDAO(Mutation):
         )
         record.save()
         DAOJobConfig(
-            dao_id=str(record.id), time_zone=kwargs['time_zone']).save()
+            dao_id=str(record.id), time_zone=kwargs['time_zone'],
+            time_zone_region=kwargs['time_zone_region']
+        ).save()
         return CreateDAO(dao=record)
