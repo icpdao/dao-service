@@ -9,7 +9,7 @@ TESTS_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 class TestJobConfig(Base):
     create_dao = """
 mutation {
-  createDao( name: "%s", desc: "test_dao_1", logo:"test_dao_1", timeZone: 8 ) {
+  createDao( name: "%s", desc: "test_dao_1", logo:"test_dao_1", timeZone: 8, timeZoneRegion: "Asia/Shanghai") {
     dao {
       id
       name
@@ -117,5 +117,16 @@ mutation {
         assert data['data']['updateDaoJobConfig']['jobConfig']['pairBeginDay'] == 17
         assert data['data']['updateDaoJobConfig']['jobConfig']['deadlineDay'] == 1
         assert data['data']['updateDaoJobConfig']['jobConfig']['votingBeginDay'] == 18
+
+        ret = self.graph_query(
+            self.icpper.id,
+            self.update_job_config % (
+                dao_id, 'timeZone: 480, timeZoneRegion: "Asia/Beijing"', "timeZone timeZoneRegion"
+            )
+        )
+        assert ret.status_code == 200
+        data = ret.json()
+        assert data['data']['updateDaoJobConfig']['jobConfig']['timeZone'] == 480
+        assert data['data']['updateDaoJobConfig']['jobConfig']['timeZoneRegion'] == "Asia/Beijing"
 
 

@@ -8,7 +8,7 @@ TESTS_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 class TestDAOs(Base):
     create_dao = """
 mutation {
-  createDao( name: "%s", desc: "test_dao_1", logo:"test_dao_1", timeZone: 8 ) {
+  createDao( name: "%s", desc: "test_dao_1", logo:"test_dao_1", timeZone: 8, timeZoneRegion: "Asia/Shanghai") {
     dao {
       id
       name
