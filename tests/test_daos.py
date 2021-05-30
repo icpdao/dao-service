@@ -35,6 +35,20 @@ query {
 }
 """
 
+    update_dao_info = """
+mutation {
+  updateDaoBaseInfo(id: "%s", %s) {
+    dao {
+       id
+       name
+       desc
+       logo
+       updateAt
+    }
+  }
+}
+"""
+
     @classmethod
     def setup_class(cls):
         # mock user
@@ -71,3 +85,22 @@ query {
 
         ret = self.graph_query(self.icpper.id, self.query_dao % (dao_id))
         assert ret.status_code == 200
+
+    def test_update_dao_base_info(self):
+        dao_id = self.graph_query(
+            self.icpper.id, self.create_dao % 'test_dao_3'
+        ).json()['data']['createDao']['dao']['id']
+        ret = self.graph_query(
+            self.user_1.id, self.update_dao_info % (
+                dao_id, 'desc: "xxx"')
+        )
+        assert ret.status_code == 400
+        data = ret.json()
+        assert data['errors'][0]["message"] == 'NOT RIGHT OWNER ACCESS'
+        ret = self.graph_query(
+            self.icpper.id, self.update_dao_info % (
+                dao_id, 'desc: "xxx"')
+        )
+        assert ret.status_code == 200
+        data = ret.json()
+        assert data['data']['updateDaoBaseInfo']['dao']['desc'] == "xxx"
