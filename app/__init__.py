@@ -18,7 +18,6 @@ prefix = ''
 if os.environ.get('IS_UNITEST') != 'yes':
     prefix = settings.API_GATEWAY_BASE_PATH
 graph_route = path_join(prefix, '/graph')
-graph_schema_route = path_join(prefix, '/graph/schema')
 
 graph_schema = graphene.Schema(
     query=Query, mutation=Mutations,
