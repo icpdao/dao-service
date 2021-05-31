@@ -24,10 +24,10 @@ class Base:
         DAO.drop_collection()
 
     @staticmethod
-    def create_icpper_user(nickname='test_icpper'):
+    def create_icpper_user(nickname='test_icpper', github_login='test_github_login'):
         record = User(
             nickname=nickname,
-            github_login='test_github_login',
+            github_login=github_login,
             status=UserStatus.ICPPER.value,
             avatar='test_avatar'
         )

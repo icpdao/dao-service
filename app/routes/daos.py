@@ -1,15 +1,20 @@
 import time
+import os
 
 from graphene import ObjectType, String, Field, Int, \
     Float, List, Boolean, Mutation
 from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
 
+from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY
+
 from app.common.models.icpdao.dao import DAO as DAOModel, DAOJobConfig
 from app.common.models.icpdao.dao import DAOFollow as DAOFollowModel
 from app.common.schema.icpdao import DAOSchema
+from app.common.models.icpdao.user_github_token import UserGithubToken
 from app.common.utils.access import check_is_icpper, check_is_dao_owner
 from app.common.utils.route_helper import get_current_user_by_graphql
+from app.common.utils.github_rest_api import org_member_role_is_admin, check_icp_app_installed_status_of_org, get_icp_app_jwt, get_github_org_id
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, DAOsSortedTypeEnum
 from app.routes.follow import DAOFollowUDSchema
 
@@ -194,3 +199,38 @@ class UpdateDAOBaseInfo(Mutation):
             dao.update_at = int(time.time())
         dao.save()
         return UpdateDAOBaseInfo(dao=dao)
+
+
+class DAOGithubAppStatus(ObjectType):
+    github_org_id = Int()
+    is_exists = Boolean()
+    is_github_org_owner = Boolean()
+    is_icp_app_installed = Boolean()
+
+    def get(self, info, name):
+        current_user = get_current_user_by_graphql(info)
+        if not current_user:
+            raise PermissionError('NOT LOGIN')
+
+        if os.environ.get('IS_UNITEST') == 'yes':
+            self.github_org_id = 0
+            self.is_exists = True
+            self.is_github_org_owner = True
+            self.is_icp_app_installed = True
+            return self
+
+        dao = DAOModel.objects(name=name).first()
+        self.is_exists = not not dao
+
+        self.github_org_id = get_github_org_id(name)
+
+        jwt = get_icp_app_jwt(ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY)
+        self.is_icp_app_installed = check_icp_app_installed_status_of_org(jwt, name)
+
+        if self.is_icp_app_installed:
+            ugt = UserGithubToken.objects(github_login=current_user.github_login).first()
+            self.is_github_org_owner = org_member_role_is_admin(ugt.access_token, name, current_user.github_login)
+        else:
+            # 当 app 没有安装时，查不多用户信息，干脆直接设置为 false
+            self.is_github_org_owner = False
+        return self
