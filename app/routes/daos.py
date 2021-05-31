@@ -4,6 +4,7 @@ from graphene import ObjectType, String, Field, Int, \
     Float, List, Boolean, Mutation
 from graphql.execution.executor import ResolveInfo
 from app.common.models.icpdao.dao import DAO as DAOModel, DAOJobConfig
+from app.common.models.icpdao.dao import DAOFollow as DAOFollowModel
 from app.common.schema.icpdao import DAOSchema
 from app.common.utils.access import check_is_icpper, check_is_dao_owner
 from app.common.utils.route_helper import get_current_user_by_graphql
@@ -29,6 +30,30 @@ class DAOItem(ObjectType):
     is_following = Boolean(required=True)
     is_owner = Boolean(required=True)
 
+    @staticmethod
+    def resolve_datum(parent, info):
+        return parent.datum
+
+    @staticmethod
+    def resolve_stat(parent, info):
+        # TODO:is mock
+        return DAOStat(following=0, job=0, size=0, token=0)
+
+    @staticmethod
+    def resolve_is_following(parent, info):
+        current_user = get_current_user_by_graphql(info)
+        if not current_user:
+            raise PermissionError('NOT LOGIN')
+
+        obj = DAOFollowModel.objects(dao_id=str(parent.datum.id), user_id=str(current_user.id)).first()
+        return not not obj
+
+    @staticmethod
+    def resolve_is_owner(parent, info):
+        current_user = get_current_user_by_graphql(info)
+        if not current_user:
+            raise PermissionError('NOT LOGIN')
+        return str(current_user.id) == parent.datum.owner_id
 
 class DAO(ObjectType):
     datum = Field(DAOSchema)
@@ -52,9 +77,17 @@ class DAOs(ObjectType):
     total = Int()
 
     @staticmethod
-    def resolve_dao(parent):
-        # TODO
-        return list()
+    def resolve_dao(parent, info):
+        return [DAOItem(datum=item) for item in parent.dao]
+
+    @staticmethod
+    def resolve_stat(parent, info):
+        # TODO is mock
+        return DAOsStat(icpper=0, size=0, income=0)
+
+    @staticmethod
+    def resolve_total(parent, info):
+        return parent.dao.count()
 
 
 class CreateDAO(Mutation):
