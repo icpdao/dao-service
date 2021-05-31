@@ -3,11 +3,14 @@ import time
 from graphene import ObjectType, String, Field, Int, \
     Float, List, Boolean, Mutation
 from graphql.execution.executor import ResolveInfo
+from mongoengine import Q
+
 from app.common.models.icpdao.dao import DAO as DAOModel, DAOJobConfig
 from app.common.models.icpdao.dao import DAOFollow as DAOFollowModel
 from app.common.schema.icpdao import DAOSchema
 from app.common.utils.access import check_is_icpper, check_is_dao_owner
 from app.common.utils.route_helper import get_current_user_by_graphql
+from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, DAOsSortedTypeEnum
 from app.routes.follow import DAOFollowUDSchema
 
 
@@ -76,18 +79,70 @@ class DAOs(ObjectType):
     stat = Field(DAOsStat)
     total = Int()
 
-    @staticmethod
-    def resolve_dao(parent, info):
-        return [DAOItem(datum=item) for item in parent.dao]
+    def get_query_dao_list(self, info, **kwargs):
+        current_user = get_current_user_by_graphql(info)
 
-    @staticmethod
-    def resolve_stat(parent, info):
+        _filter = kwargs.get('filter')
+        _sorted = kwargs.get('sorted')
+        _sorted_type = kwargs.get('sorted_type')
+        _search = kwargs.get('search')
+        _offset = kwargs.get('offset')
+        _first = kwargs.get('first')
+
+        query = None
+        sort_string = None
+        search = None
+        if _filter:
+            if _filter != DAOsFilterEnum.all:
+                if not current_user:
+                    raise PermissionError('NOT LOGIN')
+            if _filter == DAOsFilterEnum.owner:
+                query = Q(owner_id=str(current_user.id))
+            if _filter == DAOsFilterEnum.following:
+                dao_id_list = [item.dao_id for item in DAOFollowModel.objects(user_id=str(current_user.id))]
+                query = Q(id__in=dao_id_list)
+            if _filter == DAOsFilterEnum.following_and_owner:
+                dao_id_list = [item.dao_id for item in DAOFollowModel.objects(user_id=str(current_user.id))]
+                query = (Q(owner_id=str(current_user.id)) | Q(id__in=dao_id_list))
+
+        if _search:
+            if query:
+                query = query & Q(name__contains=_search)
+            else:
+                query = Q(name__contains=_search)
+
+        if _sorted is not None or _sorted_type is not None:
+            if _sorted is None:
+                _sorted = DAOsSortedEnum.number
+            if _sorted_type is None:
+                _sorted_type = DAOsSortedTypeEnum.asc
+
+            # TODO 目前只支持 number 排序
+            if _sorted == DAOsSortedEnum.number:
+                sort_string = 'number'
+            if _sorted_type == DAOsSortedTypeEnum.desc:
+                sort_string = '-{}'.format(sort_string)
+
+        if query:
+            query_dao_list = DAOModel.objects(query)
+        else:
+            query_dao_list = DAOModel.objects
+        if sort_string:
+            query_dao_list = query_dao_list.order_by(sort_string)
+
+        query_dao_list = query_dao_list.limit(_first).skip(_offset)
+        setattr(self, 'query_list', query_dao_list)
+        return self
+
+    def resolve_dao(self, info):
+        return [DAOItem(datum=item) for item in self.query_list]
+
+    def resolve_stat(self, info):
         # TODO is mock
         return DAOsStat(icpper=0, size=0, income=0)
 
-    @staticmethod
-    def resolve_total(parent, info):
-        return parent.dao.count()
+    def resolve_total(self, info):
+        return self.query_list.count()
 
 
 class CreateDAO(Mutation):
