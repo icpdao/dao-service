@@ -2,7 +2,6 @@ from graphene import ObjectType, String, Field, Int
 
 from app.common.models.icpdao.dao import DAOJobConfig as DAOJobConfigModel
 from app.common.schema.icpdao import DAOJobConfigSchema
-from app.common.utils.access import check_is_dao_owner
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.routes.config import UpdateDAOJobConfig
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo
@@ -34,8 +33,7 @@ class Query(ObjectType):
 
     @staticmethod
     def resolve_daos(root, info, **kwargs):
-        # FIXME: unrealized, now is mock
-        return DAOs(kwargs)
+        return DAOs().get_query_dao_list(info, **kwargs)
 
     @staticmethod
     def resolve_dao_job_config(root, info, dao_id):
