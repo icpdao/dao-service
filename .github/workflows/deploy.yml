@@ -44,11 +44,13 @@ jobs:
 
     - name: test
       env:
+        ICPDAO_GITHUB_APP_ID: ${{secrets.DEV__ICPDAO_GITHUB_APP_ID}}
         ICPDAO_GITHUB_APP_CLIENT_ID: ${{secrets.DEV__ICPDAO_GITHUB_APP_CLIENT_ID}}
         ICPDAO_GITHUB_APP_CLIENT_SECRET: ${{secrets.DEV__ICPDAO_GITHUB_APP_CLIENT_SECRET}}
         API_GATEWAY_BASE_PATH: ${{secrets.DEV__API_GATEWAY_BASE_PATH}}
         AWS_AUTHORIZER_ARN: ${{secrets.DEV__AWS_AUTHORIZER_ARN}}
         ICPDAO_MONGODB_ICPDAO_HOST: mongodb://127.0.0.1:27017/icpdao
+        ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY: ${{secrets.DEV__ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY}}
       run: |
         npm install
         pip install -r requirements.txt
@@ -89,11 +91,13 @@ jobs:
     - name: deploy
       env:
         SERVERLESS_ACCESS_KEY: ${{secrets.SERVERLESS_ACCESS_KEY}}
+        ICPDAO_GITHUB_APP_ID: ${{secrets.DEV__ICPDAO_GITHUB_APP_ID}}
         ICPDAO_GITHUB_APP_CLIENT_ID: ${{secrets.DEV__ICPDAO_GITHUB_APP_CLIENT_ID}}
         ICPDAO_GITHUB_APP_CLIENT_SECRET: ${{secrets.DEV__ICPDAO_GITHUB_APP_CLIENT_SECRET}}
         API_GATEWAY_BASE_PATH: ${{secrets.DEV__API_GATEWAY_BASE_PATH}}
         AWS_AUTHORIZER_ARN: ${{secrets.DEV__AWS_AUTHORIZER_ARN}}
         ICPDAO_MONGODB_ICPDAO_HOST: ${{secrets.DEV__ICPDAO_MONGODB_ICPDAO_HOST}}
+        ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY: ${{secrets.DEV__ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY}}
       run: |
         npm install -g serverless@2.35.0
         npm install
