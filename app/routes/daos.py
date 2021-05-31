@@ -43,7 +43,7 @@ class DAO(ObjectType):
 
     @staticmethod
     def resolve_following(parent, info):
-        return DAOFollowUDSchema(parent.datum)
+        return DAOFollowUDSchema(dao_id=parent.following["dao_id"])
 
 
 class DAOs(ObjectType):

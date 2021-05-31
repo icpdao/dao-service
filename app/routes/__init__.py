@@ -50,7 +50,7 @@ class Query(ObjectType):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
             raise PermissionError('NOT LOGIN')
-        return DAO({'id': id})
+        return DAO(datum={"id": id}, following={"dao_id": id})
 
 
 class Mutations(ObjectType):

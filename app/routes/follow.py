@@ -9,12 +9,13 @@ from app.routes.schema import DAOFollowTypeEnum
 
 
 class DAOFollowUDSchema(ObjectType):
+    dao_id = String(required=True)
     followers = List(DFs, user_id=String())
     total = Int(required=True)
 
     @staticmethod
     def resolve_followers(parent, info, user_id=''):
-        dao_id = parent.followers['id']
+        dao_id = parent.dao_id
         current_user = get_current_user_by_graphql(info)
         if not user_id:
             # query all, only owner can do
@@ -26,7 +27,7 @@ class DAOFollowUDSchema(ObjectType):
 
     @staticmethod
     def resolve_total(parent, info):
-        dao_id = parent.followers['id']
+        dao_id = parent.dao_id
         return DAOFollow.objects(dao_id=dao_id).count()
 
 
