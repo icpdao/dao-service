@@ -61,7 +61,7 @@ jobs:
     needs: [test]
     timeout-minutes: 20
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature/fushang318_github_app'
+    if: github.ref == 'refs/heads/dev'
 
     steps:
     - uses: actions/checkout@v2
