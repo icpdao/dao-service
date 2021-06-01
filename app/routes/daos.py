@@ -45,7 +45,7 @@ class DAOItem(ObjectType):
     @staticmethod
     def resolve_stat(parent, info):
         # TODO:is mock
-        return DAOStat(following=0, job=0, size=0, token=0)
+        return DAOStat(following=parent.datum.number, job=0, size=0, token=0)
 
     @staticmethod
     def resolve_is_following(parent, info):
