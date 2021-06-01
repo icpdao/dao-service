@@ -219,16 +219,17 @@ class DAOGithubAppStatus(ObjectType):
             self.is_icp_app_installed = True
             return self
 
+        ugt = UserGithubToken.objects(github_login=current_user.github_login).first()
+
         dao = DAOModel.objects(name=name).first()
         self.is_exists = not not dao
 
-        self.github_org_id = get_github_org_id(name)
+        self.github_org_id = get_github_org_id(ugt.access_token, name)
 
         jwt = get_icp_app_jwt(ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY)
         self.is_icp_app_installed = check_icp_app_installed_status_of_org(jwt, name)
 
         if self.is_icp_app_installed:
-            ugt = UserGithubToken.objects(github_login=current_user.github_login).first()
             self.is_github_org_owner = org_member_role_is_admin(ugt.access_token, name, current_user.github_login)
         else:
             # 当 app 没有安装时，查不多用户信息，干脆直接设置为 false
