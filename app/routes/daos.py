@@ -6,7 +6,7 @@ from graphene import ObjectType, String, Field, Int, \
 from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
 
-from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY
+from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
 
 from app.common.models.icpdao.dao import DAO as DAOModel, DAOJobConfig
 from app.common.models.icpdao.dao import DAOFollow as DAOFollowModel
@@ -45,7 +45,7 @@ class DAOItem(ObjectType):
     @staticmethod
     def resolve_stat(parent, info):
         # TODO:is mock
-        return DAOStat(following=parent.datum.number, job=0, size=0, token=0)
+        return DAOStat(following=0, job=0, size=0, token=0)
 
     @staticmethod
     def resolve_is_following(parent, info):
@@ -202,6 +202,7 @@ class UpdateDAOBaseInfo(Mutation):
 
 
 class DAOGithubAppStatus(ObjectType):
+    github_app_name = String()
     github_org_id = Int()
     is_exists = Boolean()
     is_github_org_owner = Boolean()
@@ -213,11 +214,14 @@ class DAOGithubAppStatus(ObjectType):
             raise PermissionError('NOT LOGIN')
 
         if os.environ.get('IS_UNITEST') == 'yes':
+            self.github_app_name = "icpdao-test"
             self.github_org_id = 0
             self.is_exists = True
             self.is_github_org_owner = True
             self.is_icp_app_installed = True
             return self
+
+        self.github_app_name = ICPDAO_GITHUB_APP_NAME
 
         ugt = UserGithubToken.objects(github_login=current_user.github_login).first()
 
