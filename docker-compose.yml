@@ -12,7 +12,8 @@ services:
             DEPLOY: DEVDOCKER
             NOSE_NOCAPTURE: 1
 
-            ICPDAO_GITHUB_APP_ID: xxxx 
+            ICPDAO_GITHUB_APP_ID: xxxx
+            ICPDAO_GITHUB_APP_NAME: icpdao-test
             ICPDAO_GITHUB_APP_CLIENT_ID: xxxx
             ICPDAO_GITHUB_APP_CLIENT_SECRET: xxx
             API_GATEWAY_BASE_PATH: dev/v1/dao
