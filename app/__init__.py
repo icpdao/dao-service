@@ -12,12 +12,13 @@ from app.common.utils.route_helper import find_current_user, path_join
 from app.common.models.icpdao import init_mongo
 from app.routes import Query, Mutations
 from app.common.schema.icpdao import UserSchema, DAOSchema, DAOJobConfigSchema
-
+from app.routes.webhooks import GithubWebhooksApp
 
 prefix = ''
 if os.environ.get('IS_UNITEST') != 'yes':
     prefix = settings.API_GATEWAY_BASE_PATH
 graph_route = path_join(prefix, '/graph')
+webhooks_route = path_join(prefix, '/github/webhooks')
 
 graph_schema = graphene.Schema(
     query=Query, mutation=Mutations,
@@ -28,6 +29,8 @@ app = FastAPI()
 app.add_route(graph_route, BaseGraphQLApp(
     schema=graph_schema
 ))
+
+app.add_route(webhooks_route, GithubWebhooksApp())
 
 
 class UNAUTHError(Exception):
