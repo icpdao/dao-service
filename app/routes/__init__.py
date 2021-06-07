@@ -6,8 +6,9 @@ from app.common.utils.route_helper import get_current_user_by_graphql
 from app.routes.config import UpdateDAOJobConfig
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus
 from app.routes.follow import UpdateDAOFollow
+from app.routes.jobs import Jobs, CreateJob, UpdateJob
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
-    DAOsSortedTypeEnum
+    DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum
 
 
 class Query(ObjectType):
@@ -23,7 +24,8 @@ class Query(ObjectType):
 
     dao = Field(
         DAO,
-        id=String(required=True)
+        id=String(),
+        name=String()
     )
 
     dao_job_config = Field(
@@ -36,9 +38,24 @@ class Query(ObjectType):
         name=String(required=True)
     )
 
+    jobs = Field(
+        Jobs,
+        dao_name=String(),
+        begin_time=Int(),
+        end_time=Int(),
+        sorted=JobSortedEnum(),
+        sorted_type=SortedTypeEnum(),
+        first=Int(default_value=20),
+        offset=Int(default_value=0)
+    )
+
     @staticmethod
     def resolve_daos(root, info, **kwargs):
         return DAOs().get_query_dao_list(info, **kwargs)
+
+    @staticmethod
+    def resolve_jobs(root, info, **kwargs):
+        return Jobs().get_query_job_list(info, **kwargs)
 
     @staticmethod
     def resolve_dao_job_config(root, info, dao_id):
@@ -49,19 +66,18 @@ class Query(ObjectType):
         return record
 
     @staticmethod
-    def resolve_dao(root, info, id):
-        current_user = get_current_user_by_graphql(info)
-        if not current_user:
-            raise PermissionError('NOT LOGIN')
-        return DAO(datum={"id": id}, following={"dao_id": id})
+    def resolve_dao(root, info, id=None, name=None):
+        return DAO().get_query(info, id, name)
 
     @staticmethod
     def resolve_dao_github_app_status(root, info, name):
         return DAOGithubAppStatus().get(info, name)
+
 
 class Mutations(ObjectType):
     create_dao = CreateDAO.Field()
     update_dao_job_config = UpdateDAOJobConfig.Field()
     update_dao_follow = UpdateDAOFollow.Field()
     update_dao_base_info = UpdateDAOBaseInfo.Field()
-
+    create_job = CreateJob.Field()
+    update_job = UpdateJob.Field()

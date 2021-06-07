@@ -6,10 +6,14 @@ from graphene import ObjectType, String, Field, Int, \
 from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
 
+import settings
+from app.common.models.icpdao.github_app_token import GithubAppToken
+from app.common.utils.github_app.client import GithubAppClient
 from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
 
 from app.common.models.icpdao.dao import DAO as DAOModel, DAOJobConfig
 from app.common.models.icpdao.dao import DAOFollow as DAOFollowModel
+from app.common.models.icpdao.job import Job as JobModel
 from app.common.schema.icpdao import DAOSchema
 from app.common.models.icpdao.user_github_token import UserGithubToken
 from app.common.utils.access import check_is_icpper, check_is_dao_owner
@@ -63,20 +67,38 @@ class DAOItem(ObjectType):
             raise PermissionError('NOT LOGIN')
         return str(current_user.id) == parent.datum.owner_id
 
+
 class DAO(ObjectType):
     datum = Field(DAOSchema)
     following = Field(DAOFollowUDSchema)
 
+    def get_query(self, info, id=None, name=None):
+        current_user = get_current_user_by_graphql(info)
+        if not current_user:
+            raise PermissionError('NOT LOGIN')
+        if not id and not name:
+            raise ValueError('NO FILTER')
+        _filter = {}
+        if id:
+            _filter['id'] = id
+        if name:
+            _filter['name'] = name
+
+        query = DAOModel.objects(**_filter).first()
+        setattr(self, 'query', query)
+        return self
+
     @staticmethod
     def resolve_datum(parent, info):
-        dao = DAOModel.objects(id=parent.datum['id']).first()
+        dao = getattr(parent, 'query')
         if not dao:
             raise ValueError('NOT FOUND DAO')
         return dao
 
     @staticmethod
     def resolve_following(parent, info):
-        return DAOFollowUDSchema(dao_id=parent.following["dao_id"])
+        dao = getattr(parent, 'query')
+        return DAOFollowUDSchema(dao_id=str(dao.id))
 
 
 class DAOs(ObjectType):
@@ -109,6 +131,9 @@ class DAOs(ObjectType):
             if _filter == DAOsFilterEnum.following_and_owner:
                 dao_id_list = [item.dao_id for item in DAOFollowModel.objects(user_id=str(current_user.id))]
                 query = (Q(owner_id=str(current_user.id)) | Q(id__in=dao_id_list))
+            if _filter == DAOsFilterEnum.member:
+                dao_id_list = JobModel.objects(user_id=str(current_user.id)).distinct('dao_id')
+                query = Q(id__in=dao_id_list)
 
         if _search:
             if query:
@@ -144,7 +169,11 @@ class DAOs(ObjectType):
 
     def resolve_stat(self, info):
         # TODO is mock
-        return DAOsStat(icpper=0, size=0, income=0)
+        dao_ids = {str(item.id) for item in self.query_list}
+
+        icpper = JobModel.objects(dao_id__in=dao_ids).distinct('user_id')
+        size = JobModel.objects(dao_id__in=dao_ids).sum('size')
+        return DAOsStat(icpper=len(icpper), size=size, income=0)
 
     def resolve_total(self, info):
         return self.query_list.count()
