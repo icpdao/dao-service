@@ -6,6 +6,7 @@ import settings
 from app.common.models.icpdao.github_app_token import GithubAppToken
 from app.common.models.icpdao.job import Job as JobModel, JobPR as JobPRModel
 from app.common.models.icpdao.dao import DAO as DAOModel
+from app.common.models.icpdao.user import User
 
 from app.common.schema.icpdao import JobSchema, JobPRSchema
 from app.common.utils.github_app.client import GithubAppClient
@@ -36,12 +37,18 @@ class Jobs(ObjectType):
 
     def get_query_job_list(self, info, dao_name=None, begin_time=None,
                            end_time=None, sorted=None, sorted_type=None,
-                           first=20, offset=0):
+                           first=20, offset=0, user_name=None):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
             raise PermissionError('NOT LOGIN')
+        user_id = str(current_user.id)
+        if user_name is not None:
+            user = User.objects(github_login=user_name).first()
+            if not user:
+                raise ValueError("NOT FIND QUERY USER NAME")
+            user_id = str(user.id)
 
-        _filter = {'user_id': str(current_user.id)}
+        _filter = {'user_id': user_id}
         if dao_name:
             dao = DAOModel.objects(name=dao_name).first()
             if dao:
