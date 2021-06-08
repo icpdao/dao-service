@@ -46,7 +46,8 @@ class Query(ObjectType):
         sorted=JobSortedEnum(),
         sorted_type=SortedTypeEnum(),
         first=Int(default_value=20),
-        offset=Int(default_value=0)
+        offset=Int(default_value=0),
+        user_name=String(),
     )
 
     @staticmethod
