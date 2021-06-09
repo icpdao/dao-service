@@ -49,9 +49,13 @@ def update_job_by_size(info, app_client: GithubAppClient, current_user, job, siz
 def delete_job_pr(info, app_client, del_pr):
     job_pr = JobPRModel.objects(id=del_pr).first()
     if job_pr:
+        job_ids = JobPRModel.objects(
+            github_repo_id=job_pr.github_repo_id,
+            github_pr_number=job_pr.github_pr_number
+        ).distinct('job_id')
         job_pr.delete()
-    info.context["background"].add_task(
-        sync_job_pr, app_client=app_client, job_pr=job_pr)
+        info.context["background"].add_task(
+            sync_job_pr, app_client=app_client, job_pr=job_pr, job_ids=job_ids)
 
 
 def add_job_pr(info, app_client: GithubAppClient, current_user, job, pr_link):
@@ -62,6 +66,9 @@ def add_job_pr(info, app_client: GithubAppClient, current_user, job, pr_link):
     pr_record = JobPRModel(job_id=str(job.id))
     if link_info['type'] == LinkType.pr:
         parse_info = link_info['parse']
+
+        repo = app_client.get_repo(parse_info['github_repo_name'])
+
         success, ret = app_client.get_pr(
             parse_info['github_repo_name'],
             parse_info['github_pr_number'],
@@ -84,7 +91,7 @@ def add_job_pr(info, app_client: GithubAppClient, current_user, job, pr_link):
             title=ret['title'],
             github_repo_owner=job.github_repo_owner,
             github_repo_name=parse_info['github_repo_name'],
-            github_repo_id=job.github_repo_id,
+            github_repo_id=repo['id'],
             github_pr_number=parse_info['github_pr_number'],
             status=ret['state'],
             merged_user_github_login=ret['merged_login'],
@@ -114,8 +121,12 @@ def add_job_pr(info, app_client: GithubAppClient, current_user, job, pr_link):
             status=ret['state'],
         )
         pr_record.save()
+    job_ids = JobPRModel.objects(
+        github_repo_id=pr_record.github_repo_id,
+        github_pr_number=pr_record.github_pr_number
+    ).distinct('job_id')
     info.context["background"].add_task(
-        sync_job_pr, app_client=app_client, job_pr=pr_record)
+        sync_job_pr, app_client=app_client, job_pr=pr_record, job_ids=job_ids)
 
 
 def create_job(info, dao_id, issue_link, size):
