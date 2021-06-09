@@ -6,6 +6,7 @@ from graphene import ObjectType, String, Field, Int, \
 from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
 
+from app.routes.cycles import CyclesQuery
 from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
 
 from app.common.models.icpdao.dao import DAO as DAOModel, DAOJobConfig
@@ -63,9 +64,11 @@ class DAOItem(ObjectType):
             raise PermissionError('NOT LOGIN')
         return str(current_user.id) == parent.datum.owner_id
 
+
 class DAO(ObjectType):
     datum = Field(DAOSchema)
     following = Field(DAOFollowUDSchema)
+    cycles = Field(CyclesQuery)
 
     @staticmethod
     def resolve_datum(parent, info):
@@ -77,6 +80,10 @@ class DAO(ObjectType):
     @staticmethod
     def resolve_following(parent, info):
         return DAOFollowUDSchema(dao_id=parent.following["dao_id"])
+
+    @staticmethod
+    def resolve_cycles(parent, info):
+        return CyclesQuery(dao_id=parent.datum['id'])
 
 
 class DAOs(ObjectType):

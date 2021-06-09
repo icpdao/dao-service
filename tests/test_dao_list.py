@@ -94,6 +94,11 @@ mutation {
         self.clear_db()
         self.icpper = self.create_icpper_user()
 
+        ret = self.graph_query(self.icpper.id, self.get_daos_no_params)
+        res = ret.json()
+        res_daos = res['data']['daos']['dao']
+        assert len(res_daos) == 0
+
         dao_id1 = self.graph_query(
             self.icpper.id, self.create_dao % 'test_dao_1'
         ).json()['data']['createDao']['dao']['id']

@@ -29,3 +29,5 @@ services:
         command: uvicorn app:app --reload --host 0.0.0.0
     mongodb:
         image: mongo:4.4
+        ports:
+            - "27017:27017"

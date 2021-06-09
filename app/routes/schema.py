@@ -1,5 +1,7 @@
 from graphene import Enum
 
+from app.common.models.icpdao.job import JobPairTypeEnum
+
 
 class DAOsFilterEnum(Enum):
     all = 0
@@ -24,3 +26,29 @@ class DAOsSortedTypeEnum(Enum):
 class DAOFollowTypeEnum(Enum):
     ADD = 0
     DELETE = 1
+
+
+class CycleIcpperStatSortedEnum(Enum):
+    jobCount = 0
+    size = 1
+    income = 2
+
+
+class CycleIcpperStatSortedTypeEnum(Enum):
+    asc = 0
+    desc = 1
+
+
+class JobsQuerySortedEnum(Enum):
+    size = 0
+    income = 1
+
+
+class JobsQuerySortedTypeEnum(Enum):
+    asc = 0
+    desc = 1
+
+
+class JobsQueryPairTypeEnum(Enum):
+    pair = JobPairTypeEnum.PAIR.value
+    all = JobPairTypeEnum.ALL.value

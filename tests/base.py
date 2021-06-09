@@ -3,6 +3,7 @@ from fastapi.testclient import TestClient
 from app import app, graph_route
 from app.common.models.icpdao.user import User, UserStatus
 from app.common.models.icpdao.dao import DAO, DAOJobConfig, DAOFollow
+from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote
 
 
 class Base:
@@ -22,6 +23,9 @@ class Base:
         DAOFollow.drop_collection()
         DAOJobConfig.drop_collection()
         DAO.drop_collection()
+        Cycle.drop_collection()
+        CycleIcpperStat.drop_collection()
+        CycleVote.drop_collection()
 
     @staticmethod
     def create_icpper_user(nickname='test_icpper', github_login='test_github_login'):
