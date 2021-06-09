@@ -1,9 +1,9 @@
 from fastapi.testclient import TestClient
+from mongoengine.connection import get_db
 
 from app import app, graph_route
+from app.common.models.icpdao.github_app_token import GithubAppToken
 from app.common.models.icpdao.user import User, UserStatus
-from app.common.models.icpdao.dao import DAO, DAOJobConfig, DAOFollow
-from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote
 
 
 class Base:
@@ -19,13 +19,7 @@ class Base:
 
     @classmethod
     def clear_db(cls):
-        User.drop_collection()
-        DAOFollow.drop_collection()
-        DAOJobConfig.drop_collection()
-        DAO.drop_collection()
-        Cycle.drop_collection()
-        CycleIcpperStat.drop_collection()
-        CycleVote.drop_collection()
+        get_db('icpdao').client.drop_database('icpdao')
 
     @staticmethod
     def create_icpper_user(nickname='test_icpper', github_login='test_github_login'):
@@ -58,3 +52,14 @@ class Base:
             }
         )
 
+    def gen_github_app_token(self):
+        with open(
+                './github_app.pem', 'r') as f:
+            cert_str = f.read()
+        return GithubAppToken.get_token(
+            app_id='111590', app_private_key=cert_str, dao_name='icpdao')
+
+
+if __name__ == '__main__':
+    print(Base().gen_github_app_token())
+    # print(Base().create_icpper_user(github_login='bqx619'))
