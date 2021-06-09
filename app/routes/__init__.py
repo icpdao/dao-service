@@ -10,7 +10,7 @@ from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
     DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum
-from app.routes.vote import Votes
+from app.routes.vote import UpdatePairVote, UpdateALLVote
 
 
 class Query(ObjectType):
@@ -57,13 +57,6 @@ class Query(ObjectType):
         user_name=String(),
     )
 
-    votes = Field(
-        Votes,
-        dao_id=String(required=True),
-        first=Int(default_value=20),
-        offset=Int(default_value=0),
-    )
-
     @staticmethod
     def resolve_daos(root, info, **kwargs):
         return DAOs().get_query_dao_list(info, **kwargs)
@@ -100,3 +93,5 @@ class Mutations(ObjectType):
     update_dao_base_info = UpdateDAOBaseInfo.Field()
     create_job = CreateJob.Field()
     update_job = UpdateJob.Field()
+    update_pair_vote = UpdatePairVote.Field()
+    update_all_vote = UpdateALLVote.Field()

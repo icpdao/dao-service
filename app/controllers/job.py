@@ -129,19 +129,21 @@ def add_job_pr(info, app_client: GithubAppClient, current_user, job, pr_link):
         sync_job_pr, app_client=app_client, job_pr=pr_record, job_ids=job_ids)
 
 
-def create_job(info, dao_id, issue_link, size):
+def create_job(info, issue_link, size):
     current_user = get_current_user_by_graphql(info)
     if not current_user:
         raise PermissionError('NOT LOGIN')
     if current_user.status != UserStatus.ICPPER.value:
         raise PermissionError('ONLY ICPPER CAN MARK JOB')
-    dao = DAOModel.objects(id=dao_id).first()
-    if not dao:
-        raise ValueError('NOT DAO')
 
-    issue_info = parse_issue(issue_link, dao.name)
+    issue_info = parse_issue(issue_link)
     if issue_info is False:
         raise ValueError('ILLEGAL ISSUE LINK')
+
+    dao = DAOModel.objects(
+        name=issue_info['parse']['github_repo_owner']).first()
+    if not dao:
+        raise ValueError('NOT DAO')
 
     app_token = GithubAppToken.get_token(
         app_id=settings.ICPDAO_GITHUB_APP_ID,
@@ -183,7 +185,7 @@ by @icpdao
     if not success:
         raise ValueError('CREATE COMMENT ERROR')
     record = JobModel(
-        dao_id=dao_id,
+        dao_id=str(dao.id),
         user_id=str(current_user.id),
         title=issue['title'],
         body_text=issue['body'],
