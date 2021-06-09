@@ -2,3 +2,4 @@
 
 mangum==0.11.0
 python-dotenv==0.17.1
+promise==2.3

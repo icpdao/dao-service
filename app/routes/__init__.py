@@ -4,6 +4,7 @@ from app.common.models.icpdao.dao import DAOJobConfig as DAOJobConfigModel
 from app.common.schema.icpdao import DAOJobConfigSchema
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.routes.config import UpdateDAOJobConfig
+from app.routes.cycles import CycleQuery
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus
 from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob
@@ -37,6 +38,11 @@ class Query(ObjectType):
     dao_github_app_status = Field(
         DAOGithubAppStatus,
         name=String(required=True)
+    )
+
+    cycle = Field(
+        CycleQuery,
+        id=String(required=True)
     )
 
     jobs = Field(
@@ -81,6 +87,10 @@ class Query(ObjectType):
     @staticmethod
     def resolve_dao_github_app_status(root, info, name):
         return DAOGithubAppStatus().get(info, name)
+
+    @staticmethod
+    def resolve_cycle(root, info, id):
+        return CycleQuery(cycle_id=id)
 
 
 class Mutations(ObjectType):

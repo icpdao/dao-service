@@ -6,11 +6,9 @@ from graphene import ObjectType, String, Field, Int, \
 from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
 
-import settings
-from app.common.models.icpdao.github_app_token import GithubAppToken
-from app.common.utils.github_app.client import GithubAppClient
 from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
 
+from app.routes.cycles import CyclesQuery
 from app.common.models.icpdao.dao import DAO as DAOModel, DAOJobConfig
 from app.common.models.icpdao.dao import DAOFollow as DAOFollowModel
 from app.common.models.icpdao.job import Job as JobModel
@@ -71,6 +69,7 @@ class DAOItem(ObjectType):
 class DAO(ObjectType):
     datum = Field(DAOSchema)
     following = Field(DAOFollowUDSchema)
+    cycles = Field(CyclesQuery)
 
     def get_query(self, info, id=None, name=None):
         current_user = get_current_user_by_graphql(info)
@@ -99,6 +98,11 @@ class DAO(ObjectType):
     def resolve_following(parent, info):
         dao = getattr(parent, 'query')
         return DAOFollowUDSchema(dao_id=str(dao.id))
+
+    @staticmethod
+    def resolve_cycles(parent, info):
+        dao = getattr(parent, 'query')
+        return CyclesQuery(dao_id=str(dao.id))
 
 
 class DAOs(ObjectType):

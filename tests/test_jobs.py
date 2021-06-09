@@ -175,6 +175,7 @@ mutation {
             str(self.icpper.id),
             self.create_job % (dao_id, mark_issue, str(mark_size))
         )
+
         assert res.status_code == 200
         data = res.json()
         assert data['data']['createJob']['job']['node']['daoId'] == dao_id
