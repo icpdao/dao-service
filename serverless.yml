@@ -38,7 +38,11 @@ functions:
   app:
     handler: app.handler
     events:
-      - http:  
+      - http:
+          path: '/github/webhooks'
+          method: ANY
+          cors: true
+      - http:
           path: '{proxy+}'
           method: ANY
           cors: true
