@@ -317,6 +317,11 @@ mutation {
         )
         responses.add(
             responses.GET,
+            "https://api.github.com/repos/mockdao/mockrepo",
+            json={'id': 222}
+        )
+        responses.add(
+            responses.GET,
             "https://api.github.com/repos/mockdao/mockrepo/pulls/10/reviews",
             json={}
         )
