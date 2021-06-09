@@ -144,14 +144,10 @@ def sync_job_pr_comment(app_client, job_pr, job_ids):
     return pr_comment
 
 
-def sync_job_pr(app_client, job_pr):
-    print(f'job pr sync, job_pr: {str(job_pr.id)}')
-    job_prs = JobPRModel.objects(
-        github_repo_id=job_pr.github_repo_id,
-        github_pr_number=job_pr.github_pr_number
-    ).distinct('job_id')
+def sync_job_pr(app_client, job_pr, job_ids):
+    print(f'job pr sync, job_ids: {job_ids}')
 
-    job_ids = set(job_prs)
+    job_ids = set(job_ids)
 
     sync_job_pr_comment(app_client, job_pr, job_ids)
     sync_job_issue_status_comment(app_client, job_ids)
