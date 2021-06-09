@@ -11,7 +11,7 @@ from tests.base import Base
 class TestJobs(Base):
     create_job = """
 mutation { 
-  createJob(daoId: "%s", issueLink: "%s", size: %s) {
+  createJob(issueLink: "%s", size: %s) {
     job {
       node {
         id
@@ -173,7 +173,7 @@ mutation {
         mark_size = 2.3
         res = self.graph_query(
             str(self.icpper.id),
-            self.create_job % (dao_id, mark_issue, str(mark_size))
+            self.create_job % (mark_issue, str(mark_size))
         )
 
         assert res.status_code == 200
@@ -185,21 +185,21 @@ mutation {
 
         res = self.graph_query(
             str(self.icpper.id),
-            self.create_job % (dao_id, mark_issue, str(mark_size))
+            self.create_job % (mark_issue, str(mark_size))
         )
         assert res.json()['errors'][0]['message'] == 'THIS ISSUE HAD EXIST'
 
         res = self.graph_query(
             str(self.normal_user.id),
-            self.create_job % (dao_id, mark_issue, str(mark_size))
+            self.create_job % (mark_issue, str(mark_size))
         )
         assert res.json()['errors'][0]['message'] == 'ONLY ICPPER CAN MARK JOB'
 
         res = self.graph_query(
             str(self.icpper.id),
-            self.create_job % ("60bd826e9778eaccaf0cd9ca", mark_issue, str(mark_size))
+            self.create_job % (mark_issue, str(mark_size))
         )
-        assert res.json()['errors'][0]['message'] == 'NOT DAO'
+        assert res.json()['errors'][0]['message'] == 'THIS ISSUE HAD EXIST'
 
         responses.add(
             responses.GET,
@@ -214,7 +214,7 @@ mutation {
         )
         res = self.graph_query(
             str(self.icpper.id),
-            self.create_job % (dao_id, mark_issue, str(mark_size))
+            self.create_job % (mark_issue, str(mark_size))
         )
         assert res.json()['errors'][0]['message'] == 'ONLY ISSUE USER CAN MARK THIS ISSUE'
 
@@ -248,12 +248,12 @@ mutation {
         )
         res = self.graph_query(
             str(self.icpper.id),
-            self.create_job % (dao_id, "https://github.com/mockdao/mockrepo/issues/3", "4.3")
+            self.create_job % ("https://github.com/mockdao/mockrepo/issues/3", "4.3")
         )
 
         res = self.graph_query(
             str(self.icpper.id),
-            self.create_job % (dao_id, "https://github.com/mockdao/mockrepo/issues/4", "5.3")
+            self.create_job % ("https://github.com/mockdao/mockrepo/issues/4", "5.3")
         )
 
         res = self.graph_query(

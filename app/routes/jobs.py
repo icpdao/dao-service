@@ -100,15 +100,14 @@ class Jobs(ObjectType):
 
 class CreateJob(Mutation):
     class Arguments:
-        dao_id = String(required=True)
         issue_link = String(required=True)
         size = Float(required=True)
 
     job = Field(Job)
 
-    def mutate(self, info, dao_id, issue_link, size):
+    def mutate(self, info, issue_link, size):
         check_size(size)
-        record = create_job(info, dao_id, issue_link, size)
+        record = create_job(info, issue_link, size)
         return CreateJob(job=Job(node=record, prs=[]))
 
 
