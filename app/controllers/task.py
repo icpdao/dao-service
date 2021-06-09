@@ -57,7 +57,7 @@ def get_or_create_dao_cycle(dao_id, job_last_merged_at):
     cycle = Cycle(
         dao_id=dao_id,
         time_zone=config.time_zone,
-        begin_at=last.end_at, end_at=end_at,
+        begin_at=begin_at, end_at=end_at,
         pair_begin_at=pair_begin_at, pair_end_at=pair_end_at,
         vote_begin_at=vote_begin_at, vote_end_at=vote_end_at)
 

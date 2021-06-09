@@ -9,6 +9,7 @@ from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
     DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum
+from app.routes.vote import Votes
 
 
 class Query(ObjectType):
@@ -48,6 +49,13 @@ class Query(ObjectType):
         first=Int(default_value=20),
         offset=Int(default_value=0),
         user_name=String(),
+    )
+
+    votes = Field(
+        Votes,
+        dao_id=String(required=True),
+        first=Int(default_value=20),
+        offset=Int(default_value=0),
     )
 
     @staticmethod
