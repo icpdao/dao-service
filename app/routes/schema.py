@@ -90,3 +90,10 @@ class CycleVotePairTaskStatusEnum(Enum):
 class UpdateJobVoteTypeByOwnerArgumentPairTypeEnum(Enum):
     pair = JobPairTypeEnum.PAIR.value
     all = JobPairTypeEnum.ALL.value
+
+
+class CreateCycleVotePairTaskByOwnerStatusEnum(Enum):
+    INIT = CycleVotePairTaskStatus.INIT.value
+    PAIRING = CycleVotePairTaskStatus.PAIRING.value
+    SUCCESS = CycleVotePairTaskStatus.SUCCESS.value
+    FAIL = CycleVotePairTaskStatus.FAIL.value
