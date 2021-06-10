@@ -1,9 +1,10 @@
 import time
+import decimal
 
-from graphene import ObjectType, Field, List, Int, Decimal, Boolean
+from graphene import ObjectType, Field, List, Int, Decimal, Boolean, Float, Mutation, String
 from mongoengine import Q
 
-from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType
+from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType, CycleVotePairTask
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.models.icpdao.user import User
@@ -12,9 +13,8 @@ from app.common.schema.icpdao import CycleSchema, CycleIcpperStatSchema, UserSch
 from app.common.utils.route_helper import get_custom_attr_by_graphql, set_custom_attr_by_graphql, get_current_user, \
     get_current_user_by_graphql
 from app.routes.data_loaders import UserLoader, JobLoader
-from app.routes.schema import CycleIcpperStatSortedTypeEnum, \
-    CycleIcpperStatSortedEnum, JobsQuerySortedEnum, \
-    JobsQuerySortedTypeEnum, JobsQueryPairTypeEnum, CycleFilterEnum
+from app.routes.schema import CycleIcpperStatSortedTypeEnum, CycleIcpperStatSortedEnum, JobsQuerySortedEnum, \
+    JobsQuerySortedTypeEnum, JobsQueryPairTypeEnum, CycleVotePairTaskStatusEnum, CycleFilterEnum
 
 
 class IcpperStatQuery(ObjectType):
@@ -308,8 +308,52 @@ class CycleVotesQuery(ObjectType):
         return query.limit(self.first).skip(self.offset).count()
 
 
+class CycleStatQuery(ObjectType):
+    icpper_count = Int()
+    job_count = Int()
+    size = Decimal()
+
+    @property
+    def cycle_id(self):
+        return getattr(self, '_cycle_id')
+
+    @cycle_id.setter
+    def cycle_id(self, cycle_id):
+        setattr(self, '_cycle_id', cycle_id)
+
+    def _get_icpper_stats(self, info):
+        cache = getattr(self, '_get_icpper_stats_cache', None)
+        if cache is None:
+            cache = [item for item in CycleIcpperStat.objects(cycle_id=self.cycle_id)]
+            setattr(self, '_get_icpper_stats_cache', cache)
+        return cache
+
+    def resolve_icpper_count(self, info):
+        icpper_stat_list = self._get_icpper_stats(info)
+        return len(icpper_stat_list)
+
+    def resolve_job_count(self, info):
+        count = 0
+        icpper_stat_list = self._get_icpper_stats(info)
+        for item in icpper_stat_list:
+            count += item.job_count
+        return count
+
+    def resolve_size(self, info):
+        size = decimal.Decimal('0')
+        icpper_stat_list = self._get_icpper_stats(info)
+        for item in icpper_stat_list:
+            size += item.size
+        return size
+
+
+class CycleVotePairTaskQuery(ObjectType):
+    status = Field(CycleVotePairTaskStatusEnum)
+
+
 class CycleQuery(ObjectType):
     datum = Field(CycleSchema)
+    stat = Field(CycleStatQuery)
     icpper_stats = Field(
         IcpperStatsQuery,
         sorted=CycleIcpperStatSortedEnum(),
@@ -332,6 +376,7 @@ class CycleQuery(ObjectType):
         first=Int(default_value=20),
         offset=Int(default_value=0)
     )
+    pair_task = Field(CycleVotePairTaskQuery)
 
     @property
     def cycle_id(self):
@@ -345,6 +390,9 @@ class CycleQuery(ObjectType):
         if not self.datum:
             return Cycle.objects(id=self.cycle_id).first()
         return self.datum
+
+    def resolve_stat(self, info):
+        return CycleStatQuery(cycle_id=self.cycle_id)
 
     def resolve_icpper_stats(self, info, **kwargs):
         first = kwargs.get('first')
@@ -368,6 +416,14 @@ class CycleQuery(ObjectType):
         is_myself = kwargs.get('is_myself', None)
         return CycleVotesQuery(cycle_id=self.cycle_id, first=first, offset=offset, is_public=is_public, is_myself=is_myself)
 
+    def resolve_pair_task(self, info):
+        cycle = Cycle.objects(id=self.cycle_id).first()
+        dao_id = cycle.dao_id
+        task = CycleVotePairTask.objects(dao_id=dao_id, cycle_id=str(cycle.id)).order_by('-id').first()
+        if not task:
+            return None
+        return CycleVotePairTaskQuery(status=task.status)
+
 
 class CyclesQuery(BaseObjectType):
     nodes = List(CycleQuery)
@@ -388,3 +444,40 @@ class CyclesQuery(BaseObjectType):
 
         cycle_list = Cycle.objects(**query).order_by('-begin_at')
         return [CycleQuery(datum=i, cycle_id=str(i.id)) for i in cycle_list]
+
+
+class PublishCycleVoteResultByOwner(Mutation):
+    class Arguments:
+        cycle_id = String(required=True)
+
+    ok = Boolean()
+
+    def mutate(self, info, cycle_id):
+        cycle = Cycle.objects(id=cycle_id).first()
+        if not cycle:
+            raise ValueError('NOT CYCLE')
+
+        dao = DAO.objects(id=cycle.dao_id).first()
+        if not dao:
+            raise ValueError('NOT DAO')
+
+        current_user = get_current_user_by_graphql(info)
+        if str(current_user.id) != dao.owner_id:
+            raise ValueError('NOT ROLE')
+
+        if not cycle.vote_result_stat_at:
+            raise ValueError('CURRENT TIME NO IN CHANGE CYCLE')
+
+        if cycle.vote_result_published_at:
+            raise ValueError('IS PUBLISHED')
+
+        for item in CycleIcpperStat.objects(cycle_id=str(cycle.id)):
+            item.ei = item.vote_ei + item.owner_ei
+            item.save()
+
+        current_time = int(time.time())
+        cycle.vote_result_published_at = current_time
+        cycle.update_at = current_time
+        cycle.save()
+
+        return PublishCycleVoteResultByOwner(ok=True)

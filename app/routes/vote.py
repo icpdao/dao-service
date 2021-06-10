@@ -29,7 +29,7 @@ class UpdatePairVote(Mutation):
         cycle = Cycle.objects(id=cycle_vote.cycle_id).first()
         if not cycle:
             raise ValueError('NOT CYCLE')
-        if not cycle.is_paired:
+        if not cycle.paired_at:
             raise ValueError('NOT PAIRED THIS CYCLE')
         now_at = int(time.time())
         if now_at < cycle.vote_begin_at or now_at > cycle.vote_end_at:
@@ -62,7 +62,7 @@ class UpdateALLVote(Mutation):
         cycle = Cycle.objects(id=cycle_vote.cycle_id).first()
         if not cycle:
             raise ValueError('NOT CYCLE')
-        if not cycle.is_paired:
+        if not cycle.paired_at:
             raise ValueError('NOT PAIRED THIS CYCLE')
 
         now_at = int(time.time())

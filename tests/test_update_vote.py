@@ -1,4 +1,5 @@
 import random
+import time
 
 from app.common.models.icpdao.cycle import Cycle, CycleVote
 from app.common.models.icpdao.dao import DAO
@@ -67,7 +68,7 @@ mutation {
         dao_id = str(mockdao.id)
         cycle = Cycle(
             dao_id=dao_id, vote_begin_at=0, vote_end_at=33180161000,
-            is_paired=True)
+            paired_at=time.time())
         cycle.save()
         cycle_id = str(cycle.id)
         self.job1 = self.create_job(str(mockdao.id), str(self.icpper1.id), str(cycle.id))

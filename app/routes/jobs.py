@@ -1,8 +1,11 @@
+import decimal
+import time
 from collections import defaultdict
 
-from graphene import ObjectType, List, Int, Float, String, Field, Mutation
+from graphene import ObjectType, List, Int, Float, String, Field, Mutation, Boolean, Decimal
 
 import settings
+from app.common.models.icpdao.cycle import CycleIcpperStat, Cycle
 from app.common.models.icpdao.github_app_token import GithubAppToken
 from app.common.models.icpdao.job import Job as JobModel, JobPR as JobPRModel
 from app.common.models.icpdao.dao import DAO as DAOModel
@@ -12,8 +15,7 @@ from app.common.schema.icpdao import JobSchema, JobPRSchema
 from app.common.utils.github_app.client import GithubAppClient
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.common.utils import check_size
-from app.routes.schema import SortedTypeEnum
-
+from app.routes.schema import SortedTypeEnum, UpdateJobVoteTypeByOwnerArgumentPairTypeEnum
 
 from app.controllers.job import delete_job_pr, update_job_by_size, add_job_pr, \
     create_job
@@ -151,3 +153,81 @@ class UpdateJob(Mutation):
         prs = JobPRModel.objects(job_id=id).all()
 
         return UpdateJob(job=Job(node=job, prs=list(prs)))
+
+
+class UpdateJobVoteTypeByOwner(Mutation):
+    class Arguments:
+        id = String(required=True)
+        vote_type = UpdateJobVoteTypeByOwnerArgumentPairTypeEnum()
+
+    ok = Boolean()
+
+    def mutate(self, info, id, vote_type):
+        job = JobModel.objects(id=id).first()
+        if not job:
+            raise ValueError('NOT JOB')
+
+        if not job.cycle_id:
+            raise ValueError('NOT CYCLE')
+
+        cycle = Cycle.objects(id=job.cycle_id).first()
+        if not cycle:
+            raise ValueError('NOT CYCLE')
+
+        dao = DAOModel.objects(id=job.dao_id).first()
+        if not dao:
+            raise ValueError('NOT DAO')
+
+        current_user = get_current_user_by_graphql(info)
+        if str(current_user.id) != dao.owner_id:
+            raise ValueError('NOT ROLE')
+
+        if cycle.paired_at:
+            raise ValueError('CURRENT TIME NOT IN CHANGE CYCLE')
+
+        job.pair_type = vote_type
+        job.save()
+        return UpdateJobVoteTypeByOwner(ok=True)
+
+
+class UpdateIcpperStatOwnerEi(Mutation):
+    class Arguments:
+        id = String(required=True)
+        owner_ei = Decimal()
+
+    ei = Decimal()
+    vote_ei = Decimal()
+    owner_ei = Decimal()
+
+    def mutate(self, info, id, owner_ei):
+        icpper_stat = CycleIcpperStat.objects(id=id).first()
+        if not icpper_stat:
+            raise ValueError('NOT ICPPER_STAT')
+
+        cycle = Cycle.objects(id=icpper_stat.cycle_id).first()
+        if not cycle:
+            raise ValueError('NOT CYCLE')
+
+        dao = DAOModel.objects(id=icpper_stat.dao_id).first()
+        if not dao:
+            raise ValueError('NOT DAO')
+
+        current_user = get_current_user_by_graphql(info)
+        if str(current_user.id) != dao.owner_id:
+            raise ValueError('NOT ROLE')
+
+        if not cycle.vote_result_stat_at or cycle.vote_result_published_at:
+            raise ValueError('CURRENT TIME NO IN CHANGE CYCLE')
+
+        if owner_ei < decimal.Decimal('-0.2') or owner_ei > decimal.Decimal('0.2'):
+            raise ValueError('OWNER_EI MUST IN -0.2 TO 0.2 RANGE')
+
+        icpper_stat.owner_ei = owner_ei
+        icpper_stat.ei = icpper_stat.vote_ei + icpper_stat.owner_ei
+        icpper_stat.save()
+
+        return UpdateIcpperStatOwnerEi(
+            ei=icpper_stat.ei,
+            vote_ei=icpper_stat.vote_ei,
+            owner_ei=icpper_stat.owner_ei
+        )
