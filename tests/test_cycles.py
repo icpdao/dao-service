@@ -2,11 +2,12 @@ import time
 from decimal import Decimal
 
 from app.common.models.icpdao.job import Job, JobStatusEnum, JobPairTypeEnum
+from app.routes.schema import CycleVotePairTaskStatusEnum
 from tests.base import Base
 
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType, VoteResultTypeAll, \
-    VoteResultTypeAllResultType
+    VoteResultTypeAllResultType, CycleVotePairTask, CycleVotePairTaskStatus
 
 
 class TestCycles(Base):
@@ -25,8 +26,8 @@ query{
                     pairEndAt
                     voteBeginAt
                     voteEndAt
-                    isPaired
-                    isVoteResultPublished
+                    pairedAt
+                    voteResultPublishedAt
                     createAt
                     updateAt
                 }
@@ -48,8 +49,8 @@ query{
                 pairEndAt
                 voteBeginAt
                 voteEndAt
-                isPaired
-                isVoteResultPublished
+                pairedAt
+                voteResultPublishedAt
                 createAt
                 updateAt
             }
@@ -540,6 +541,54 @@ query{
     }
     """
 
+    get_cycle_stat = """
+query{
+    cycle(id: "%s"){
+        stat{
+            icpperCount
+            jobCount
+            size
+        }
+    }
+}
+"""
+
+    get_cycle_pair_task = """
+    query{
+        cycle(id: "%s"){
+            pairTask{
+                status
+            }
+        }
+    }
+    """
+
+    update_job_vote_type_by_owner = """
+mutation{
+    updateJobVoteTypeByOwner(id: "%s", voteType: %s){
+        ok
+    }
+}
+"""
+
+    update_icpper_stat_owner_ei = """
+mutation{
+    updateIcpperStatOwnerEi(id: "%s", ownerEi: "%s"){
+        ei
+        voteEi
+        ownerEi
+    }
+}
+    """
+
+    publish_cycle_vote_result_by_owner = """
+    mutation{
+        publishCycleVoteResultByOwner(cycleId: "%s"){
+            ok
+        }
+    }
+        """
+
     @staticmethod
     def get_cycle_time_by_end_at(end_at):
         begin_at = end_at - 30 * 24 * 60 * 60
@@ -789,6 +838,15 @@ query{
         assert icpper_stat_list[1]['datum']['jobCount'] == 2
         assert icpper_stat_list[1]['icpper']['nickname'] == 'icpper1'
         assert icpper_stat_list[1]['lastEi'] is not None
+
+        res = self.graph_query(
+            self.icpper2.id, self.get_cycle_stat % str(test_cycle_2.id)
+        )
+
+        stat = res.json()['data']['cycle']['stat']
+        assert stat['icpperCount'] == 2
+        assert stat['jobCount'] == 5
+        assert stat['size'] == '12.0'
 
     def test_get_cycle_job_list(self):
         self.__class__.clear_db()
@@ -1208,3 +1266,378 @@ query{
         assert votes_list[2]['datum']['voterId'] == str(self.icpper2.id)
         assert votes_list[2]['voteJob']['datum']['id'] == str(job_1.id)
         assert votes_list[2]['voter']['nickname'] == str(self.icpper2.nickname)
+
+    def test_get_cycle_pair_task(self):
+        self.__class__.clear_db()
+        self.icpper1 = self.__class__.create_icpper_user(nickname='icpper1', github_login='iccper1')
+
+        DAO(
+            name='test_dao2',
+            logo='xxx.png2',
+            desc='test_dao_desc2',
+            owner_id=str(self.icpper1.id)
+        ).save()
+
+        test_dao = DAO(
+            name='test_dao',
+            logo='xxx.png',
+            desc='test_dao_desc',
+            owner_id=str(self.icpper1.id)
+        )
+        test_dao.save()
+
+        end_at = time.time()
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_2 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_2.save()
+
+        end_at = test_cycle_2.begin_at
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_1 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_1.save()
+
+        res = self.graph_query(
+            self.icpper1.id, self.get_cycle_pair_task % str(test_cycle_2.id)
+        )
+
+        pair_task = res.json()['data']['cycle']['pairTask']
+        assert pair_task is None
+
+        cp = CycleVotePairTask(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_2.id),
+        ).save()
+
+        res = self.graph_query(
+            self.icpper1.id, self.get_cycle_pair_task % str(test_cycle_2.id)
+        )
+
+        pair_task = res.json()['data']['cycle']['pairTask']
+        assert pair_task['status'] == CycleVotePairTaskStatusEnum.get(CycleVotePairTaskStatus.INIT.value).name
+
+        cp.status = CycleVotePairTaskStatus.FAIL.value
+        cp.save()
+
+        res = self.graph_query(
+            self.icpper1.id, self.get_cycle_pair_task % str(test_cycle_2.id)
+        )
+
+        pair_task = res.json()['data']['cycle']['pairTask']
+        assert pair_task['status'] == CycleVotePairTaskStatusEnum.get(CycleVotePairTaskStatus.FAIL.value).name
+
+        time.sleep(1)
+
+        cp2 = CycleVotePairTask(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_2.id),
+        ).save()
+
+        res = self.graph_query(
+            self.icpper1.id, self.get_cycle_pair_task % str(test_cycle_2.id)
+        )
+
+        pair_task = res.json()['data']['cycle']['pairTask']
+        assert pair_task['status'] == CycleVotePairTaskStatusEnum.get(CycleVotePairTaskStatus.INIT.value).name
+
+    def test_update_job_vote_type_by_owner(self):
+        self.__class__.clear_db()
+        self.icpper1 = self.__class__.create_icpper_user(nickname='icpper1', github_login='iccper1')
+        self.icpper2 = self.__class__.create_icpper_user(nickname='icpper2', github_login='iccper2')
+
+        DAO(
+            name='test_dao2',
+            logo='xxx.png2',
+            desc='test_dao_desc2',
+            owner_id=str(self.icpper2.id)
+        ).save()
+
+        test_dao = DAO(
+            name='test_dao',
+            logo='xxx.png',
+            desc='test_dao_desc',
+            owner_id=str(self.icpper1.id)
+        )
+        test_dao.save()
+
+        end_at = time.time()
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_2 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_2.save()
+
+        end_at = test_cycle_2.begin_at
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_1 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_1.save()
+
+        job_1 = Job(
+            dao_id=str(test_dao.id),
+            user_id=str(self.icpper1.id),
+            title="test_dao_icpper1_title1",
+            size=Decimal("1.0"),
+            github_repo_owner="icpdao",
+            github_repo_name="public",
+            github_repo_id=1,
+            github_issue_number=1,
+            bot_comment_database_id=1,
+            status=JobStatusEnum.MERGED.value,
+            income=10,
+            pair_type=JobPairTypeEnum.PAIR.value,
+            cycle_id=str(test_cycle_2.id)
+        )
+        job_1.save()
+
+        res = self.graph_query(
+            self.icpper2.id, self.update_job_vote_type_by_owner % (str(job_1.id), 'all')
+        )
+
+        assert not not res.json()['errors']
+
+        job_1 = Job.objects(id=str(job_1.id)).first()
+        assert job_1.pair_type == JobPairTypeEnum.PAIR.value
+
+        res = self.graph_query(
+            self.icpper1.id, self.update_job_vote_type_by_owner % (str(job_1.id), 'all')
+        )
+
+        ok = res.json()['data']['updateJobVoteTypeByOwner']['ok']
+        assert ok is True
+
+        job_1 = Job.objects(id=str(job_1.id)).first()
+        assert job_1.pair_type == JobPairTypeEnum.ALL.value
+
+        test_cycle_2.paired_at = time.time()
+        test_cycle_2.save()
+
+        res = self.graph_query(
+            self.icpper1.id, self.update_job_vote_type_by_owner % (str(job_1.id), 'all')
+        )
+        assert not not res.json()['errors']
+
+    def test_update_icpper_stat_owner_ei(self):
+        self.__class__.clear_db()
+        self.icpper1 = self.__class__.create_icpper_user(nickname='icpper1', github_login='iccper1')
+        self.icpper2 = self.__class__.create_icpper_user(nickname='icpper2', github_login='iccper2')
+
+        DAO(
+            name='test_dao2',
+            logo='xxx.png2',
+            desc='test_dao_desc2',
+            owner_id=str(self.icpper2.id)
+        ).save()
+
+        test_dao = DAO(
+            name='test_dao',
+            logo='xxx.png',
+            desc='test_dao_desc',
+            owner_id=str(self.icpper1.id)
+        )
+        test_dao.save()
+
+        end_at = time.time()
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_2 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_2.save()
+
+        end_at = test_cycle_2.begin_at
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_1 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_1.save()
+
+        cycle_2_icpper1 = CycleIcpperStat(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_2.id),
+            user_id=str(self.icpper1.id),
+            job_count=2,
+            size=Decimal('5'),
+            income=500,
+            vote_ei=1,
+            owner_ei=Decimal('0.1'),
+            ei=Decimal('1.1')
+        )
+        cycle_2_icpper1.save()
+
+        cycle_2_icpper2 = CycleIcpperStat(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_2.id),
+            user_id=str(self.icpper2.id),
+            job_count=3,
+            size=Decimal('7'),
+            income=700,
+            vote_ei=1,
+            owner_ei=Decimal('0.2'),
+            ei=Decimal('1.2')
+        )
+        cycle_2_icpper2.save()
+
+        res = self.graph_query(
+            self.icpper1.id, self.update_icpper_stat_owner_ei % (str(cycle_2_icpper2.id), str(0.1))
+        )
+
+        assert not not res.json()['errors']
+
+        test_cycle_2.vote_result_stat_at = time.time()
+        test_cycle_2.save()
+
+        arr = ['-0.21', '-0.3', '0.21', '0.3']
+        for item in arr:
+            res = self.graph_query(
+                self.icpper1.id, self.update_icpper_stat_owner_ei % (str(cycle_2_icpper2.id), item)
+            )
+            assert not not res.json()['errors']
+
+        res = self.graph_query(
+            self.icpper1.id, self.update_icpper_stat_owner_ei % (str(cycle_2_icpper2.id), str(-0.2))
+        )
+
+        data = res.json()['data']['updateIcpperStatOwnerEi']
+        assert data['ei'] == '0.80'
+        assert data['voteEi'] == '1.00'
+        assert data['ownerEi'] == '-0.2'
+
+        res = self.graph_query(
+            self.icpper2.id, self.update_icpper_stat_owner_ei % (str(cycle_2_icpper2.id), str(0.1))
+        )
+
+        assert not not res.json()['errors']
+
+    def test_publish_vote_result_by_owner(self):
+        self.__class__.clear_db()
+        self.icpper1 = self.__class__.create_icpper_user(nickname='icpper1', github_login='iccper1')
+        self.icpper2 = self.__class__.create_icpper_user(nickname='icpper2', github_login='iccper2')
+
+        DAO(
+            name='test_dao2',
+            logo='xxx.png2',
+            desc='test_dao_desc2',
+            owner_id=str(self.icpper2.id)
+        ).save()
+
+        test_dao = DAO(
+            name='test_dao',
+            logo='xxx.png',
+            desc='test_dao_desc',
+            owner_id=str(self.icpper1.id)
+        )
+        test_dao.save()
+
+        end_at = time.time()
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_2 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_2.save()
+
+        end_at = test_cycle_2.begin_at
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_1 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_1.save()
+
+        cycle_2_icpper1 = CycleIcpperStat(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_2.id),
+            user_id=str(self.icpper1.id),
+            job_count=2,
+            size=Decimal('5'),
+            income=500,
+            vote_ei=1,
+            owner_ei=Decimal('0.1'),
+            ei=Decimal('1.1')
+        )
+        cycle_2_icpper1.save()
+
+        cycle_2_icpper2 = CycleIcpperStat(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_2.id),
+            user_id=str(self.icpper2.id),
+            job_count=3,
+            size=Decimal('7'),
+            income=700,
+            vote_ei=1,
+            owner_ei=Decimal('0.2'),
+            ei=Decimal('1.2')
+        )
+        cycle_2_icpper2.save()
+
+        res = self.graph_query(
+            self.icpper1.id, self.publish_cycle_vote_result_by_owner % str(test_cycle_2.id)
+        )
+
+        assert not not res.json()['errors']
+
+        test_cycle_2.vote_result_stat_at = time.time()
+        test_cycle_2.save()
+
+        res = self.graph_query(
+            self.icpper2.id, self.publish_cycle_vote_result_by_owner % str(test_cycle_2.id)
+        )
+
+        assert not not res.json()['errors']
+
+        res = self.graph_query(
+            self.icpper1.id, self.publish_cycle_vote_result_by_owner % str(test_cycle_2.id)
+        )
+
+        data = res.json()['data']['publishCycleVoteResultByOwner']
+        assert data['ok'] is True

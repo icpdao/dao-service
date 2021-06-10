@@ -4,10 +4,10 @@ from app.common.models.icpdao.dao import DAOJobConfig as DAOJobConfigModel
 from app.common.schema.icpdao import DAOJobConfigSchema
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.routes.config import UpdateDAOJobConfig
-from app.routes.cycles import CycleQuery
+from app.routes.cycles import CycleQuery, PublishCycleVoteResultByOwner
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus
 from app.routes.follow import UpdateDAOFollow
-from app.routes.jobs import Jobs, CreateJob, UpdateJob
+from app.routes.jobs import Jobs, CreateJob, UpdateJob, UpdateJobVoteTypeByOwner, UpdateIcpperStatOwnerEi
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
     DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum
 from app.routes.vote import Votes
@@ -100,3 +100,6 @@ class Mutations(ObjectType):
     update_dao_base_info = UpdateDAOBaseInfo.Field()
     create_job = CreateJob.Field()
     update_job = UpdateJob.Field()
+    update_job_vote_type_by_owner = UpdateJobVoteTypeByOwner.Field()
+    update_icpper_stat_owner_ei = UpdateIcpperStatOwnerEi.Field()
+    publish_cycle_vote_result_by_owner = PublishCycleVoteResultByOwner.Field()
