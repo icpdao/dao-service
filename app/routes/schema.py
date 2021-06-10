@@ -1,5 +1,6 @@
 from graphene import Enum
 
+from app.common.models.icpdao.cycle import CycleVotePairTaskStatus
 from app.common.models.icpdao.job import JobPairTypeEnum
 
 
@@ -61,5 +62,17 @@ class JobsQuerySortedTypeEnum(Enum):
 
 
 class JobsQueryPairTypeEnum(Enum):
+    pair = JobPairTypeEnum.PAIR.value
+    all = JobPairTypeEnum.ALL.value
+
+
+class CycleVotePairTaskStatusEnum(Enum):
+    INIT = CycleVotePairTaskStatus.INIT.value
+    PAIRING = CycleVotePairTaskStatus.PAIRING.value
+    SUCCESS = CycleVotePairTaskStatus.SUCCESS.value
+    FAIL = CycleVotePairTaskStatus.FAIL.value
+
+
+class UpdateJobVoteTypeByOwnerArgumentPairTypeEnum(Enum):
     pair = JobPairTypeEnum.PAIR.value
     all = JobPairTypeEnum.ALL.value
