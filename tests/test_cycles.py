@@ -1229,9 +1229,9 @@ mutation{
 
         assert votes_list[0]['datum']['id'] == str(cycle_vote_1.id)
         assert votes_list[0]['datum']['voteJobId'] == str(job_1.id)
-        assert votes_list[0]['datum']['voterId'] == str(self.icpper1.id)
+        assert votes_list[0]['datum']['voterId'] is None
         assert votes_list[0]['voteJob']['datum']['id'] == str(job_1.id)
-        assert votes_list[0]['voter']['nickname'] == str(self.icpper1.nickname)
+        assert votes_list[2]['voter'] is None
 
         assert votes_list[1]['datum']['id'] == str(cycle_vote_2.id)
         assert votes_list[1]['datum']['voteJobId'] is None
@@ -1253,9 +1253,9 @@ mutation{
 
         assert votes_list[0]['datum']['id'] == str(cycle_vote_1.id)
         assert votes_list[0]['datum']['voteJobId'] == str(job_1.id)
-        assert votes_list[0]['datum']['voterId'] == str(self.icpper1.id)
+        assert votes_list[0]['datum']['voterId'] is None
         assert votes_list[0]['voteJob']['datum']['id'] == str(job_1.id)
-        assert votes_list[0]['voter']['nickname'] == str(self.icpper1.nickname)
+        assert votes_list[0]['voter'] is None
 
         assert votes_list[1]['datum']['id'] == str(cycle_vote_2.id)
         assert votes_list[1]['datum']['voteJobId'] is None
