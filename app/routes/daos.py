@@ -6,6 +6,7 @@ from graphene import ObjectType, String, Field, Int, \
 from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
 
+from app.common.schema import BaseObjectArgs
 from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
 
 from app.routes.cycles import CyclesQuery
@@ -17,7 +18,8 @@ from app.common.models.icpdao.user_github_token import UserGithubToken
 from app.common.utils.access import check_is_icpper, check_is_dao_owner
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.common.utils.github_rest_api import org_member_role_is_admin, check_icp_app_installed_status_of_org, get_icp_app_jwt, get_github_org_id
-from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, DAOsSortedTypeEnum
+from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
+    DAOsSortedTypeEnum, CycleFilterEnum, CyclesQueryArgs
 from app.routes.follow import DAOFollowUDSchema
 
 
@@ -69,7 +71,7 @@ class DAOItem(ObjectType):
 class DAO(ObjectType):
     datum = Field(DAOSchema)
     following = Field(DAOFollowUDSchema)
-    cycles = Field(CyclesQuery)
+    cycles = Field(CyclesQuery, filter=CycleFilterEnum())
 
     def get_query(self, info, id=None, name=None):
         current_user = get_current_user_by_graphql(info)
@@ -100,9 +102,11 @@ class DAO(ObjectType):
         return DAOFollowUDSchema(dao_id=str(dao.id))
 
     @staticmethod
-    def resolve_cycles(parent, info):
+    def resolve_cycles(parent, info, filter=None):
         dao = getattr(parent, 'query')
-        return CyclesQuery(dao_id=str(dao.id))
+
+        return CyclesQuery(_args=CyclesQueryArgs(
+          dao_id=str(dao.id), filter=filter))
 
 
 class DAOs(ObjectType):
