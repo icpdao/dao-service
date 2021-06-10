@@ -27,7 +27,7 @@ def get_or_create_dao_cycle(dao_id, job_last_merged_at):
         begin_at__lte=job_last_merged_at,
         end_at__gt=job_last_merged_at
     ).first()
-    if query and query.is_paired is False:
+    if query and not query.paired_at:
         return query
     last = Cycle.objects(dao_id=dao_id).order_by('-create_at').first()
     if not last:
