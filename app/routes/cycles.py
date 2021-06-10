@@ -485,6 +485,27 @@ class PublishCycleVoteResultByOwner(Mutation):
         return PublishCycleVoteResultByOwner(ok=True)
 
 
+class ChangeVoteResultPublic(Mutation):
+    class Arguments:
+        id = String(required=True)
+        public = Boolean(required=True)
+
+    ok = Boolean()
+
+    def mutate(self, info, id, public):
+        cv = CycleVote.objects(id=id).first()
+        if cv.vote_type != CycleVoteType.PAIR.value:
+            raise ValueError('NOT SUPPORT')
+
+        current_user = get_current_user_by_graphql(info)
+        if str(current_user.id) != cv.voter_id:
+            raise ValueError('NOT ROLE')
+
+        cv.is_result_public = public
+        cv.save()
+        return ChangeVoteResultPublic(ok=True)
+
+
 def run_pair_task(task_id):
     # TODO PAIR
     print("run_pair_task begin")

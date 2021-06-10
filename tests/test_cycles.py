@@ -571,6 +571,14 @@ mutation{
 }
 """
 
+    change_vote_result_public = """
+mutation{
+    changeVoteResultPublic(id: "%s", public: %s){
+        ok
+    }
+}
+"""
+
     update_icpper_stat_owner_ei = """
 mutation{
     updateIcpperStatOwnerEi(id: "%s", ownerEi: "%s"){
@@ -1444,6 +1452,173 @@ mutation{
             self.icpper1.id, self.update_job_vote_type_by_owner % (str(job_1.id), 'all')
         )
         assert not not res.json()['errors']
+
+    def test_change_vote_result_public(self):
+        self.__class__.clear_db()
+        self.icpper1 = self.__class__.create_icpper_user(nickname='icpper1', github_login='iccper1')
+        self.icpper2 = self.__class__.create_icpper_user(nickname='icpper2', github_login='iccper2')
+        self.icpper3 = self.__class__.create_icpper_user(nickname='icpper3', github_login='iccper3')
+
+        DAO(
+            name='test_dao2',
+            logo='xxx.png2',
+            desc='test_dao_desc2',
+            owner_id=str(self.icpper2.id)
+        ).save()
+
+        test_dao = DAO(
+            name='test_dao',
+            logo='xxx.png',
+            desc='test_dao_desc',
+            owner_id=str(self.icpper1.id)
+        )
+        test_dao.save()
+
+        end_at = time.time()
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_2 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_2.save()
+
+        end_at = test_cycle_2.begin_at
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_1 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_1.save()
+
+        job_1 = Job(
+            dao_id=str(test_dao.id),
+            user_id=str(self.icpper1.id),
+            title="test_dao_icpper1_title1",
+            size=Decimal("1.0"),
+            github_repo_owner="icpdao",
+            github_repo_name="public",
+            github_repo_id=1,
+            github_issue_number=1,
+            bot_comment_database_id=1,
+            status=JobStatusEnum.MERGED.value,
+            income=10,
+            pair_type=JobPairTypeEnum.PAIR.value,
+            cycle_id=str(test_cycle_2.id)
+        )
+        job_1.save()
+
+        job_2 = Job(
+            dao_id=str(test_dao.id),
+            user_id=str(self.icpper2.id),
+            title="test_dao_icpper2_title1",
+            size=Decimal("1.1"),
+            github_repo_owner="icpdao",
+            github_repo_name="public",
+            github_repo_id=2,
+            github_issue_number=2,
+            bot_comment_database_id=2,
+            status=JobStatusEnum.MERGED.value,
+            income=20,
+            pair_type=JobPairTypeEnum.PAIR.value,
+            cycle_id=str(test_cycle_2.id)
+        )
+        job_2.save()
+
+        job_3 = Job(
+            dao_id=str(test_dao.id),
+            user_id=str(self.icpper2.id),
+            title="test_dao_icpper2_title2",
+            size=Decimal("1.2"),
+            github_repo_owner="icpdao",
+            github_repo_name="public",
+            github_repo_id=3,
+            github_issue_number=3,
+            bot_comment_database_id=3,
+            status=JobStatusEnum.MERGED.value,
+            income=30,
+            pair_type=JobPairTypeEnum.ALL.value,
+            cycle_id=str(test_cycle_2.id)
+        )
+        job_3.save()
+
+        cycle_vote_1 = CycleVote(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_2.id),
+            left_job_id=str(job_1.id),
+            right_job_id=str(job_2.id),
+            vote_type=CycleVoteType.PAIR.value,
+            vote_job_id=str(job_1.id),
+            voter_id=str(self.icpper1.id),
+            is_result_public=True
+        )
+        cycle_vote_1.save()
+
+        cycle_vote_2 = CycleVote(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_2.id),
+            left_job_id=str(job_3.id),
+            right_job_id=str(job_3.id),
+            vote_type=CycleVoteType.ALL.value,
+            is_result_public=True,
+            vote_result_type_all=[
+                VoteResultTypeAll(
+                    voter_id=str(self.icpper1.id),
+                    result=VoteResultTypeAllResultType.YES.value
+                ),
+                VoteResultTypeAll(
+                    voter_id=str(self.icpper2.id),
+                    result=VoteResultTypeAllResultType.YES.value
+                )
+            ],
+            vote_result_stat_type_all=100
+        )
+        cycle_vote_2.save()
+
+        cycle_vote_3 = CycleVote(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_2.id),
+            left_job_id=str(job_2.id),
+            right_job_id=str(job_1.id),
+            vote_type=CycleVoteType.PAIR.value,
+            vote_job_id=str(job_1.id),
+            voter_id=str(self.icpper2.id),
+            is_result_public=False
+        )
+        cycle_vote_3.save()
+
+        res = self.graph_query(
+            self.icpper1.id, self.change_vote_result_public % (str(cycle_vote_3.id), 'true')
+        )
+        assert not not res.json()['errors']
+
+        res = self.graph_query(
+            self.icpper1.id, self.change_vote_result_public % (str(cycle_vote_2.id), 'true')
+        )
+        assert not not res.json()['errors']
+
+        res = self.graph_query(
+            self.icpper2.id, self.change_vote_result_public % (str(cycle_vote_3.id), 'true')
+        )
+        assert res.json()['data']['changeVoteResultPublic']['ok'] is True
+        cycle_vote_3 = CycleVote.objects(id=str(cycle_vote_3.id)).first()
+        assert cycle_vote_3.is_result_public is True
+
+        res = self.graph_query(
+            self.icpper2.id, self.change_vote_result_public % (str(cycle_vote_3.id), 'false')
+        )
+        assert res.json()['data']['changeVoteResultPublic']['ok'] is True
+        cycle_vote_3 = CycleVote.objects(id=str(cycle_vote_3.id)).first()
+        assert cycle_vote_3.is_result_public is False
 
     def test_update_icpper_stat_owner_ei(self):
         self.__class__.clear_db()
