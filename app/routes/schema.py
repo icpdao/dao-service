@@ -1,7 +1,10 @@
+from typing import Optional
+from enum import Enum as PyEnum
 from graphene import Enum
 
 from app.common.models.icpdao.cycle import CycleVotePairTaskStatus
 from app.common.models.icpdao.job import JobPairTypeEnum
+from app.common.schema import BaseObjectArgs
 
 
 class DAOsFilterEnum(Enum):
@@ -10,6 +13,17 @@ class DAOsFilterEnum(Enum):
     following = 2
     following_and_owner = 3
     member = 4
+
+
+class CycleFilterEnum(Enum):
+    processing = 0
+    pairing = 1
+    voting = 1
+
+
+class CyclesQueryArgs(BaseObjectArgs):
+    dao_id: str
+    filter: Optional[PyEnum]
 
 
 class DAOsSortedEnum(Enum):

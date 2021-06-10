@@ -1,5 +1,5 @@
-import decimal
 import time
+import decimal
 
 from graphene import ObjectType, Field, List, Int, Decimal, Boolean, Float, Mutation, String
 from mongoengine import Q
@@ -7,12 +7,14 @@ from mongoengine import Q
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType, CycleVotePairTask
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job, JobStatusEnum
+from app.common.models.icpdao.user import User
+from app.common.schema import BaseObjectType
 from app.common.schema.icpdao import CycleSchema, CycleIcpperStatSchema, UserSchema, JobSchema, CycleVoteSchema
 from app.common.utils.route_helper import get_custom_attr_by_graphql, set_custom_attr_by_graphql, get_current_user, \
     get_current_user_by_graphql
 from app.routes.data_loaders import UserLoader, JobLoader
 from app.routes.schema import CycleIcpperStatSortedTypeEnum, CycleIcpperStatSortedEnum, JobsQuerySortedEnum, \
-    JobsQuerySortedTypeEnum, JobsQueryPairTypeEnum, CycleVotePairTaskStatusEnum
+    JobsQuerySortedTypeEnum, JobsQueryPairTypeEnum, CycleVotePairTaskStatusEnum, CycleFilterEnum
 
 
 class IcpperStatQuery(ObjectType):
@@ -423,19 +425,24 @@ class CycleQuery(ObjectType):
         return CycleVotePairTaskQuery(status=task.status)
 
 
-class CyclesQuery(ObjectType):
+class CyclesQuery(BaseObjectType):
     nodes = List(CycleQuery)
 
-    @property
-    def dao_id(self):
-        return getattr(self, '_dao_id')
-
-    @dao_id.setter
-    def dao_id(self, dao_id):
-        setattr(self, '_dao_id', dao_id)
-
     def resolve_nodes(self, info):
-        cycle_list = Cycle.objects(dao_id=self.dao_id).order_by('-begin_at')
+        query = dict(dao_id=self._args.dao_id)
+        now_time = int(time.time())
+        if self._args.get('filter') == CycleFilterEnum.processing:
+            query['begin_at__lte'] = now_time
+            query['end_at__gt'] = now_time
+        if self._args.get('filter') == CycleFilterEnum.pairing:
+            query['pair_begin_at__lte'] = now_time
+            query['pair_end_at__gt'] = now_time
+        if self._args.get('filter') == CycleFilterEnum.voting:
+            query['vote_begin_at__lte'] = now_time
+            query['vote_end_at__gt'] = now_time
+            query['paired_at__gt'] = 0
+
+        cycle_list = Cycle.objects(**query).order_by('-begin_at')
         return [CycleQuery(datum=i, cycle_id=str(i.id)) for i in cycle_list]
 
 
