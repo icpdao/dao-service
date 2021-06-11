@@ -2,7 +2,7 @@ import decimal
 import os
 import time
 
-from graphene import ObjectType, Field, List, Int, Decimal, Boolean, Float, Mutation, String
+from graphene import ObjectType, Field, List, Int, Decimal, Boolean, Mutation, String
 from mongoengine import Q
 
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType, CycleVotePairTask, \
@@ -11,8 +11,9 @@ from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.schema import BaseObjectType
 from app.common.schema.icpdao import CycleSchema, CycleIcpperStatSchema, UserSchema, JobSchema, CycleVoteSchema
-from app.common.utils.route_helper import get_custom_attr_by_graphql, set_custom_attr_by_graphql, get_current_user, \
+from app.common.utils.route_helper import get_custom_attr_by_graphql, set_custom_attr_by_graphql, \
     get_current_user_by_graphql
+from app.controllers.pair import run_pair_task
 from app.routes.data_loaders import UserLoader, JobLoader
 from app.routes.schema import CycleIcpperStatSortedTypeEnum, CycleIcpperStatSortedEnum, JobsQuerySortedEnum, \
     JobsQuerySortedTypeEnum, JobsQueryPairTypeEnum, CycleVotePairTaskStatusEnum, \
@@ -504,13 +505,6 @@ class ChangeVoteResultPublic(Mutation):
         cv.is_result_public = public
         cv.save()
         return ChangeVoteResultPublic(ok=True)
-
-
-def run_pair_task(task_id):
-    # TODO PAIR
-    print("run_pair_task begin")
-    print(task_id)
-    print("run_pair_task end")
 
 
 class CreateCycleVotePairTaskByOwner(Mutation):

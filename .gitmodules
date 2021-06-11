@@ -1,3 +1,6 @@
 [submodule "app/common"]
 	path = app/common
 	url = https://github.com/icpdao/backend-common.git
+[submodule "app/ei"]
+	path = app/ei
+	url = https://github.com/icpdao/icpdao-ei-core.git
