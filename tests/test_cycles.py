@@ -1795,6 +1795,23 @@ mutation{
         )
         cycle_2_icpper2.save()
 
+        job_1 = Job(
+            dao_id=str(test_dao.id),
+            user_id=str(self.icpper1.id),
+            title="test_dao_icpper1_title1",
+            size=Decimal("1.0"),
+            github_repo_owner="icpdao",
+            github_repo_name="public",
+            github_repo_id=1,
+            github_issue_number=1,
+            bot_comment_database_id=1,
+            status=JobStatusEnum.MERGED.value,
+            income=10,
+            pair_type=JobPairTypeEnum.PAIR.value,
+            cycle_id=str(test_cycle_2.id)
+        )
+        job_1.save()
+
         res = self.graph_query(
             self.icpper1.id, self.publish_cycle_vote_result_by_owner % str(test_cycle_2.id)
         )
@@ -1816,3 +1833,7 @@ mutation{
 
         data = res.json()['data']['publishCycleVoteResultByOwner']
         assert data['ok'] is True
+
+        job_1 = Job.objects(id=str(job_1.id)).first()
+        assert job_1.status == JobStatusEnum.WAITING_FOR_TOKEN.value
+
