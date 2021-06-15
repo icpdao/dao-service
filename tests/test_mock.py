@@ -5,7 +5,7 @@ class TestMock(Base):
 
     create_mock = """
 mutation{
-  createMock(ownerGithubUserLogin: "%s", icpperGithubUserLogin: "%s", otherGithubUserLogin: "%s"){
+  createMock(ownerGithubUserLogin: "%s", icpperGithubUserLogin: "%s"){
     ok
   }
 }
@@ -20,7 +20,6 @@ mutation{
         res = self.graph_query(
             self.icpper1.id, self.create_mock % (
                 self.icpper1.github_login,
-                self.icpper2.github_login,
-                self.icpper3.github_login
+                self.icpper2.github_login
             )
         )

@@ -57,12 +57,12 @@ class DeleteDaoMock:
         self.delete_dao()
 
 
-def create_ing_cycle_dao(owner_user, icpper_user):
+def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
     # DAO
     dao = DAO(
-        name='icpdao-test-icp',
+        name=dao_name,
         logo='https://s3.amazonaws.com/dev.files.icpdao/avatar/rc-upload-1623139230084-2',
-        desc='icpdao-test-icpicpdao-test-icpicpdao-test-icpicpdao-test-icp',
+        desc='{}_{}_{}'.format(dao_name, dao_name, dao_name),
         owner_id=str(owner_user.id)
     )
     dao.save()
@@ -70,6 +70,12 @@ def create_ing_cycle_dao(owner_user, icpper_user):
     # DAOJobConfig
     current_datetime = datetime.fromtimestamp(int(time.time()), tz=timezone(timedelta(hours=8)))
     deadline_day_datetime = current_datetime - timedelta(days=15)
+    deadline_day_datetime = datetime(
+        year=deadline_day_datetime.year,
+        month=deadline_day_datetime.month,
+        day=deadline_day_datetime.day,
+        tzinfo=deadline_day_datetime.tzinfo
+    )
     if deadline_day_datetime.day >= 25:
         deadline_day_datetime = deadline_day_datetime + timedelta(days=7)
 
@@ -317,7 +323,180 @@ def create_ing_cycle_dao(owner_user, icpper_user):
     ).save()
 
 
-def init_mock_data(owner_github_user_login, icpper_github_user_login, other_github_user_login):
+def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
+    dao = DAO.objects(name=dao_name).first()
+    prev_cycle = Cycle.objects(dao_id=str(dao.id)).first()
+
+    current_datetime = datetime.fromtimestamp(int(time.time()), tz=timezone(timedelta(hours=8)))
+    current_datetime = datetime(
+        year=current_datetime.year,
+        month=current_datetime.month,
+        day=current_datetime.day,
+        tzinfo=current_datetime.tzinfo
+    )
+    end_at = current_datetime.timestamp()
+    pair_begin_at = end_at + 24 * 60 * 60
+    pair_end_at = pair_begin_at + 24 * 60 * 60
+    vote_begin_at = pair_end_at
+    vote_end_at = vote_begin_at + 36 * 60 * 60
+
+    # Cycle
+    cycle = Cycle(
+        dao_id=str(dao.id),
+        begin_at=prev_cycle.end_at,
+        end_at=end_at,
+        pair_begin_at=pair_begin_at,
+        pair_end_at=pair_end_at,
+        vote_begin_at=vote_begin_at,
+        vote_end_at=vote_end_at
+    )
+    cycle.save()
+
+    # Job
+    # JobPR
+    job1 = Job(
+        dao_id=str(dao.id),
+        user_id=str(owner_user.id),
+        title="{}:{}:{}:1".format(dao.name, "not_pair_cycle", owner_user.github_login),
+        body_text="xxxxx",
+        size=decimal.Decimal('1.0'),
+        github_repo_owner=dao.name,
+        github_repo_name='mock',
+        github_repo_id=1,
+        github_issue_number=1,
+        bot_comment_database_id=1,
+        status=JobStatusEnum.MERGED.value,
+        income=100,
+        pair_type=JobPairTypeEnum.PAIR.value,
+        cycle_id=str(cycle.id),
+    ).save()
+    JobPR(
+        job_id=str(job1.id),
+        user_id=str(owner_user.id),
+        title='pr merged',
+        github_repo_owner=dao.name,
+        github_repo_name='mock',
+        github_repo_id=1,
+        github_pr_number=2,
+        status=JobPRStatusEnum.MERGED.value,
+        merged_user_github_login=owner_user.github_login,
+        merged_at=cycle.end_at - 12 * 60 * 60
+    ).save()
+
+    job2 = Job(
+        dao_id=str(dao.id),
+        user_id=str(owner_user.id),
+        title="{}:{}:{}:2".format(dao.name, "not_pair_cycle", owner_user.github_login),
+        body_text="xxxxx",
+        size=decimal.Decimal('2.0'),
+        github_repo_owner=dao.name,
+        github_repo_name='mock',
+        github_repo_id=1,
+        github_issue_number=3,
+        bot_comment_database_id=1,
+        status=JobStatusEnum.MERGED.value,
+        income=200,
+        pair_type=JobPairTypeEnum.ALL.value,
+        cycle_id=str(cycle.id),
+    ).save()
+    JobPR(
+        job_id=str(job2.id),
+        user_id=str(owner_user.id),
+        title='pr merged',
+        github_repo_owner=dao.name,
+        github_repo_name='mock',
+        github_repo_id=1,
+        github_pr_number=4,
+        status=JobPRStatusEnum.MERGED.value,
+        merged_user_github_login=owner_user.github_login,
+        merged_at=cycle.end_at - 12 * 60 * 60
+    ).save()
+
+    job3 = Job(
+        dao_id=str(dao.id),
+        user_id=str(icpper_user.id),
+        title="{}:{}:{}:3".format(dao.name, "not_pair_cycle", owner_user.github_login),
+        body_text="xxxxx",
+        size=decimal.Decimal('1.0'),
+        github_repo_owner=dao.name,
+        github_repo_name='mock',
+        github_repo_id=1,
+        github_issue_number=5,
+        bot_comment_database_id=1,
+        status=JobStatusEnum.MERGED.value,
+        income=100,
+        pair_type=JobPairTypeEnum.PAIR.value,
+        cycle_id=str(cycle.id),
+    ).save()
+    JobPR(
+        job_id=str(job3.id),
+        user_id=str(icpper_user.id),
+        title='pr merged',
+        github_repo_owner=dao.name,
+        github_repo_name='mock',
+        github_repo_id=1,
+        github_pr_number=6,
+        status=JobPRStatusEnum.MERGED.value,
+        merged_user_github_login=icpper_user.github_login,
+        merged_at=cycle.end_at - 12 * 60 * 60
+    ).save()
+
+    job4 = Job(
+        dao_id=str(dao.id),
+        user_id=str(icpper_user.id),
+        title="{}:{}:{}:4".format(dao.name, "not_pair_cycle", owner_user.github_login),
+        body_text="xxxxx",
+        size=decimal.Decimal('4.0'),
+        github_repo_owner=dao.name,
+        github_repo_name='mock',
+        github_repo_id=1,
+        github_issue_number=7,
+        bot_comment_database_id=1,
+        status=JobStatusEnum.MERGED.value,
+        income=400,
+        pair_type=JobPairTypeEnum.ALL.value,
+        cycle_id=str(cycle.id),
+    ).save()
+    JobPR(
+        job_id=str(job4.id),
+        user_id=str(icpper_user.id),
+        title='pr merged',
+        github_repo_owner=dao.name,
+        github_repo_name='mock',
+        github_repo_id=1,
+        github_pr_number=8,
+        status=JobPRStatusEnum.MERGED.value,
+        merged_user_github_login=icpper_user.github_login,
+        merged_at=cycle.end_at - 12 * 60 * 60
+    ).save()
+
+    # CycleIcpperStat
+    CycleIcpperStat(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        user_id=str(owner_user.id),
+        job_count=2,
+        size=decimal.Decimal('3.0')
+    ).save()
+    CycleIcpperStat(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        user_id=str(icpper_user.id),
+        job_count=2,
+        size=decimal.Decimal('5.0'),
+    ).save()
+
+
+def create_ing_cycle_dao(owner_user, icpper_user):
+    create_one_end_cycle_data(owner_user, icpper_user, 'icpdao-test-icp')
+
+
+def create_end_and_not_pair_cycle_dao(owner_user, icpper_user):
+    create_one_end_cycle_data(owner_user, icpper_user, 'end-and-not-pair')
+    create_not_pair_cycle_data(owner_user, icpper_user, 'end-and-not-pair')
+
+
+def init_mock_data(owner_github_user_login, icpper_github_user_login):
     dao_name_list = [
         "icpdao-test-icp"
     ]
@@ -329,7 +508,6 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login, other_gith
 
     owner_user = User.objects(github_login=owner_github_user_login).first()
     icpper_user = User.objects(github_login=icpper_github_user_login).first()
-    other_user = User.objects(github_login=other_github_user_login).first()
 
     create_ing_cycle_dao(owner_user, icpper_user)
-
+    create_end_and_not_pair_cycle_dao(owner_user, icpper_user)
