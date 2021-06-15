@@ -483,6 +483,10 @@ class PublishCycleVoteResultByOwner(Mutation):
         cycle.update_at = current_time
         cycle.save()
 
+        for item in Job.objects(dao_id=str(dao.id), cycle_id=str(cycle.id)):
+            item.status = JobStatusEnum.WAITING_FOR_TOKEN.value
+            item.save()
+
         return PublishCycleVoteResultByOwner(ok=True)
 
 
