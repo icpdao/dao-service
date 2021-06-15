@@ -9,6 +9,7 @@ from app.routes.cycles import CycleQuery, PublishCycleVoteResultByOwner, CreateC
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus
 from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob, UpdateJobVoteTypeByOwner, UpdateIcpperStatOwnerEi
+from app.routes.mock import CreateMock
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
     DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum
 from app.routes.vote import UpdatePairVote, UpdateALLVote
@@ -101,3 +102,4 @@ class Mutations(ObjectType):
     update_all_vote = UpdateALLVote.Field()
     create_cycle_vote_pair_task_by_owner = CreateCycleVotePairTaskByOwner.Field()
     change_vote_result_public = ChangeVoteResultPublic.Field()
+    create_mock = CreateMock.Field()
