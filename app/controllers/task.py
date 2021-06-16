@@ -1,7 +1,8 @@
+import decimal
 import time
 from collections import defaultdict
 
-from app.common.models.icpdao.cycle import Cycle
+from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat
 from app.common.models.icpdao.dao import DAOJobConfig
 from app.common.models.icpdao.user import User as UserModel
 from app.common.models.icpdao.job import Job as JobModel, JobPR as JobPRModel, \
@@ -65,6 +66,59 @@ def get_or_create_dao_cycle(dao_id, job_last_merged_at):
     return cycle
 
 
+def create_or_update_cycle_icpper_stat(dao_id, user_id, cycle_id, job_size, job_count):
+    update_result = CycleIcpperStat.objects(
+        dao_id=dao_id, user_id=user_id, cycle_id=cycle_id
+    ).update_one(upsert=True, set__job_size=job_size, set__size=job_size, set__job_count=job_count)
+
+    is_new = False
+    is_dict = isinstance(update_result, dict)
+    if is_dict and update_result.get('upserted_id'):
+        is_new = True
+    elif not is_dict and update_result.upserted_id:
+        is_new = True
+
+    if is_new:
+        cis = CycleIcpperStat.objects(
+            dao_id=dao_id, user_id=user_id, cycle_id=cycle_id
+        ).first()
+        cis.income = 0
+        cis.vote_ei = decimal.Decimal('0')
+        cis.owner_ei = decimal.Decimal('0')
+        cis.ei = decimal.Decimal('0')
+        cis.create_at = int(time.time())
+        cis.update_at = int(time.time())
+        cis.save()
+
+
+def sync_cycle_icppper_stat(job_ids):
+    # TODO 补充单元测试
+    jobs = JobModel.objects(id__in=list(job_ids)).all()
+    tmp = []
+    for job in jobs:
+        if job.cycle_id:
+            value = [job.dao_id, job.user_id, job.cycle_id]
+            if value not in tmp:
+                tmp.append(value)
+
+    for value in tmp:
+        dao_id, user_id, cycle_id = value
+        job_list = JobModel.objects(dao_id=dao_id, user_id=user_id, cycle_id=cycle_id, status__nin=[JobStatusEnum.AWAITING_MERGER.value])
+        job_list = [job for job in job_list]
+        job_size = decimal.Decimal('0')
+        job_count = len(job_list)
+        for job in job_list:
+            job_size += job.size
+
+        create_or_update_cycle_icpper_stat(
+            dao_id=dao_id,
+            user_id=user_id,
+            cycle_id=cycle_id,
+            job_size=job_size,
+            job_count=job_count
+        )
+
+
 def sync_job_issue_status_comment(app_client, job_ids):
     print(f"job issue status comment, job_ids={''.join(job_ids)}")
     jobs = JobModel.objects(id__in=list(job_ids)).all()
@@ -103,6 +157,7 @@ def sync_job_issue_status_comment(app_client, job_ids):
                 need_update_comment_jobs.append(job)
     for update_job in need_update_comment_jobs:
         update_issue_comment(app_client, update_job)
+    sync_cycle_icppper_stat(list(job_ids))
 
 
 def sync_job_pr_comment(app_client, job_pr, job_ids):

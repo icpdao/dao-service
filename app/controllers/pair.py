@@ -118,8 +118,8 @@ def run_pair_task(task_id):
     if not cycle:
         print("cycle not found")
         return
-    if time.time() >= cycle.pair_end_at:
-        print("current time > cycle pair_end_at")
+    if time.time() >= cycle.pair_end_at or time.time() <= cycle.pair_begin_at:
+        print("current time not in range cycle pair_begin_at pair_end_at")
         return
 
     dao_id = cycle.dao_id

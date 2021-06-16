@@ -2009,7 +2009,7 @@ mutation{
         assert CycleVoteResultStatTask.objects.count() == 1
         assert CycleVoteResultStatTask.objects.first().status == CycleVoteResultStatTaskStatus.INIT.value
 
-        # # have old task sttatus is init pairing
+        # # have old task sttatus is init stating
         res = self.graph_query(
             self.icpper.id, self.create_cycle_vote_result_stat_by_owner % str(test_cycle_1.id)
         )

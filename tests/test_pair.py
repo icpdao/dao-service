@@ -49,7 +49,7 @@ class TestPair(Base):
             dao_id=str(test_dao.id),
             begin_at=begin_at,
             end_at=end_at,
-            pair_begin_at=pair_begin_at,
+            pair_begin_at=end_at - 1,
             pair_end_at=pair_end_at,
             vote_begin_at=vote_begin_at,
             vote_end_at=vote_end_at
