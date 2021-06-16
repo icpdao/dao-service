@@ -592,8 +592,8 @@ class CreateCycleVoteResultStatTaskByOwner(Mutation):
             raise ValueError('CURRENT TIME NO IN STAT CYCLE')
 
         old_task = CycleVoteResultStatTask.objects(cycle_id=str(cycle.id)).order_by('-id').first()
-        # have old task sttatus is init pairing
-        if old_task and old_task.status in [CycleVoteResultStatTaskStatus.INIT.value, CycleVoteResultStatTaskStatus.PAIRING.value]:
+        # have old task sttatus is init stating
+        if old_task and old_task.status in [CycleVoteResultStatTaskStatus.INIT.value, CycleVoteResultStatTaskStatus.STATING.value]:
             return CreateCycleVoteResultStatTaskByOwner(status=old_task.status)
 
         task = CycleVoteResultStatTask(

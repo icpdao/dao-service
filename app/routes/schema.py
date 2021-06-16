@@ -101,13 +101,13 @@ class CreateCycleVotePairTaskByOwnerStatusEnum(Enum):
 
 class CreateCycleVoteResultStatTaskByOwnerStatusEnum(Enum):
     INIT = CycleVoteResultStatTaskStatus.INIT.value
-    PAIRING = CycleVoteResultStatTaskStatus.PAIRING.value
+    STATING = CycleVoteResultStatTaskStatus.STATING.value
     SUCCESS = CycleVoteResultStatTaskStatus.SUCCESS.value
     FAIL = CycleVoteResultStatTaskStatus.FAIL.value
 
 
 class CycleVoteResultStatTaskStatusEnum(Enum):
     INIT = CycleVoteResultStatTaskStatus.INIT.value
-    PAIRING = CycleVoteResultStatTaskStatus.PAIRING.value
+    STATING = CycleVoteResultStatTaskStatus.STATING.value
     SUCCESS = CycleVoteResultStatTaskStatus.SUCCESS.value
     FAIL = CycleVoteResultStatTaskStatus.FAIL.value
