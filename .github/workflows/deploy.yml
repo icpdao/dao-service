@@ -62,7 +62,7 @@ jobs:
     needs: [test]
     timeout-minutes: 20
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/feature/fushang318_add_mock'
+    if: github.ref == 'refs/heads/dev'
 
     steps:
     - uses: actions/checkout@v2
