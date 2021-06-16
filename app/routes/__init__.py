@@ -5,7 +5,7 @@ from app.common.schema.icpdao import DAOJobConfigSchema
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.routes.config import UpdateDAOJobConfig
 from app.routes.cycles import CycleQuery, PublishCycleVoteResultByOwner, CreateCycleVotePairTaskByOwner, \
-    ChangeVoteResultPublic
+    ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus
 from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob, UpdateJobVoteTypeByOwner, UpdateIcpperStatOwnerEi
@@ -103,3 +103,4 @@ class Mutations(ObjectType):
     create_cycle_vote_pair_task_by_owner = CreateCycleVotePairTaskByOwner.Field()
     change_vote_result_public = ChangeVoteResultPublic.Field()
     create_mock = CreateMock.Field()
+    createCycleVoteResultStatTaskByOwner = CreateCycleVoteResultStatTaskByOwner.Field()

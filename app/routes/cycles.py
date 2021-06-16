@@ -6,7 +6,7 @@ from graphene import ObjectType, Field, List, Int, Decimal, Boolean, Mutation, S
 from mongoengine import Q
 
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType, CycleVotePairTask, \
-    CycleVotePairTaskStatus
+    CycleVotePairTaskStatus, CycleVoteResultStatTask, CycleVoteResultStatTaskStatus
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.schema import BaseObjectType
@@ -14,10 +14,12 @@ from app.common.schema.icpdao import CycleSchema, CycleIcpperStatSchema, UserSch
 from app.common.utils.route_helper import get_custom_attr_by_graphql, set_custom_attr_by_graphql, \
     get_current_user_by_graphql
 from app.controllers.pair import run_pair_task
+from app.controllers.vote_result_stat import run_vote_result_stat_task
 from app.routes.data_loaders import UserLoader, JobLoader
 from app.routes.schema import CycleIcpperStatSortedTypeEnum, CycleIcpperStatSortedEnum, JobsQuerySortedEnum, \
     JobsQuerySortedTypeEnum, JobsQueryPairTypeEnum, CycleVotePairTaskStatusEnum, \
-    CreateCycleVotePairTaskByOwnerStatusEnum, CycleFilterEnum
+    CreateCycleVotePairTaskByOwnerStatusEnum, CycleFilterEnum, CreateCycleVoteResultStatTaskByOwnerStatusEnum, \
+    CycleVoteResultStatTaskStatusEnum
 
 
 class IcpperStatQuery(ObjectType):
@@ -354,6 +356,10 @@ class CycleVotePairTaskQuery(ObjectType):
     status = Field(CycleVotePairTaskStatusEnum)
 
 
+class CycleVoteResultStatTaskQuery(ObjectType):
+    status = Field(CycleVoteResultStatTaskStatusEnum)
+
+
 class CycleQuery(ObjectType):
     datum = Field(CycleSchema)
     stat = Field(CycleStatQuery)
@@ -380,6 +386,7 @@ class CycleQuery(ObjectType):
         offset=Int(default_value=0)
     )
     pair_task = Field(CycleVotePairTaskQuery)
+    vote_result_stat_task = Field(CycleVoteResultStatTaskQuery)
 
     @property
     def cycle_id(self):
@@ -426,6 +433,14 @@ class CycleQuery(ObjectType):
         if not task:
             return None
         return CycleVotePairTaskQuery(status=task.status)
+
+    def resolve_vote_result_stat_task(self, info):
+        cycle = Cycle.objects(id=self.cycle_id).first()
+        dao_id = cycle.dao_id
+        task = CycleVoteResultStatTask.objects(dao_id=dao_id, cycle_id=str(cycle.id)).order_by('-id').first()
+        if not task:
+            return None
+        return CycleVoteResultStatTaskQuery(status=task.status)
 
 
 class CyclesQuery(BaseObjectType):
@@ -515,7 +530,7 @@ class CreateCycleVotePairTaskByOwner(Mutation):
     class Arguments:
         cycle_id = String(required=True)
 
-    status = CreateCycleVotePairTaskByOwnerStatusEnum()
+    status = CreateCycleVoteResultStatTaskByOwnerStatusEnum()
 
     def mutate(self, info, cycle_id):
         cycle = Cycle.objects(id=cycle_id).first()
@@ -532,32 +547,62 @@ class CreateCycleVotePairTaskByOwner(Mutation):
             raise ValueError('NOT ROLE')
 
         # time range
-        if cycle.pair_begin_at >= time.time():
+        if cycle.pair_begin_at >= time.time() or cycle.pair_end_at <= time.time():
             raise ValueError('CURRENT TIME NO IN PAIR CYCLE')
 
         old_task = CycleVotePairTask.objects(cycle_id=str(cycle.id)).order_by('-id').first()
-        # is paired
-        if cycle.paired_at:
-            return CreateCycleVotePairTaskByOwner(status=old_task.status)
-
-        if old_task and old_task.status == CycleVotePairTaskStatus.SUCCESS.value:
-            return CreateCycleVotePairTaskByOwner(status=old_task.status)
-
         # have old task sttatus is init pairing
         if old_task and old_task.status in [CycleVotePairTaskStatus.INIT.value, CycleVotePairTaskStatus.PAIRING.value]:
             return CreateCycleVotePairTaskByOwner(status=old_task.status)
 
-        # have old task sttatus is fail
-        # no old
-        if not old_task or old_task.status == CycleVotePairTaskStatus.FAIL.value:
-            task = CycleVotePairTask(
-                dao_id=cycle.dao_id,
-                cycle_id=str(cycle.id)
-            ).save()
-            # TODO PAIR
-            if os.environ.get('IS_UNITEST') != 'yes':
-                background_tasks = info.context['background']
-                background_tasks.add_task(run_pair_task, str(task.id))
-            return CreateCycleVotePairTaskByOwner(status=task.status)
+        task = CycleVotePairTask(
+            dao_id=cycle.dao_id,
+            cycle_id=str(cycle.id)
+        ).save()
 
-        raise ValueError('UNKNOWN')
+        # TODO PAIR
+        if os.environ.get('IS_UNITEST') != 'yes':
+            background_tasks = info.context['background']
+            background_tasks.add_task(run_pair_task, str(task.id))
+        return CreateCycleVotePairTaskByOwner(status=task.status)
+
+
+class CreateCycleVoteResultStatTaskByOwner(Mutation):
+    class Arguments:
+        cycle_id = String(required=True)
+
+    status = CreateCycleVoteResultStatTaskByOwnerStatusEnum()
+
+    def mutate(self, info, cycle_id):
+        cycle = Cycle.objects(id=cycle_id).first()
+        if not cycle:
+            raise ValueError('NOT CYCLE')
+
+        dao = DAO.objects(id=cycle.dao_id).first()
+        if not dao:
+            raise ValueError('NOT DAO')
+
+        # not owner
+        current_user = get_current_user_by_graphql(info)
+        if str(current_user.id) != dao.owner_id:
+            raise ValueError('NOT ROLE')
+
+        # time range
+        if cycle.vote_end_at >= time.time():
+            raise ValueError('CURRENT TIME NO IN STAT CYCLE')
+
+        old_task = CycleVoteResultStatTask.objects(cycle_id=str(cycle.id)).order_by('-id').first()
+        # have old task sttatus is init pairing
+        if old_task and old_task.status in [CycleVoteResultStatTaskStatus.INIT.value, CycleVoteResultStatTaskStatus.PAIRING.value]:
+            return CreateCycleVoteResultStatTaskByOwner(status=old_task.status)
+
+        task = CycleVoteResultStatTask(
+            dao_id=cycle.dao_id,
+            cycle_id=str(cycle.id)
+        ).save()
+
+        # TODO 优化 task 运行方式
+        if os.environ.get('IS_UNITEST') != 'yes':
+            background_tasks = info.context['background']
+            background_tasks.add_task(run_vote_result_stat_task, str(task.id))
+        return CreateCycleVoteResultStatTaskByOwner(status=task.status)

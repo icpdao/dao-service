@@ -2,7 +2,7 @@ from typing import Optional
 from enum import Enum as PyEnum
 from graphene import Enum
 
-from app.common.models.icpdao.cycle import CycleVotePairTaskStatus
+from app.common.models.icpdao.cycle import CycleVotePairTaskStatus, CycleVoteResultStatTaskStatus
 from app.common.models.icpdao.job import JobPairTypeEnum
 from app.common.schema import BaseObjectArgs
 
@@ -97,3 +97,17 @@ class CreateCycleVotePairTaskByOwnerStatusEnum(Enum):
     PAIRING = CycleVotePairTaskStatus.PAIRING.value
     SUCCESS = CycleVotePairTaskStatus.SUCCESS.value
     FAIL = CycleVotePairTaskStatus.FAIL.value
+
+
+class CreateCycleVoteResultStatTaskByOwnerStatusEnum(Enum):
+    INIT = CycleVoteResultStatTaskStatus.INIT.value
+    PAIRING = CycleVoteResultStatTaskStatus.PAIRING.value
+    SUCCESS = CycleVoteResultStatTaskStatus.SUCCESS.value
+    FAIL = CycleVoteResultStatTaskStatus.FAIL.value
+
+
+class CycleVoteResultStatTaskStatusEnum(Enum):
+    INIT = CycleVoteResultStatTaskStatus.INIT.value
+    PAIRING = CycleVoteResultStatTaskStatus.PAIRING.value
+    SUCCESS = CycleVoteResultStatTaskStatus.SUCCESS.value
+    FAIL = CycleVoteResultStatTaskStatus.FAIL.value
