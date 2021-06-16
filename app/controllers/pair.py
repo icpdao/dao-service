@@ -125,6 +125,7 @@ def run_pair_task(task_id):
     dao_id = cycle.dao_id
 
     task.status = CycleVotePairTaskStatus.PAIRING.value
+    task.update_at = int(time.time())
     task.save()
 
     try:
@@ -172,17 +173,25 @@ def run_pair_task(task_id):
         # 所有 job 更改状态
         for job in type_all_jobs:
             job.status = JobStatusEnum.AWAITING_VOTING.value
+            job.update_at = int(time.time())
             job.save()
         for job in type_pair_jobs:
             job.status = JobStatusEnum.AWAITING_VOTING.value
+            job.update_at = int(time.time())
             job.save()
 
+        cycle.paired_at = int(time.time())
+        cycle.update_at = int(time.time())
+        cycle.save()
+
         task.status = CycleVotePairTaskStatus.SUCCESS.value
+        task.update_at = int(time.time())
         task.save()
 
     except:
         # 出现任何错误回滚
         task.status = CycleVotePairTaskStatus.FAIL.value
+        task.update_at = int(time.time())
         task.save()
 
     print("run_pair_task end")

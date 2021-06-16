@@ -2,12 +2,13 @@ import time
 from decimal import Decimal
 
 from app.common.models.icpdao.job import Job, JobStatusEnum, JobPairTypeEnum
-from app.routes.schema import CycleVotePairTaskStatusEnum
+from app.routes.schema import CycleVotePairTaskStatusEnum, CycleVoteResultStatTaskStatusEnum
 from tests.base import Base
 
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType, VoteResultTypeAll, \
-    VoteResultTypeAllResultType, CycleVotePairTask, CycleVotePairTaskStatus
+    VoteResultTypeAllResultType, CycleVotePairTask, CycleVotePairTaskStatus, CycleVoteResultStatTask, \
+    CycleVoteResultStatTaskStatus
 
 
 class TestCycles(Base):
@@ -596,6 +597,24 @@ mutation{
         }
     }
         """
+
+    create_cycle_vote_result_stat_by_owner = """
+    mutation{
+        createCycleVoteResultStatTaskByOwner(cycleId: "%s"){
+            status
+        }
+    }
+    """
+
+    get_cycle_vote_result_stat_task = """
+    query{
+        cycle(id: "%s"){
+            voteResultStatTask{
+                status
+            }
+        }
+    }
+    """
 
     @staticmethod
     def get_cycle_time_by_end_at(end_at):
@@ -1837,3 +1856,193 @@ mutation{
         job_1 = Job.objects(id=str(job_1.id)).first()
         assert job_1.status == JobStatusEnum.WAITING_FOR_TOKEN.value
 
+    def test_get_cycle_vote_result_stat_task(self):
+        self.__class__.clear_db()
+        self.icpper1 = self.__class__.create_icpper_user(nickname='icpper1', github_login='iccper1')
+
+        DAO(
+            name='test_dao2',
+            logo='xxx.png2',
+            desc='test_dao_desc2',
+            owner_id=str(self.icpper1.id)
+        ).save()
+
+        test_dao = DAO(
+            name='test_dao',
+            logo='xxx.png',
+            desc='test_dao_desc',
+            owner_id=str(self.icpper1.id)
+        )
+        test_dao.save()
+
+        end_at = time.time()
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_2 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_2.save()
+
+        end_at = test_cycle_2.begin_at
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_1 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_1.save()
+
+        res = self.graph_query(
+            self.icpper1.id, self.get_cycle_vote_result_stat_task % str(test_cycle_2.id)
+        )
+
+        stat_task = res.json()['data']['cycle']['voteResultStatTask']
+        assert stat_task is None
+
+        cp = CycleVoteResultStatTask(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_2.id),
+        ).save()
+
+        res = self.graph_query(
+            self.icpper1.id, self.get_cycle_vote_result_stat_task % str(test_cycle_2.id)
+        )
+
+        stat_task = res.json()['data']['cycle']['voteResultStatTask']
+        assert stat_task['status'] == CycleVoteResultStatTaskStatusEnum.get(CycleVoteResultStatTaskStatus.INIT.value).name
+
+        cp.status = CycleVoteResultStatTaskStatus.FAIL.value
+        cp.save()
+
+        res = self.graph_query(
+            self.icpper1.id, self.get_cycle_vote_result_stat_task % str(test_cycle_2.id)
+        )
+
+        stat_task = res.json()['data']['cycle']['voteResultStatTask']
+        assert stat_task['status'] == CycleVoteResultStatTaskStatusEnum.get(CycleVoteResultStatTaskStatus.FAIL.value).name
+
+        time.sleep(1)
+
+        cp2 = CycleVoteResultStatTask(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_2.id),
+        ).save()
+
+        res = self.graph_query(
+            self.icpper1.id, self.get_cycle_vote_result_stat_task % str(test_cycle_2.id)
+        )
+
+        stat_task = res.json()['data']['cycle']['voteResultStatTask']
+        assert stat_task['status'] == CycleVoteResultStatTaskStatusEnum.get(CycleVoteResultStatTaskStatus.INIT.value).name
+
+
+    def test_create_result_vote_stat_task(self):
+        # creat dao
+        # creat cycle
+        self.__class__.clear_db()
+        self.icpper = self.__class__.create_icpper_user()
+        self.icpper2 = self.__class__.create_icpper_user()
+
+        test_dao = DAO(
+            name='test_dao',
+            logo='xxx.png',
+            desc='test_dao_desc',
+            owner_id=str(self.icpper.id)
+        )
+        test_dao.save()
+
+        end_at = time.time()
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_2 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_2.save()
+
+        end_at = test_cycle_2.begin_at
+        begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
+        test_cycle_1 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=begin_at,
+            end_at=end_at,
+            pair_begin_at=pair_begin_at,
+            pair_end_at=pair_end_at,
+            vote_begin_at=vote_begin_at,
+            vote_end_at=vote_end_at
+        )
+        test_cycle_1.save()
+
+        # time range
+        res = self.graph_query(
+            self.icpper.id, self.create_cycle_vote_result_stat_by_owner % str(test_cycle_2.id)
+        )
+
+        assert not not res.json()['errors']
+
+        # not owner
+        res = self.graph_query(
+            self.icpper2.id, self.create_cycle_vote_result_stat_by_owner % str(test_cycle_1.id)
+        )
+
+        assert not not res.json()['errors']
+
+        # no old
+        res = self.graph_query(
+            self.icpper.id, self.create_cycle_vote_result_stat_by_owner % str(test_cycle_1.id)
+        )
+
+        assert res.json()['data']['createCycleVoteResultStatTaskByOwner']['status'] == 'INIT'
+        assert CycleVoteResultStatTask.objects.count() == 1
+        assert CycleVoteResultStatTask.objects.first().status == CycleVoteResultStatTaskStatus.INIT.value
+
+        # # have old task sttatus is init pairing
+        res = self.graph_query(
+            self.icpper.id, self.create_cycle_vote_result_stat_by_owner % str(test_cycle_1.id)
+        )
+
+        assert res.json()['data']['createCycleVoteResultStatTaskByOwner']['status'] == 'INIT'
+        assert CycleVoteResultStatTask.objects.count() == 1
+        assert CycleVoteResultStatTask.objects.first().status == CycleVoteResultStatTaskStatus.INIT.value
+
+        # have old task sttatus is fail
+        old_task = CycleVoteResultStatTask.objects.first()
+        old_task.status = CycleVoteResultStatTaskStatus.FAIL.value
+        old_task.save()
+        time.sleep(1)
+        res = self.graph_query(
+            self.icpper.id, self.create_cycle_vote_result_stat_by_owner % str(test_cycle_1.id)
+        )
+
+        assert res.json()['data']['createCycleVoteResultStatTaskByOwner']['status'] == 'INIT'
+        assert CycleVoteResultStatTask.objects.count() == 2
+        assert CycleVoteResultStatTask.objects.order_by('-id').first().status == CycleVoteResultStatTaskStatus.INIT.value
+
+        time.sleep(1)
+        #  re stat
+        old_task = CycleVoteResultStatTask.objects.order_by('-id').first()
+        old_task.status = CycleVoteResultStatTaskStatus.SUCCESS.value
+        old_task.save()
+        test_cycle_1.vote_result_stat_at = time.time()
+        test_cycle_1.save()
+
+        res = self.graph_query(
+            self.icpper.id, self.create_cycle_vote_result_stat_by_owner % str(test_cycle_1.id)
+        )
+
+        assert res.json()['data']['createCycleVoteResultStatTaskByOwner']['status'] == 'INIT'
+        assert CycleVoteResultStatTask.objects.count() == 3
+        assert CycleVoteResultStatTask.objects.order_by('-id').first().status == CycleVoteResultStatTaskStatus.INIT.value

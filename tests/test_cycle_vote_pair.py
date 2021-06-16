@@ -59,10 +59,10 @@ mutation{
             dao_id=str(test_dao.id),
             begin_at=begin_at,
             end_at=end_at,
-            pair_begin_at=pair_begin_at,
-            pair_end_at=pair_end_at,
-            vote_begin_at=vote_begin_at,
-            vote_end_at=vote_end_at
+            pair_begin_at=time.time() - 60 * 60,
+            pair_end_at=time.time() + 60 * 60,
+            vote_begin_at=time.time() + 2 * 60 * 60,
+            vote_end_at=time.time() + 3 * 60 * 60,
         )
         test_cycle_1.save()
 
