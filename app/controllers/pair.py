@@ -169,9 +169,6 @@ def run_pair_task(task_id):
         for vote in vote_list:
             vote.save()
 
-        task.status = CycleVotePairTaskStatus.SUCCESS.value
-        task.save()
-
         # 所有 job 更改状态
         for job in type_all_jobs:
             job.status = JobStatusEnum.AWAITING_VOTING.value
@@ -179,6 +176,9 @@ def run_pair_task(task_id):
         for job in type_pair_jobs:
             job.status = JobStatusEnum.AWAITING_VOTING.value
             job.save()
+
+        task.status = CycleVotePairTaskStatus.SUCCESS.value
+        task.save()
 
     except:
         # 出现任何错误回滚

@@ -536,28 +536,17 @@ class CreateCycleVotePairTaskByOwner(Mutation):
             raise ValueError('CURRENT TIME NO IN PAIR CYCLE')
 
         old_task = CycleVotePairTask.objects(cycle_id=str(cycle.id)).order_by('-id').first()
-        # is paired
-        if cycle.paired_at:
-            return CreateCycleVotePairTaskByOwner(status=old_task.status)
-
-        if old_task and old_task.status == CycleVotePairTaskStatus.SUCCESS.value:
-            return CreateCycleVotePairTaskByOwner(status=old_task.status)
-
         # have old task sttatus is init pairing
         if old_task and old_task.status in [CycleVotePairTaskStatus.INIT.value, CycleVotePairTaskStatus.PAIRING.value]:
             return CreateCycleVotePairTaskByOwner(status=old_task.status)
 
-        # have old task sttatus is fail
-        # no old
-        if not old_task or old_task.status == CycleVotePairTaskStatus.FAIL.value:
-            task = CycleVotePairTask(
-                dao_id=cycle.dao_id,
-                cycle_id=str(cycle.id)
-            ).save()
-            # TODO PAIR
-            if os.environ.get('IS_UNITEST') != 'yes':
-                background_tasks = info.context['background']
-                background_tasks.add_task(run_pair_task, str(task.id))
-            return CreateCycleVotePairTaskByOwner(status=task.status)
+        task = CycleVotePairTask(
+            dao_id=cycle.dao_id,
+            cycle_id=str(cycle.id)
+        ).save()
 
-        raise ValueError('UNKNOWN')
+        # TODO PAIR
+        if os.environ.get('IS_UNITEST') != 'yes':
+            background_tasks = info.context['background']
+            background_tasks.add_task(run_pair_task, str(task.id))
+        return CreateCycleVotePairTaskByOwner(status=task.status)

@@ -109,7 +109,8 @@ mutation{
         assert CycleVotePairTask.objects.count() == 2
         assert CycleVotePairTask.objects.order_by('-id').first().status == CycleVotePairTaskStatus.INIT.value
 
-        # is paired
+        time.sleep(1)
+        # is paired re pair
         old_task = CycleVotePairTask.objects.order_by('-id').first()
         old_task.status = CycleVotePairTaskStatus.SUCCESS.value
         old_task.save()
@@ -120,6 +121,6 @@ mutation{
             self.icpper.id, self.create_pair_task % str(test_cycle_1.id)
         )
 
-        assert res.json()['data']['createCycleVotePairTaskByOwner']['status'] == 'SUCCESS'
-        assert CycleVotePairTask.objects.count() == 2
-        assert CycleVotePairTask.objects.order_by('-id').first().status == CycleVotePairTaskStatus.SUCCESS.value
+        assert res.json()['data']['createCycleVotePairTaskByOwner']['status'] == 'INIT'
+        assert CycleVotePairTask.objects.count() == 3
+        assert CycleVotePairTask.objects.order_by('-id').first().status == CycleVotePairTaskStatus.INIT.value
