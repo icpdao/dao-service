@@ -23,3 +23,4 @@ mutation{
                 self.icpper2.github_login
             )
         )
+        print(res.json())
