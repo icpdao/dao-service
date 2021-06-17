@@ -23,7 +23,7 @@ class CycleFilterEnum(Enum):
 
 class CyclesQueryArgs(BaseObjectArgs):
     dao_id: str
-    filter: int
+    filter: Optional[int]
 
 
 class DAOsSortedEnum(Enum):
