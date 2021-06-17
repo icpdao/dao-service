@@ -13,6 +13,45 @@ EI_04 = decimal.Decimal('0.40')
 SIZE_0 = decimal.Decimal('0')
 
 
+def _process_warning_review_stat(cycle_icpper_stat):
+    """
+    cycle_icpper_stat 上次没有或者正常，本次低于 0.4，要警告相关 reviewer
+    """
+    dao_id = cycle_icpper_stat.dao_id
+    cycle_id = cycle_icpper_stat.cycle_id
+    user_id = cycle_icpper_stat.user_id
+
+    job_list = Job.objects(
+        dao_id=dao_id,
+        cycle_id=cycle_id,
+        user_id=user_id,
+        status__nin=[JobStatusEnum.AWAITING_MERGER.value]
+    )
+    job_list = [item for item in job_list]
+    job_id_list = [str(item.id) for item in job_list]
+    job_pr_list = JobPR.objects(job_id__in=job_id_list, status=JobPRStatusEnum.MERGED.value)
+    job_pr_list = [item for item in job_pr_list]
+    reviewer_id_list = []
+    merged_user_github_login_set = set()
+    for job_pr in job_pr_list:
+        merged_user_github_login_set.add(job_pr.merged_user_github_login)
+    reviewer_list = User.objects(github_login__in=list(merged_user_github_login_set))
+    for item in reviewer_list:
+        reviewer_id_list.append(str(item.id))
+
+    cycle_icpper_stat_list_query = CycleIcpperStat.objects(
+        dao_id=dao_id, cycle_id=cycle_id,
+        user_id__in=reviewer_id_list
+    )
+    for item in cycle_icpper_stat_list_query:
+        if not item.has_warning_review_user_ids:
+            item.has_warning_review_user_ids = []
+
+        item.has_warning_review_user_ids.append(user_id)
+        item.update_at = int(time.time())
+        item.save()
+
+
 def _process_04_reviewer_size(cycle_icpper_stat):
     """
     cycle_icpper_stat 连续两次低于0.4 需要处理相关 reviewer
@@ -53,20 +92,36 @@ def _process_04_reviewer_size(cycle_icpper_stat):
         reviewer_id_2_merge_size.setdefault(reviewer_id, SIZE_0)
         reviewer_id_2_merge_size[reviewer_id] += size
 
+    cycle_icpper_stat_list_query = CycleIcpperStat.objects(
+        dao_id=dao_id, cycle_id=cycle_id,
+        user_id__in=list(reviewer_id_2_merge_size.keys())
+    )
+    for item in cycle_icpper_stat_list_query:
+        if not item.has_deducted_review_size:
+            item.has_deducted_review_size = SIZE_0
+        deducted_review_size = round(reviewer_id_2_merge_size[str(item.user_id)]/2, 2)
+        item.has_deducted_review_size += deducted_review_size
 
+        size = item.job_size
+        if item.un_voted_all_vote or item.have_two_times_lt_08 or item.have_two_times_lt_04:
+            size = round(size/2, 2)
+        item.size = size - item.has_deducted_review_size
+
+        item.update_at = int(time.time())
+        item.save()
 
 
 def stat_cycle_icpper_stat_size(dao_id, cycle_id):
     """
     根据 ei 情况，统计 size 数据
     """
-    # TODO 公布 Ei 时，需要计算 ei 0.8 0.4 问题
-    # TODO EI 和 SIZE 计算方法有多个地方需要确认
-
     cycle_icpper_stat_list_query = CycleIcpperStat.objects(dao_id=dao_id, cycle_id=cycle_id)
 
     for item in cycle_icpper_stat_list_query:
         item.size = item.job_size
+        if item.un_voted_all_vote:
+            # 没有投完，直接减半
+            item.size = round(item.job_size/2, 2)
         item.update_at = int(time.time())
         item.save()
 
@@ -83,6 +138,15 @@ def stat_cycle_icpper_stat_size(dao_id, cycle_id):
     for item in CycleIcpperStat.objects(id__in=need_query_last_cycle_icpper_stat_id_list):
         last_info__id_2_ei[str(item.id)] = item.ei
 
+    # 处理 has_warning_review_user_ids
+    for item in cycle_icpper_stat_list_lt_08:
+        ei = item.ei
+        if ei >= EI_04:
+            continue
+
+        if not item.last_id or last_info__id_2_ei[item.last_id] >= EI_08:
+            _process_warning_review_stat(item)
+
     # 处理 size
     for item in cycle_icpper_stat_list_lt_08:
         # 没有上一周期
@@ -98,12 +162,14 @@ def stat_cycle_icpper_stat_size(dao_id, cycle_id):
         # 不是都小于04，但是都小于0.8
         if last_ei >= EI_04 or ei >= EI_04:
             item.size = round(item.job_size/2, 2)
+            item.have_two_times_lt_08 = True
             item.update_at = int(time.time())
             item.save()
             continue
 
         # 都小于 04
         item.size = round(item.job_size/2, 2)
+        item.have_two_times_lt_04 = True
         item.update_at = int(time.time())
         item.save()
         _process_04_reviewer_size(item)
@@ -218,6 +284,10 @@ def run_vote_result_stat_task(task_id):
             dao_id=dao_id,
             cycle_id=str(cycle.id)
         )
+
+        cycle.vote_result_stat_at = int(time.time())
+        cycle.update_at = int(time.time())
+        cycle.save()
 
         task.status = CycleVoteResultStatTaskStatus.SUCCESS.value
         task.update_at = time.time()
