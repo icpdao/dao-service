@@ -18,12 +18,12 @@ class DAOsFilterEnum(Enum):
 class CycleFilterEnum(Enum):
     processing = 0
     pairing = 1
-    voting = 1
+    voting = 2
 
 
 class CyclesQueryArgs(BaseObjectArgs):
     dao_id: str
-    filter: Optional[PyEnum]
+    filter: int
 
 
 class DAOsSortedEnum(Enum):
