@@ -182,7 +182,8 @@ class UpdateJobVoteTypeByOwner(Mutation):
         if str(current_user.id) != dao.owner_id:
             raise ValueError('NOT ROLE')
 
-        if cycle.paired_at:
+        current_time = int(time.time())
+        if current_time > cycle.pair_end_at or current_time < cycle.pair_begin_at:
             raise ValueError('CURRENT TIME NOT IN CHANGE CYCLE')
 
         job.pair_type = vote_type

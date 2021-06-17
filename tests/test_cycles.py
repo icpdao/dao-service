@@ -1410,13 +1410,13 @@ mutation{
         )
         test_dao.save()
 
-        end_at = time.time()
+        end_at = time.time() - 1 * 60 * 60
         begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
         test_cycle_2 = Cycle(
             dao_id=str(test_dao.id),
             begin_at=begin_at,
             end_at=end_at,
-            pair_begin_at=pair_begin_at,
+            pair_begin_at=end_at,
             pair_end_at=pair_end_at,
             vote_begin_at=vote_begin_at,
             vote_end_at=vote_end_at
@@ -1478,7 +1478,8 @@ mutation{
         res = self.graph_query(
             self.icpper1.id, self.update_job_vote_type_by_owner % (str(job_1.id), 'all')
         )
-        assert not not res.json()['errors']
+        ok = res.json()['data']['updateJobVoteTypeByOwner']['ok']
+        assert ok is True
 
     def test_change_vote_result_public(self):
         self.__class__.clear_db()
