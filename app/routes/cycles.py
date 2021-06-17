@@ -293,6 +293,7 @@ class CycleVotesQuery(ObjectType):
                 query = query.filter(Q(is_result_public=self.is_public) | Q(vote_type=CycleVoteType.ALL.value))
             else:
                 query = query.filter(is_result_public=self.is_public, vote_type=CycleVoteType.PAIR.value)
+        query = query.order_by('-vote_type')
         return query
 
     def resolve_nodes(self, info):
