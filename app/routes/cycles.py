@@ -14,6 +14,7 @@ from app.common.schema.icpdao import CycleSchema, CycleIcpperStatSchema, UserSch
 from app.common.utils.route_helper import get_custom_attr_by_graphql, set_custom_attr_by_graphql, \
     get_current_user_by_graphql
 from app.controllers.pair import run_pair_task
+from app.controllers.vote_result_publish import run_vote_result_publish_task
 from app.controllers.vote_result_stat import run_vote_result_stat_task
 from app.routes.data_loaders import UserLoader, JobLoader
 from app.routes.schema import CycleIcpperStatSortedTypeEnum, CycleIcpperStatSortedEnum, JobsQuerySortedEnum, \
@@ -28,11 +29,9 @@ class IcpperStatQuery(ObjectType):
     icpper = Field(lambda: UserSchema)
 
     def resolve_last_ei(self, info):
-        dao_id = self.datum.dao_id
-        user_id = self.datum.user_id
-        create_at = self.datum.create_at
-        last_item = CycleIcpperStat.objects(dao_id=dao_id, user_id=user_id, create_at__lt=create_at).order_by('-create_at').first()
-        if last_item:
+        CycleIcpperStat
+        if self.datum.last_id:
+            last_item = CycleIcpperStat.objects(id=self.datum.last_id).first()
             return last_item.ei
         return None
 
@@ -504,19 +503,7 @@ class PublishCycleVoteResultByOwner(Mutation):
         if cycle.vote_result_published_at:
             raise ValueError('IS PUBLISHED')
 
-        for item in CycleIcpperStat.objects(cycle_id=str(cycle.id)):
-            item.ei = item.vote_ei + item.owner_ei
-            item.save()
-
-        current_time = int(time.time())
-        cycle.vote_result_published_at = current_time
-        cycle.update_at = current_time
-        cycle.save()
-
-        for item in Job.objects(dao_id=str(dao.id), cycle_id=str(cycle.id)):
-            item.status = JobStatusEnum.WAITING_FOR_TOKEN.value
-            item.save()
-
+        run_vote_result_publish_task(cycle_id=cycle_id)
         return PublishCycleVoteResultByOwner(ok=True)
 
 
