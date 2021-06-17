@@ -1170,26 +1170,27 @@ mutation{
         )
 
         votes_list = res.json()['data']['cycle']['votes']['nodes']
+
         assert len(votes_list) == 3
 
-        assert votes_list[0]['datum']['leftJobId'] == str(job_1.id)
-        assert votes_list[0]['datum']['rightJobId'] == str(job_2.id)
-        assert votes_list[0]['datum']['voteJobId'] == str(job_1.id)
-        assert votes_list[0]['datum']['voterId'] == str(self.icpper1.id)
+        assert votes_list[1]['datum']['leftJobId'] == str(job_1.id)
+        assert votes_list[1]['datum']['rightJobId'] == str(job_2.id)
+        assert votes_list[1]['datum']['voteJobId'] == str(job_1.id)
+        assert votes_list[1]['datum']['voterId'] == str(self.icpper1.id)
 
-        assert votes_list[0]['leftJob']['datum']['id'] == str(job_1.id)
-        assert votes_list[0]['rightJob']['datum']['id'] == str(job_2.id)
-        assert votes_list[0]['voter']['nickname'] == str(self.icpper1.nickname)
+        assert votes_list[1]['leftJob']['datum']['id'] == str(job_1.id)
+        assert votes_list[1]['rightJob']['datum']['id'] == str(job_2.id)
+        assert votes_list[1]['voter']['nickname'] == str(self.icpper1.nickname)
 
-        assert votes_list[1]['datum']['leftJobId'] == str(job_3.id)
-        assert votes_list[1]['datum']['rightJobId'] == str(job_3.id)
-        assert votes_list[1]['datum']['voteJobId'] is None
-        assert votes_list[1]['datum']['voterId'] is None
-        assert votes_list[1]['datum']['voteResultStatTypeAll'] == 100
+        assert votes_list[0]['datum']['leftJobId'] == str(job_3.id)
+        assert votes_list[0]['datum']['rightJobId'] == str(job_3.id)
+        assert votes_list[0]['datum']['voteJobId'] is None
+        assert votes_list[0]['datum']['voterId'] is None
+        assert votes_list[0]['datum']['voteResultStatTypeAll'] == 100
 
-        assert votes_list[1]['leftJob']['datum']['id'] == str(job_3.id)
-        assert votes_list[1]['rightJob']['datum']['id'] == str(job_3.id)
-        assert votes_list[1]['voter'] is None
+        assert votes_list[0]['leftJob']['datum']['id'] == str(job_3.id)
+        assert votes_list[0]['rightJob']['datum']['id'] == str(job_3.id)
+        assert votes_list[0]['voter'] is None
 
         res = self.graph_query(
             self.icpper1.id, self.get_cycle_vote_list_is_public % (str(test_cycle_2.id), "true")
@@ -1198,8 +1199,8 @@ mutation{
         votes_list = res.json()['data']['cycle']['votes']['nodes']
         assert len(votes_list) == 2
 
-        assert votes_list[0]['datum']['id'] == str(cycle_vote_1.id)
-        assert votes_list[1]['datum']['id'] == str(cycle_vote_2.id)
+        assert votes_list[1]['datum']['id'] == str(cycle_vote_1.id)
+        assert votes_list[0]['datum']['id'] == str(cycle_vote_2.id)
 
         res = self.graph_query(
             self.icpper1.id, self.get_cycle_vote_list_is_public % (str(test_cycle_2.id), "false")
@@ -1230,15 +1231,15 @@ mutation{
         votes_list = res.json()['data']['cycle']['votes']['nodes']
         assert len(votes_list) == 3
 
-        assert votes_list[0]['datum']['id'] == str(cycle_vote_1.id)
-        assert votes_list[0]['datum']['voteJobId'] == str(job_1.id)
-        assert votes_list[0]['datum']['voterId'] == str(self.icpper1.id)
-        assert votes_list[0]['voteJob']['datum']['id'] == str(job_1.id)
-        assert votes_list[0]['voter']['nickname'] == str(self.icpper1.nickname)
+        assert votes_list[1]['datum']['id'] == str(cycle_vote_1.id)
+        assert votes_list[1]['datum']['voteJobId'] == str(job_1.id)
+        assert votes_list[1]['datum']['voterId'] == str(self.icpper1.id)
+        assert votes_list[1]['voteJob']['datum']['id'] == str(job_1.id)
+        assert votes_list[1]['voter']['nickname'] == str(self.icpper1.nickname)
 
-        assert votes_list[1]['datum']['id'] == str(cycle_vote_2.id)
-        assert votes_list[1]['datum']['voteJobId'] is None
-        assert votes_list[1]['datum']['voterId'] is None
+        assert votes_list[0]['datum']['id'] == str(cycle_vote_2.id)
+        assert votes_list[0]['datum']['voteJobId'] is None
+        assert votes_list[0]['datum']['voterId'] is None
 
         assert votes_list[2]['datum']['id'] == str(cycle_vote_3.id)
         assert votes_list[2]['datum']['voteJobId'] is None
@@ -1254,15 +1255,15 @@ mutation{
         votes_list = res.json()['data']['cycle']['votes']['nodes']
         assert len(votes_list) == 3
 
-        assert votes_list[0]['datum']['id'] == str(cycle_vote_1.id)
-        assert votes_list[0]['datum']['voteJobId'] == str(job_1.id)
-        assert votes_list[0]['datum']['voterId'] is None
-        assert votes_list[0]['voteJob']['datum']['id'] == str(job_1.id)
-        assert votes_list[2]['voter'] is None
-
-        assert votes_list[1]['datum']['id'] == str(cycle_vote_2.id)
-        assert votes_list[1]['datum']['voteJobId'] is None
+        assert votes_list[1]['datum']['id'] == str(cycle_vote_1.id)
+        assert votes_list[1]['datum']['voteJobId'] == str(job_1.id)
         assert votes_list[1]['datum']['voterId'] is None
+        assert votes_list[1]['voteJob']['datum']['id'] == str(job_1.id)
+        assert votes_list[1]['voter'] is None
+
+        assert votes_list[0]['datum']['id'] == str(cycle_vote_2.id)
+        assert votes_list[0]['datum']['voteJobId'] is None
+        assert votes_list[0]['datum']['voterId'] is None
 
         assert votes_list[2]['datum']['id'] == str(cycle_vote_3.id)
         assert votes_list[2]['datum']['voteJobId'] is None
@@ -1278,15 +1279,15 @@ mutation{
         votes_list = res.json()['data']['cycle']['votes']['nodes']
         assert len(votes_list) == 3
 
-        assert votes_list[0]['datum']['id'] == str(cycle_vote_1.id)
-        assert votes_list[0]['datum']['voteJobId'] == str(job_1.id)
-        assert votes_list[0]['datum']['voterId'] is None
-        assert votes_list[0]['voteJob']['datum']['id'] == str(job_1.id)
-        assert votes_list[0]['voter'] is None
-
-        assert votes_list[1]['datum']['id'] == str(cycle_vote_2.id)
-        assert votes_list[1]['datum']['voteJobId'] is None
+        assert votes_list[1]['datum']['id'] == str(cycle_vote_1.id)
+        assert votes_list[1]['datum']['voteJobId'] == str(job_1.id)
         assert votes_list[1]['datum']['voterId'] is None
+        assert votes_list[1]['voteJob']['datum']['id'] == str(job_1.id)
+        assert votes_list[1]['voter'] is None
+
+        assert votes_list[0]['datum']['id'] == str(cycle_vote_2.id)
+        assert votes_list[0]['datum']['voteJobId'] is None
+        assert votes_list[0]['datum']['voterId'] is None
 
         assert votes_list[2]['datum']['id'] == str(cycle_vote_3.id)
         assert votes_list[2]['datum']['voteJobId'] == str(job_1.id)
