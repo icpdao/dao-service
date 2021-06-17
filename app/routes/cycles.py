@@ -19,7 +19,7 @@ from app.routes.data_loaders import UserLoader, JobLoader
 from app.routes.schema import CycleIcpperStatSortedTypeEnum, CycleIcpperStatSortedEnum, JobsQuerySortedEnum, \
     JobsQuerySortedTypeEnum, JobsQueryPairTypeEnum, CycleVotePairTaskStatusEnum, \
     CreateCycleVotePairTaskByOwnerStatusEnum, CycleFilterEnum, CreateCycleVoteResultStatTaskByOwnerStatusEnum, \
-    CycleVoteResultStatTaskStatusEnum
+    CycleVoteResultStatTaskStatusEnum, CycleVoteResultTypeAllResultTypeEnum
 
 
 class IcpperStatQuery(ObjectType):
@@ -220,6 +220,7 @@ class CycleVoteQuery(ObjectType):
     right_job = Field(JobItemQuery)
     vote_job = Field(JobItemQuery)
     voter = Field(lambda: UserSchema)
+    self_vote_result_type_all = Field(CycleVoteResultTypeAllResultTypeEnum)
 
     def resolve_left_job(self, info):
         return JobItemQuery(job_id=self.datum.left_job_id)
@@ -236,6 +237,19 @@ class CycleVoteQuery(ObjectType):
         user_loader = get_custom_attr_by_graphql(info, 'user_loader')
         if CycleVoteSchema.have_view_voter_id_role(info, self.datum) and self.datum.voter_id:
             return user_loader.load(self.datum.voter_id)
+        return None
+
+    def resolve_self_vote_result_type_all(self, info):
+        if self.datum.vote_type == CycleVoteType.PAIR.value:
+            return None
+
+        current_user = get_current_user_by_graphql(info)
+        if not current_user:
+            return None
+
+        for result in self.datum.vote_result_type_all:
+            if result.voter_id == str(current_user.id):
+                return result.result
         return None
 
 

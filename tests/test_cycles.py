@@ -308,6 +308,7 @@ query{
                     voter{
                         nickname
                     }
+                    selfVoteResultTypeAll
                 }
             }
         }
@@ -398,6 +399,7 @@ query{
                     voter{
                         nickname
                     }
+                    selfVoteResultTypeAll
                 }
             }
         }
@@ -489,6 +491,7 @@ query{
                     voter{
                         nickname
                     }
+                    selfVoteResultTypeAll
                 }
             }
         }
@@ -536,6 +539,7 @@ query{
                     voter{
                         nickname
                     }
+                    selfVoteResultTypeAll
                 }
             }
         }
@@ -1122,14 +1126,14 @@ mutation{
             vote_result_type_all=[
                 VoteResultTypeAll(
                     voter_id=str(self.icpper1.id),
-                    result=VoteResultTypeAllResultType.YES.value
+                    result=VoteResultTypeAllResultType.NO.value
                 ),
                 VoteResultTypeAll(
                     voter_id=str(self.icpper2.id),
                     result=VoteResultTypeAllResultType.YES.value
                 )
             ],
-            vote_result_stat_type_all=100
+            vote_result_stat_type_all=50
         )
         cycle_vote_2.save()
 
@@ -1186,7 +1190,8 @@ mutation{
         assert votes_list[0]['datum']['rightJobId'] == str(job_3.id)
         assert votes_list[0]['datum']['voteJobId'] is None
         assert votes_list[0]['datum']['voterId'] is None
-        assert votes_list[0]['datum']['voteResultStatTypeAll'] == 100
+        assert votes_list[0]['datum']['voteResultStatTypeAll'] == 50
+        assert votes_list[0]['selfVoteResultTypeAll'] == 'NO'
 
         assert votes_list[0]['leftJob']['datum']['id'] == str(job_3.id)
         assert votes_list[0]['rightJob']['datum']['id'] == str(job_3.id)
@@ -1264,6 +1269,7 @@ mutation{
         assert votes_list[0]['datum']['id'] == str(cycle_vote_2.id)
         assert votes_list[0]['datum']['voteJobId'] is None
         assert votes_list[0]['datum']['voterId'] is None
+        assert votes_list[0]['selfVoteResultTypeAll'] is None
 
         assert votes_list[2]['datum']['id'] == str(cycle_vote_3.id)
         assert votes_list[2]['datum']['voteJobId'] is None
@@ -1288,6 +1294,7 @@ mutation{
         assert votes_list[0]['datum']['id'] == str(cycle_vote_2.id)
         assert votes_list[0]['datum']['voteJobId'] is None
         assert votes_list[0]['datum']['voterId'] is None
+        assert votes_list[0]['selfVoteResultTypeAll'] == 'YES'
 
         assert votes_list[2]['datum']['id'] == str(cycle_vote_3.id)
         assert votes_list[2]['datum']['voteJobId'] == str(job_1.id)
