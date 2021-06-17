@@ -797,7 +797,8 @@ mutation{
             income=500,
             vote_ei=1,
             owner_ei=Decimal('0.1'),
-            ei=Decimal('1.1')
+            ei=Decimal('1.1'),
+            last_id=str(cycle_1_icpper1.id)
         )
         cycle_2_icpper1.save()
 
