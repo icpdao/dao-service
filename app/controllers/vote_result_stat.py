@@ -44,10 +44,10 @@ def _process_warning_review_stat(cycle_icpper_stat):
         user_id__in=reviewer_id_list
     )
     for item in cycle_icpper_stat_list_query:
-        if not item.has_warning_review_user_ids:
-            item.has_warning_review_user_ids = []
+        if not item.be_reviewer_has_warning_user_ids:
+            item.be_reviewer_has_warning_user_ids = []
 
-        item.has_warning_review_user_ids.append(user_id)
+        item.be_reviewer_has_warning_user_ids.append(user_id)
         item.update_at = int(time.time())
         item.save()
 
@@ -97,15 +97,15 @@ def _process_04_reviewer_size(cycle_icpper_stat):
         user_id__in=list(reviewer_id_2_merge_size.keys())
     )
     for item in cycle_icpper_stat_list_query:
-        if not item.has_deducted_review_size:
-            item.has_deducted_review_size = SIZE_0
+        if not item.be_deducted_size_by_review:
+            item.be_deducted_size_by_review = SIZE_0
         deducted_review_size = round(reviewer_id_2_merge_size[str(item.user_id)]/2, 2)
-        item.has_deducted_review_size += deducted_review_size
+        item.be_deducted_size_by_review += deducted_review_size
 
         size = item.job_size
         if item.un_voted_all_vote or item.have_two_times_lt_08 or item.have_two_times_lt_04:
             size = round(size/2, 2)
-        item.size = size - item.has_deducted_review_size
+        item.size = size - item.be_deducted_size_by_review
 
         item.update_at = int(time.time())
         item.save()
@@ -138,7 +138,7 @@ def stat_cycle_icpper_stat_size(dao_id, cycle_id):
     for item in CycleIcpperStat.objects(id__in=need_query_last_cycle_icpper_stat_id_list):
         last_info__id_2_ei[str(item.id)] = item.ei
 
-    # 处理 has_warning_review_user_ids
+    # 处理 be_reviewer_has_warning_user_ids
     for item in cycle_icpper_stat_list_lt_08:
         ei = item.ei
         if ei >= EI_04:

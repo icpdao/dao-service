@@ -78,6 +78,10 @@ query{
                     nickname
                     avatar
                 }
+                beReviewerHasWarningUsers{
+                    nickname
+                    avatar
+                }
                 lastEi
             }
         }
@@ -101,6 +105,10 @@ query{
                     ownerEi
                 }
                 icpper{
+                    nickname
+                    avatar
+                }
+                beReviewerHasWarningUsers{
                     nickname
                     avatar
                 }
@@ -811,7 +819,8 @@ mutation{
             income=700,
             vote_ei=1,
             owner_ei=Decimal('0.2'),
-            ei=Decimal('1.2')
+            ei=Decimal('1.2'),
+            be_reviewer_has_warning_user_ids=[str(self.icpper1.id)],
         )
         cycle_2_icpper2.save()
 
@@ -827,6 +836,7 @@ mutation{
         assert icpper_stat_list[0]['datum']['ei'] is not None
         assert icpper_stat_list[0]['datum']['voteEi'] is not None
         assert icpper_stat_list[0]['datum']['ownerEi'] is not None
+        assert icpper_stat_list[0]['beReviewerHasWarningUsers'] == []
 
         res = self.graph_query(
             self.icpper1.id, self.get_cycle_icpper_stats_params_by_owner % str(test_cycle_2.id)
@@ -840,6 +850,8 @@ mutation{
         assert icpper_stat_list[0]['datum']['jobCount'] == 3
         assert icpper_stat_list[0]['icpper']['nickname'] == 'icpper2'
         assert icpper_stat_list[0]['lastEi'] is None
+        assert len(icpper_stat_list[0]['beReviewerHasWarningUsers']) == 1
+        assert icpper_stat_list[0]['beReviewerHasWarningUsers'][0]['nickname'] == 'icpper1'
 
         assert icpper_stat_list[1]['datum']['jobCount'] == 2
         assert icpper_stat_list[1]['icpper']['nickname'] == 'icpper1'

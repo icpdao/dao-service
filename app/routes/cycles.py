@@ -27,9 +27,9 @@ class IcpperStatQuery(ObjectType):
     datum = Field(CycleIcpperStatSchema)
     last_ei = Decimal()
     icpper = Field(lambda: UserSchema)
+    be_reviewer_has_warning_users = List(lambda: UserSchema)
 
     def resolve_last_ei(self, info):
-        CycleIcpperStat
         if self.datum.last_id:
             last_item = CycleIcpperStat.objects(id=self.datum.last_id).first()
             return last_item.ei
@@ -38,6 +38,12 @@ class IcpperStatQuery(ObjectType):
     def resolve_icpper(self, info):
         user_loader = get_custom_attr_by_graphql(info, 'user_loader')
         return user_loader.load(self.datum.user_id)
+
+    def resolve_be_reviewer_has_warning_users(self, info):
+        if self.datum.be_reviewer_has_warning_user_ids:
+            user_loader = get_custom_attr_by_graphql(info, 'user_loader')
+            return user_loader.load_many(self.datum.be_reviewer_has_warning_user_ids)
+        return []
 
 
 class IcpperStatsQuery(ObjectType):
