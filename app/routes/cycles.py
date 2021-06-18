@@ -6,7 +6,8 @@ from graphene import ObjectType, Field, List, Int, Decimal, Boolean, Mutation, S
 from mongoengine import Q
 
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType, CycleVotePairTask, \
-    CycleVotePairTaskStatus, CycleVoteResultStatTask, CycleVoteResultStatTaskStatus
+    CycleVotePairTaskStatus, CycleVoteResultStatTask, CycleVoteResultStatTaskStatus, CycleVoteResultPublishTask, \
+    CycleVoteResultPublishTaskStatus
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.schema import BaseObjectType
@@ -20,7 +21,8 @@ from app.routes.data_loaders import UserLoader, JobLoader
 from app.routes.schema import CycleIcpperStatSortedTypeEnum, CycleIcpperStatSortedEnum, JobsQuerySortedEnum, \
     JobsQuerySortedTypeEnum, JobsQueryPairTypeEnum, CycleVotePairTaskStatusEnum, \
     CreateCycleVotePairTaskByOwnerStatusEnum, CycleFilterEnum, CreateCycleVoteResultStatTaskByOwnerStatusEnum, \
-    CycleVoteResultStatTaskStatusEnum, CycleVoteResultTypeAllResultTypeEnum
+    CycleVoteResultStatTaskStatusEnum, CycleVoteResultTypeAllResultTypeEnum, \
+    CreateCycleVoteResultPublishTaskByOwnerStatusEnum, CycleVoteResultPublishTaskStatusEnum
 
 
 class IcpperStatQuery(ObjectType):
@@ -380,6 +382,10 @@ class CycleVoteResultStatTaskQuery(ObjectType):
     status = Field(CycleVoteResultStatTaskStatusEnum)
 
 
+class CycleVoteResultPublishTaskQuery(ObjectType):
+    status = Field(CycleVoteResultPublishTaskStatusEnum)
+
+
 class CycleQuery(ObjectType):
     datum = Field(CycleSchema)
     stat = Field(CycleStatQuery)
@@ -407,6 +413,7 @@ class CycleQuery(ObjectType):
     )
     pair_task = Field(CycleVotePairTaskQuery)
     vote_result_stat_task = Field(CycleVoteResultStatTaskQuery)
+    vote_result_publish_task = Field(CycleVoteResultPublishTaskQuery)
 
     @property
     def cycle_id(self):
@@ -462,6 +469,14 @@ class CycleQuery(ObjectType):
             return None
         return CycleVoteResultStatTaskQuery(status=task.status)
 
+    def resolve_vote_result_publish_task(self, info):
+        cycle = Cycle.objects(id=self.cycle_id).first()
+        dao_id = cycle.dao_id
+        task = CycleVoteResultPublishTask.objects(dao_id=dao_id, cycle_id=str(cycle.id)).order_by('-id').first()
+        if not task:
+            return None
+        return CycleVoteResultPublishTaskQuery(status=task.status)
+
 
 class CyclesQuery(BaseObjectType):
     nodes = List(CycleQuery)
@@ -482,35 +497,6 @@ class CyclesQuery(BaseObjectType):
 
         cycle_list = Cycle.objects(**query).order_by('-begin_at')
         return [CycleQuery(datum=i, cycle_id=str(i.id)) for i in cycle_list]
-
-
-class PublishCycleVoteResultByOwner(Mutation):
-    class Arguments:
-        cycle_id = String(required=True)
-
-    ok = Boolean()
-
-    def mutate(self, info, cycle_id):
-        cycle = Cycle.objects(id=cycle_id).first()
-        if not cycle:
-            raise ValueError('NOT CYCLE')
-
-        dao = DAO.objects(id=cycle.dao_id).first()
-        if not dao:
-            raise ValueError('NOT DAO')
-
-        current_user = get_current_user_by_graphql(info)
-        if str(current_user.id) != dao.owner_id:
-            raise ValueError('NOT ROLE')
-
-        if not cycle.vote_result_stat_at:
-            raise ValueError('CURRENT TIME NO IN CHANGE CYCLE')
-
-        if cycle.vote_result_published_at:
-            raise ValueError('IS PUBLISHED')
-
-        run_vote_result_publish_task(cycle_id=cycle_id)
-        return PublishCycleVoteResultByOwner(ok=True)
 
 
 class ChangeVoteResultPublic(Mutation):
@@ -614,3 +600,46 @@ class CreateCycleVoteResultStatTaskByOwner(Mutation):
             background_tasks = info.context['background']
             background_tasks.add_task(run_vote_result_stat_task, str(task.id))
         return CreateCycleVoteResultStatTaskByOwner(status=task.status)
+
+
+class CreateCycleVoteResultPublishTaskByOwner(Mutation):
+    class Arguments:
+        cycle_id = String(required=True)
+
+    status = CreateCycleVoteResultPublishTaskByOwnerStatusEnum()
+
+    def mutate(self, info, cycle_id):
+        cycle = Cycle.objects(id=cycle_id).first()
+        if not cycle:
+            raise ValueError('NOT CYCLE')
+
+        dao = DAO.objects(id=cycle.dao_id).first()
+        if not dao:
+            raise ValueError('NOT DAO')
+
+        # not owner
+        current_user = get_current_user_by_graphql(info)
+        if str(current_user.id) != dao.owner_id:
+            raise ValueError('NOT ROLE')
+
+        # time range
+        if cycle.vote_end_at >= time.time():
+            raise ValueError('CURRENT TIME NO IN STAT CYCLE')
+        if not cycle.vote_result_stat_at:
+            raise ValueError('CYCLE NO STAT')
+
+        old_task = CycleVoteResultPublishTask.objects(cycle_id=str(cycle.id)).order_by('-id').first()
+        # have old task sttatus is init running
+        if old_task and old_task.status in [CycleVoteResultPublishTaskStatus.INIT.value, CycleVoteResultPublishTaskStatus.RUNNING.value]:
+            return CreateCycleVoteResultPublishTaskByOwner(status=old_task.status)
+
+        task = CycleVoteResultPublishTask(
+            dao_id=cycle.dao_id,
+            cycle_id=str(cycle.id)
+        ).save()
+
+        # TODO 优化 task 运行方式
+        if os.environ.get('IS_UNITEST') != 'yes':
+            background_tasks = info.context['background']
+            background_tasks.add_task(run_vote_result_publish_task, str(task.id))
+        return CreateCycleVoteResultPublishTaskByOwner(status=task.status)
