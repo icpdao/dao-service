@@ -296,7 +296,12 @@ def run_vote_result_stat_task(task_id):
         task.status = CycleVoteResultStatTaskStatus.SUCCESS.value
         task.update_at = time.time()
         task.save()
-    except:
+    except Exception as ex:
+        import traceback
+        msg = traceback.format_exc()
+        print('exception log_exception' + str(ex))
+        print(msg)
         task.status = CycleVoteResultStatTaskStatus.FAIL.value
         task.update_at = time.time()
         task.save()
+    print("run_vote_result_stat_task end")
