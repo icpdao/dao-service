@@ -7,7 +7,7 @@ from app.common.models.icpdao.job import Job, JobStatusEnum
 def create_or_update_cycle_icpper_stat(dao_id, cycle_id, user_id, job_count, job_size):
     update_result = CycleIcpperStat.objects(
         dao_id=dao_id, user_id=user_id, cycle_id=cycle_id
-    ).update_one(upsert=True, set__job_size=job_size, set__size=job_size, set__job_count=job_count)
+    ).update_one(full_result=True, upsert=True, job_size=job_size, size__=job_size, job_count=job_count)
 
     is_new = False
     is_dict = isinstance(update_result, dict)
