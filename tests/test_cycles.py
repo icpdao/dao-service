@@ -594,8 +594,8 @@ mutation{
 """
 
     update_icpper_stat_owner_ei = """
-mutation{
-    updateIcpperStatOwnerEi(id: "%s", ownerEi: "%s"){
+mutation($ownerEi: Decimal){
+    updateIcpperStatOwnerEi(id: "%s", ownerEi: $ownerEi){
         ei
         voteEi
         ownerEi
@@ -1745,7 +1745,9 @@ mutation{
         cycle_2_icpper2.save()
 
         res = self.graph_query(
-            self.icpper1.id, self.update_icpper_stat_owner_ei % (str(cycle_2_icpper2.id), str(0.1))
+            self.icpper1.id, self.update_icpper_stat_owner_ei % (str(cycle_2_icpper2.id)), {
+                "ownerEi": "0.1"
+            }
         )
 
         assert not not res.json()['errors']
@@ -1756,12 +1758,16 @@ mutation{
         arr = ['-0.21', '-0.3', '0.21', '0.3']
         for item in arr:
             res = self.graph_query(
-                self.icpper1.id, self.update_icpper_stat_owner_ei % (str(cycle_2_icpper2.id), item)
+                self.icpper1.id, self.update_icpper_stat_owner_ei % (str(cycle_2_icpper2.id)), {
+                    "ownerEi": item
+                }
             )
             assert not not res.json()['errors']
 
         res = self.graph_query(
-            self.icpper1.id, self.update_icpper_stat_owner_ei % (str(cycle_2_icpper2.id), str(-0.2))
+            self.icpper1.id, self.update_icpper_stat_owner_ei % (str(cycle_2_icpper2.id)), {
+                "ownerEi": str(-0.2)
+            }
         )
 
         data = res.json()['data']['updateIcpperStatOwnerEi']
@@ -1770,7 +1776,9 @@ mutation{
         assert data['ownerEi'] == '-0.2'
 
         res = self.graph_query(
-            self.icpper2.id, self.update_icpper_stat_owner_ei % (str(cycle_2_icpper2.id), str(0.1))
+            self.icpper2.id, self.update_icpper_stat_owner_ei % (str(cycle_2_icpper2.id)), {
+                "ownerEi": str(0.1)
+            }
         )
 
         assert not not res.json()['errors']
