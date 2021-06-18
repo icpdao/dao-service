@@ -8,9 +8,10 @@ from app.common.models.icpdao.user import User
 from app.controllers.sync_cycle_icppper_stat import sync_one_cycle_icppper_stat
 
 
+DECIMAL_0 = decimal.Decimal('0')
 EI_08 = decimal.Decimal('0.80')
 EI_04 = decimal.Decimal('0.40')
-SIZE_0 = decimal.Decimal('0')
+SIZE_0 = DECIMAL_0
 
 
 def _process_warning_review_stat(cycle_icpper_stat):
@@ -107,7 +108,7 @@ def _process_04_reviewer_size(cycle_icpper_stat):
             size = round(size/2, 2)
         item.size = size - item.be_deducted_size_by_review
 
-        item.update_at = int(time.time())
+        item.update_at = time.time()
         item.save()
 
 
@@ -122,7 +123,12 @@ def stat_cycle_icpper_stat_size(dao_id, cycle_id):
         if item.un_voted_all_vote:
             # 没有投完，直接减半
             item.size = round(item.job_size/2, 2)
-        item.update_at = int(time.time())
+
+        item.be_deducted_size_by_review = None
+        item.be_reviewer_has_warning_user_ids = None
+        item.have_two_times_lt_04 = None
+        item.have_two_times_lt_08 = None
+        item.update_at = time.time()
         item.save()
 
     # 找到小于0.8的 icpper 数据
@@ -140,12 +146,9 @@ def stat_cycle_icpper_stat_size(dao_id, cycle_id):
 
     # 处理 be_reviewer_has_warning_user_ids
     for item in cycle_icpper_stat_list_lt_08:
-        ei = item.ei
-        if ei >= EI_04:
-            continue
-
-        if not item.last_id or last_info__id_2_ei[item.last_id] >= EI_08:
-            _process_warning_review_stat(item)
+        if item.ei < EI_04:
+            if not item.last_id or last_info__id_2_ei[item.last_id] >= EI_08:
+                _process_warning_review_stat(item)
 
     # 处理 size
     for item in cycle_icpper_stat_list_lt_08:
@@ -155,6 +158,7 @@ def stat_cycle_icpper_stat_size(dao_id, cycle_id):
 
         last_ei = last_info__id_2_ei[item.last_id]
         ei = item.ei
+
         # 不是都小于0.8
         if last_ei >= EI_08:
             continue
@@ -163,14 +167,14 @@ def stat_cycle_icpper_stat_size(dao_id, cycle_id):
         if last_ei >= EI_04 or ei >= EI_04:
             item.size = round(item.job_size/2, 2)
             item.have_two_times_lt_08 = True
-            item.update_at = int(time.time())
+            item.update_at = time.time()
             item.save()
             continue
 
         # 都小于 04
         item.size = round(item.job_size/2, 2)
         item.have_two_times_lt_04 = True
-        item.update_at = int(time.time())
+        item.update_at = time.time()
         item.save()
         _process_04_reviewer_size(item)
 
@@ -285,8 +289,8 @@ def run_vote_result_stat_task(task_id):
             cycle_id=str(cycle.id)
         )
 
-        cycle.vote_result_stat_at = int(time.time())
-        cycle.update_at = int(time.time())
+        cycle.vote_result_stat_at = time.time()
+        cycle.update_at = time.time()
         cycle.save()
 
         task.status = CycleVoteResultStatTaskStatus.SUCCESS.value
