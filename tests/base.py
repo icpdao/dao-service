@@ -43,12 +43,12 @@ class Base:
         record.save()
         return record
 
-    def graph_query(self, user_id, query):
+    def graph_query(self, user_id, query, variables=None):
         return self.client.post(
             graph_route, headers={'user_id': str(user_id)},
             json={
                 'query': query,
-                'variables': None
+                'variables': variables
             }
         )
 
