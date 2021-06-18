@@ -4,8 +4,8 @@ from app.common.models.icpdao.dao import DAOJobConfig as DAOJobConfigModel
 from app.common.schema.icpdao import DAOJobConfigSchema
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.routes.config import UpdateDAOJobConfig
-from app.routes.cycles import CycleQuery, PublishCycleVoteResultByOwner, CreateCycleVotePairTaskByOwner, \
-    ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner
+from app.routes.cycles import CycleQuery, CreateCycleVotePairTaskByOwner, \
+    ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner, CreateCycleVoteResultPublishTaskByOwner
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus
 from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob, UpdateJobVoteTypeByOwner, UpdateIcpperStatOwnerEi
@@ -97,10 +97,10 @@ class Mutations(ObjectType):
     update_job = UpdateJob.Field()
     update_job_vote_type_by_owner = UpdateJobVoteTypeByOwner.Field()
     update_icpper_stat_owner_ei = UpdateIcpperStatOwnerEi.Field()
-    publish_cycle_vote_result_by_owner = PublishCycleVoteResultByOwner.Field()
     update_pair_vote = UpdatePairVote.Field()
     update_all_vote = UpdateALLVote.Field()
     create_cycle_vote_pair_task_by_owner = CreateCycleVotePairTaskByOwner.Field()
     change_vote_result_public = ChangeVoteResultPublic.Field()
     create_mock = CreateMock.Field()
     createCycleVoteResultStatTaskByOwner = CreateCycleVoteResultStatTaskByOwner.Field()
+    createCycleVoteResultPublishTaskByOwner = CreateCycleVoteResultPublishTaskByOwner.Field()
