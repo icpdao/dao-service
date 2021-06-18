@@ -37,6 +37,7 @@ def get_or_create_dao_cycle(dao_id, job_last_merged_at):
         begin_at = last.end_at
 
     config = DAOJobConfig.objects(dao_id=dao_id).first()
+    # TODO 时间计算需要考虑FIX
     end_at = get_next_time(
         config.time_zone, job_last_merged_at,
         config.deadline_day, config.deadline_time)
@@ -113,8 +114,8 @@ def sync_job_issue_status_comment(app_client, job_ids):
                 raise ValueError("NOT AWAITING MERGED JOB NOT CYCLE")
             cycle = Cycle.objects(id=job.cycle_id).first()
             create_at_list = sorted([i.create_at for i in tmp_prs])
-            if (len(create_at_list) == 0 and int(time.time()) < cycle.pair_begin_at) or (
-                len(create_at_list) > 0 and create_at_list[-1] < cycle.pair_begin_at and check_status != {JobPRStatusEnum.MERGED.value}):
+            if (len(create_at_list) == 0 and int(time.time()) < cycle.end_at) or (
+                len(create_at_list) > 0 and create_at_list[-1] < cycle.end_at and check_status != {JobPRStatusEnum.MERGED.value}):
                 job.status = JobStatusEnum.AWAITING_MERGER.value
                 job.update_at = int(time.time())
                 job.cycle_id = None
