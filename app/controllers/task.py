@@ -22,38 +22,22 @@ by @icpdao
     )
 
 
-def get_or_create_dao_cycle(dao_id, job_last_merged_at):
-    query = Cycle.objects(
-        dao_id=dao_id,
-        begin_at__lte=job_last_merged_at,
-        end_at__gt=job_last_merged_at
-    ).first()
-    if query and not query.paired_at:
-        return query
-    last = Cycle.objects(dao_id=dao_id).order_by('-create_at').first()
-    if not last:
-        begin_at = job_last_merged_at
-    else:
-        begin_at = last.end_at
-
+def create_cycle_by_params(dao_id, begin_at):
     config = DAOJobConfig.objects(dao_id=dao_id).first()
-    # TODO 时间计算需要考虑FIX
     end_at = get_next_time(
-        config.time_zone, job_last_merged_at,
+        config.time_zone, int(time.time()),
         config.deadline_day, config.deadline_time)
-
     pair_begin_at = get_next_time(
-        config.time_zone, begin_at,
+        config.time_zone, end_at,
         config.pair_begin_day, config.pair_begin_hour)
     pair_end_at = get_next_time(
-        config.time_zone, begin_at,
+        config.time_zone, pair_begin_at,
         config.pair_end_day, config.pair_end_hour)
-
     vote_begin_at = get_next_time(
-        config.time_zone, begin_at,
+        config.time_zone, pair_end_at,
         config.voting_begin_day, config.voting_begin_hour)
     vote_end_at = get_next_time(
-        config.time_zone, begin_at,
+        config.time_zone, vote_begin_at,
         config.voting_end_day, config.voting_end_hour)
 
     cycle = Cycle(
@@ -102,12 +86,24 @@ def sync_job_issue_status_comment(app_client, job_ids):
                 job.update_at = int(time.time())
                 merged_at_list = sorted([i.merged_at for i in tmp_prs])
                 if not job.cycle_id:
-                    cycle = get_or_create_dao_cycle(
-                        job.dao_id, merged_at_list[-1])
-                    job.cycle_id = str(cycle.id)
+                    link_cycle = None
+                    merged_at = merged_at_list[-1]
+                    newest_cycle = Cycle.objects(dao_id=job.dao_id).order_by("-begin_at").first()
+                    if not newest_cycle:
+                        begin_at = merged_at
+                        link_cycle = create_cycle_by_params(job.dao_id, begin_at)
+                    elif newest_cycle and newest_cycle.begin_at <= merged_at and merged_at < newest_cycle.end_at:
+                        link_cycle = newest_cycle
+                    elif newest_cycle and merged_at >= newest_cycle.end_at:
+                        begin_at = newest_cycle.end_at
+                        link_cycle = create_cycle_by_params(job.dao_id, begin_at)
+                    else:
+                        # 如果找不到 link_cycle 就不保存
+                        print("job id:{} 找不到 link_cycle，所以不更新".format(job.id))
+                        continue
 
+                    job.cycle_id = str(link_cycle.id)
                 job.save()
-
                 need_update_comment_jobs.append(job)
         else:
             if not job.cycle_id:
