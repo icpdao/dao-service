@@ -41,6 +41,7 @@ def run_vote_result_publish_task(task_id):
     try:
         for item in CycleIcpperStat.objects(cycle_id=str(cycle.id)):
             item.ei = item.vote_ei + item.owner_ei
+            item.update_at = int(time.time())
             item.save()
 
         stat_cycle_icpper_stat_size(
@@ -48,7 +49,11 @@ def run_vote_result_publish_task(task_id):
             cycle_id=str(cycle.id)
         )
 
-        for item in Job.objects(dao_id=dao_id, cycle_id=str(cycle.id), status__nin=[JobStatusEnum.AWAITING_MERGER.value]):
+        for item in Job.objects(
+                dao_id=dao_id, cycle_id=str(cycle.id),
+                status__in=[
+                    JobStatusEnum.AWAITING_VOTING.value,
+                    JobStatusEnum.WAITING_FOR_TOKEN.value]):
             item.status = JobStatusEnum.WAITING_FOR_TOKEN.value
             item.save()
 
