@@ -31,6 +31,7 @@ def create_or_update_cycle_icpper_stat(dao_id, cycle_id, user_id, job_count, job
         cis.vote_ei = decimal.Decimal('0')
         cis.owner_ei = decimal.Decimal('0')
         cis.ei = decimal.Decimal('0')
+        cis.be_reviewer_has_warning_user_ids = []
         cis.create_at = int(cis.id.generation_time.timestamp())
         cis.update_at = int(cis.id.generation_time.timestamp())
         if last_item:
@@ -44,7 +45,10 @@ def sync_one_cycle_icppper_stat(dao_id, cycle_id, user_id):
         dao_id=dao_id,
         cycle_id=cycle_id,
         user_id=user_id,
-        status__nin=[JobStatusEnum.AWAITING_MERGER.value]
+        status__in=[
+            JobStatusEnum.MERGED.value, JobStatusEnum.AWAITING_VOTING.value,
+            JobStatusEnum.WAITING_FOR_TOKEN.value
+        ]
     )
     job_list = [job for job in job_list]
 

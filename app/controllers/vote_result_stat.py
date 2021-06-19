@@ -40,17 +40,12 @@ def _process_warning_review_stat(cycle_icpper_stat):
     for item in reviewer_list:
         reviewer_id_list.append(str(item.id))
 
-    cycle_icpper_stat_list_query = CycleIcpperStat.objects(
+    CycleIcpperStat.objects(
         dao_id=dao_id, cycle_id=cycle_id,
         user_id__in=reviewer_id_list
-    )
-    for item in cycle_icpper_stat_list_query:
-        if not item.be_reviewer_has_warning_user_ids:
-            item.be_reviewer_has_warning_user_ids = []
-
-        item.be_reviewer_has_warning_user_ids.append(user_id)
-        item.update_at = int(time.time())
-        item.save()
+    ).update(
+        update_at=int(time.time()),
+        push__be_reviewer_has_warning_user_ids=user_id)
 
 
 def _process_04_reviewer_size(cycle_icpper_stat):
@@ -72,8 +67,12 @@ def _process_04_reviewer_size(cycle_icpper_stat):
     job_id_2_size = {}
     for job in job_list:
         job_id_2_size[str(job.id)] = job.size
-
-    job_pr_list = JobPR.objects(job_id__in=job_id_list, status=JobPRStatusEnum.MERGED.value)
+    current_user_github_login = User.objects(id=user_id).first().github_login
+    job_pr_list = JobPR.objects(
+        job_id__in=job_id_list,
+        status=JobPRStatusEnum.MERGED.value,
+        merged_user_github_login__ne=current_user_github_login
+    )
     job_pr_list = [item for item in job_pr_list]
     github_login_2_user_id = {}
     merged_user_github_login_set = set()
@@ -107,7 +106,8 @@ def _process_04_reviewer_size(cycle_icpper_stat):
         if item.un_voted_all_vote or item.have_two_times_lt_08 or item.have_two_times_lt_04:
             size = round(size/2, 2)
         item.size = size - item.be_deducted_size_by_review
-
+        if item.size < SIZE_0:
+            item.size = SIZE_0
         item.update_at = time.time()
         item.save()
 
@@ -213,13 +213,13 @@ def run_vote_result_stat_task(task_id):
         job_list_query = Job.objects(
             dao_id=dao_id,
             cycle_id=str(cycle.id),
-            status__nin=[JobStatusEnum.AWAITING_MERGER.value]
+            status=JobStatusEnum.AWAITING_VOTING.value
         )
         for job in job_list_query:
             all_user_id_set.add(job.user_id)
 
         # 同步一下所有 cycle icpper stat
-        for user_id in list(all_user_id_set):
+        for user_id in all_user_id_set:
             sync_one_cycle_icppper_stat(
                 dao_id=dao_id,
                 cycle_id=str(cycle.id),
@@ -227,8 +227,7 @@ def run_vote_result_stat_task(task_id):
             )
 
         # 查询所有投票
-        cycle_vote_list_query = CycleVote.objects(dao_id=dao_id, cycle_id=str(cycle.id))
-        cycle_vote_list = [item for item in cycle_vote_list_query]
+        cycle_vote_list = list(CycleVote.objects(dao_id=dao_id, cycle_id=str(cycle.id)))
         # 找到谁没有投完票
         un_voted_all_vote_user_id_set = set()
         for cycle_vote in cycle_vote_list:
@@ -258,15 +257,13 @@ def run_vote_result_stat_task(task_id):
 
         # 统计 vote size
         userid_2_vote_size = {}
-        vote_job_list_query = Job.objects(id__in=vote_job_id_list)
-        vote_job_list = [item for item in vote_job_list_query]
+        vote_job_list = list(Job.objects(id__in=vote_job_id_list))
         for job in vote_job_list:
             userid_2_vote_size.setdefault(job.user_id, decimal.Decimal('0'))
             userid_2_vote_size[job.user_id] += job.size
 
         # 统计 ei
-        cycle_icpper_stat_list_query = CycleIcpperStat.objects(dao_id=dao_id, cycle_id=str(cycle.id))
-        cycle_icpper_stat_list = [cycle_icpper_stat for cycle_icpper_stat in cycle_icpper_stat_list_query]
+        cycle_icpper_stat_list = list(CycleIcpperStat.objects(dao_id=dao_id, cycle_id=str(cycle.id)))
         for cycle_icpper_stat in cycle_icpper_stat_list:
             userid_2_vote_size.setdefault(cycle_icpper_stat.user_id, decimal.Decimal('0'))
             vote_size = userid_2_vote_size[cycle_icpper_stat.user_id]

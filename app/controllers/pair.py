@@ -1,4 +1,5 @@
 import time
+from mongoengine import Q
 
 from app.common.models.icpdao.cycle import CycleVotePairTask, CycleVotePairTaskStatus, Cycle, CycleVote, CycleVoteType
 from app.common.models.icpdao.job import JobPairTypeEnum, Job, JobStatusEnum, JobPR, JobPRStatusEnum
@@ -18,10 +19,11 @@ def filter_job_lables(job):
 
 def get_data_by_cycle(cycle):
     # 找到所有 job
-    job_list = [job for job in Job.objects(cycle_id=str(cycle.id), status__nin=[JobStatusEnum.AWAITING_MERGER.value])]
+    job_list = list(Job.objects(cycle_id=str(cycle.id), status__in=[
+        JobStatusEnum.MERGED.value, JobStatusEnum.AWAITING_VOTING.value]))
     job_id_list = [str(job.id) for job in job_list]
     # 找到所有 job pr
-    job_pr_list = [job_pr for job_pr in JobPR.objects(job_id__in=job_id_list, status=JobPRStatusEnum.MERGED.value)]
+    job_pr_list = list(JobPR.objects(job_id__in=job_id_list, status=JobPRStatusEnum.MERGED.value))
 
     jobid_2_job_pr_list = {}
     for job_pr in job_pr_list:
@@ -44,11 +46,11 @@ def get_data_by_cycle(cycle):
         github_login_list.add(job_pr.merged_user_github_login)
 
     userid_2_user = {}
-    for user in User.objects(id__in=list(user_ids)):
-        userid_2_user[str(user.id)] = user
-
     githublogin_2_user = {}
-    for user in User.objects(github_login__in=list(github_login_list)):
+
+    for user in User.objects(
+            Q(id__in=list(user_ids)) | Q(github_login__in=list(github_login_list))):
+        userid_2_user[str(user.id)] = user
         githublogin_2_user[str(user.github_login)] = user
 
     type_all_jobs = []
