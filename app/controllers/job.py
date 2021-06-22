@@ -75,7 +75,7 @@ def add_job_pr(info, app_client: GithubAppClient, current_user, job, pr_link):
         )
         if success is False:
             raise ValueError('NOT GET PR')
-        if ret['closed_at']:
+        if ret['closed_at'] and not ret['merged_at']:
             raise ValueError('PR ALREADY CLOSED')
         if ret['state'] == JobPRStatusEnum.MERGED.value and str(
                 current_user.github_login) != ret['merged_login']:
