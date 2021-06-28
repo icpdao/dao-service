@@ -1,3 +1,6 @@
+from app.common.models.icpdao.cycle import Cycle, CycleVotePairTask
+from app.common.models.icpdao.dao import DAO
+from app.controllers.pair import run_pair_task
 from tests.base import Base
 
 
@@ -24,3 +27,11 @@ mutation{
             )
         )
         print(res.json())
+
+        dao = DAO.objects(name="end-and-in-pair-time").first()
+        cycle = Cycle.objects(dao_id=str(dao.id)).order_by("-begin_at").first()
+        task = CycleVotePairTask(
+            dao_id=str(dao.id),
+            cycle_id=str(cycle.id)
+        ).save()
+        run_pair_task(str(task.id))
