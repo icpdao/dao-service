@@ -64,7 +64,11 @@ def run_vote_result_publish_task(task_id):
         task.status = CycleVoteResultPublishTaskStatus.SUCCESS.value
         task.update_at = time.time()
         task.save()
-    except:
+    except Exception as ex:
+        import traceback
+        msg = traceback.format_exc()
+        print('exception log_exception' + str(ex))
+        print(msg)
         task.status = CycleVoteResultPublishTaskStatus.FAIL.value
         task.update_at = time.time()
         task.save()

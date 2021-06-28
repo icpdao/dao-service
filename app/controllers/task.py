@@ -98,8 +98,9 @@ def sync_job_issue_status_comment(app_client, job_ids):
                         begin_at = newest_cycle.end_at
                         link_cycle = create_cycle_by_params(job.dao_id, begin_at)
                     else:
-                        # 如果找不到 link_cycle 就不保存
-                        print("job id:{} 找不到 link_cycle，所以不更新".format(job.id))
+                        # merged at 应该是小于当前周期的 begin_at
+                        # 不能给已经结束的 cycle 关联新的 job
+                        print("job id:{} 没有合适的 link_cycle，所以不更新".format(job.id))
                         continue
 
                     job.cycle_id = str(link_cycle.id)

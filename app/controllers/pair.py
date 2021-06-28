@@ -190,7 +190,11 @@ def run_pair_task(task_id):
         task.update_at = int(time.time())
         task.save()
 
-    except:
+    except Exception as ex:
+        import traceback
+        msg = traceback.format_exc()
+        print('exception log_exception' + str(ex))
+        print(msg)
         # 出现任何错误回滚
         task.status = CycleVotePairTaskStatus.FAIL.value
         task.update_at = int(time.time())
