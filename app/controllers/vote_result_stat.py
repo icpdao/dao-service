@@ -33,10 +33,10 @@ def _process_warning_review_stat(cycle_icpper_stat):
     job_pr_list = JobPR.objects(job_id__in=job_id_list, status=JobPRStatusEnum.MERGED.value)
     job_pr_list = [item for item in job_pr_list]
     reviewer_id_list = []
-    merged_user_github_login_set = set()
+    merged_user_github_user_id_set = set()
     for job_pr in job_pr_list:
-        merged_user_github_login_set.add(job_pr.merged_user_github_login)
-    reviewer_list = User.objects(github_login__in=list(merged_user_github_login_set))
+        merged_user_github_user_id_set.add(job_pr.merged_user_github_user_id)
+    reviewer_list = User.objects(github_user_id__in=list(merged_user_github_user_id_set))
     for item in reviewer_list:
         reviewer_id_list.append(str(item.id))
 
@@ -67,24 +67,24 @@ def _process_04_reviewer_size(cycle_icpper_stat):
     job_id_2_size = {}
     for job in job_list:
         job_id_2_size[str(job.id)] = job.size
-    current_user_github_login = User.objects(id=user_id).first().github_login
+    current_user_github_user_id = User.objects(id=user_id).first().github_user_id
     job_pr_list = JobPR.objects(
         job_id__in=job_id_list,
         status=JobPRStatusEnum.MERGED.value,
-        merged_user_github_login__ne=current_user_github_login
+        merged_user_github_user_id__ne=current_user_github_user_id
     )
     job_pr_list = [item for item in job_pr_list]
-    github_login_2_user_id = {}
-    merged_user_github_login_set = set()
+    github_user_id_2_user_id = {}
+    merged_user_github_user_id_set = set()
     for job_pr in job_pr_list:
-        merged_user_github_login_set.add(job_pr.merged_user_github_login)
-    reviewer_list = User.objects(github_login__in=list(merged_user_github_login_set))
+        merged_user_github_user_id_set.add(job_pr.merged_user_github_user_id)
+    reviewer_list = User.objects(github_user_id__in=list(merged_user_github_user_id_set))
     for user in reviewer_list:
-        github_login_2_user_id[user.github_login] = str(user.id)
+        github_user_id_2_user_id[user.github_user_id] = str(user.id)
 
     reviewer_id_2_merge_size = {}
     for job_pr in job_pr_list:
-        reviewer_id = github_login_2_user_id.get(job_pr.merged_user_github_login, None)
+        reviewer_id = github_user_id_2_user_id.get(job_pr.merged_user_github_user_id, None)
         if not reviewer_id:
             continue
 

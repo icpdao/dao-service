@@ -1,5 +1,6 @@
 import time
 from decimal import Decimal
+import random
 
 from app.common.models.icpdao.cycle import Cycle, CycleVotePairTask, CycleVote, CycleVoteType
 from app.common.models.icpdao.dao import DAO
@@ -7,6 +8,13 @@ from app.common.models.icpdao.job import Job, JobStatusEnum, JobPairTypeEnum, Jo
 from app.common.models.icpdao.user import User
 from app.controllers.pair import run_pair_task
 from tests.base import Base
+
+
+def _get_github_user_id(github_login):
+    random.seed(github_login)
+    github_user_id = int(random.random() * 10000)
+    random.seed()
+    return github_user_id
 
 
 class TestPair(Base):
@@ -96,7 +104,7 @@ class TestPair(Base):
             github_repo_id=1,
             github_pr_number=101,
             status=JobPRStatusEnum.MERGED.value,
-            merged_user_github_login=self.icpper2.github_login,
+            merged_user_github_user_id=_get_github_user_id(self.icpper2.github_login),
             merged_at=time.time()
         )
         icpper1_job_1_pr.save()
@@ -127,7 +135,7 @@ class TestPair(Base):
             github_repo_id=1,
             github_pr_number=102,
             status=JobPRStatusEnum.MERGED.value,
-            merged_user_github_login=self.icpper2.github_login,
+            merged_user_github_user_id=_get_github_user_id(self.icpper2.github_login),
             merged_at=time.time()
         )
         icpper1_job_2_pr.save()
@@ -158,7 +166,7 @@ class TestPair(Base):
             github_repo_id=1,
             github_pr_number=103,
             status=JobPRStatusEnum.MERGED.value,
-            merged_user_github_login=self.icpper3.github_login,
+            merged_user_github_user_id=_get_github_user_id(self.icpper3.github_login),
             merged_at=time.time()
         )
         icpper2_job_1_pr.save()
@@ -189,7 +197,7 @@ class TestPair(Base):
             github_repo_id=1,
             github_pr_number=104,
             status=JobPRStatusEnum.MERGED.value,
-            merged_user_github_login=self.icpper3.github_login,
+            merged_user_github_user_id=_get_github_user_id(self.icpper3.github_login),
             merged_at=time.time()
         )
         icpper2_job_2_pr.save()
@@ -220,7 +228,7 @@ class TestPair(Base):
             github_repo_id=1,
             github_pr_number=105,
             status=JobPRStatusEnum.MERGED.value,
-            merged_user_github_login=self.icpper1.github_login,
+            merged_user_github_user_id=_get_github_user_id(self.icpper1.github_login),
             merged_at=time.time()
         )
         icpper3_job_1_pr.save()
@@ -251,7 +259,7 @@ class TestPair(Base):
             github_repo_id=1,
             github_pr_number=106,
             status=JobPRStatusEnum.MERGED.value,
-            merged_user_github_login=self.icpper1.github_login,
+            merged_user_github_user_id=_get_github_user_id(self.icpper1.github_login),
             merged_at=time.time()
         )
         icpper3_job_2_pr.save()
@@ -282,7 +290,7 @@ class TestPair(Base):
             github_repo_id=1,
             github_pr_number=107,
             status=JobPRStatusEnum.MERGED.value,
-            merged_user_github_login=self.icpper1.github_login,
+            merged_user_github_user_id=_get_github_user_id(self.icpper1.github_login),
             merged_at=time.time()
         )
         icpper3_job_all_pr.save()
