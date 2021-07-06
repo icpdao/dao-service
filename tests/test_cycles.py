@@ -666,7 +666,9 @@ mutation($ownerEi: Decimal){
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper.id)
+            owner_id=str(self.icpper.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 
@@ -717,7 +719,9 @@ mutation($ownerEi: Decimal){
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper.id)
+            owner_id=str(self.icpper.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 
@@ -763,14 +767,18 @@ mutation($ownerEi: Decimal){
             name='test_dao2',
             logo='xxx.png2',
             desc='test_dao_desc2',
-            owner_id=str(self.icpper2.id)
+            owner_id=str(self.icpper2.id),
+            github_owner_id=_get_github_user_id('test_dao2'),
+            github_owner_name='test_dao2'
         ).save()
 
         test_dao = DAO(
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper1.id)
+            owner_id=str(self.icpper1.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 
@@ -920,14 +928,18 @@ mutation($ownerEi: Decimal){
             name='test_dao2',
             logo='xxx.png2',
             desc='test_dao_desc2',
-            owner_id=str(self.icpper2.id)
+            owner_id=str(self.icpper2.id),
+            github_owner_id=_get_github_user_id('test_dao2'),
+            github_owner_name='test_dao2'
         ).save()
 
         test_dao = DAO(
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper1.id)
+            owner_id=str(self.icpper1.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 
@@ -1051,14 +1063,18 @@ mutation($ownerEi: Decimal){
             name='test_dao2',
             logo='xxx.png2',
             desc='test_dao_desc2',
-            owner_id=str(self.icpper2.id)
+            owner_id=str(self.icpper2.id),
+            github_owner_id=_get_github_user_id('test_dao2'),
+            github_owner_name='test_dao2'
         ).save()
 
         test_dao = DAO(
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper1.id)
+            owner_id=str(self.icpper1.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 
@@ -1348,14 +1364,18 @@ mutation($ownerEi: Decimal){
             name='test_dao2',
             logo='xxx.png2',
             desc='test_dao_desc2',
-            owner_id=str(self.icpper1.id)
+            owner_id=str(self.icpper1.id),
+            github_owner_id=_get_github_user_id('test_dao2'),
+            github_owner_name='test_dao2'
         ).save()
 
         test_dao = DAO(
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper1.id)
+            owner_id=str(self.icpper1.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 
@@ -1437,14 +1457,18 @@ mutation($ownerEi: Decimal){
             name='test_dao2',
             logo='xxx.png2',
             desc='test_dao_desc2',
-            owner_id=str(self.icpper2.id)
+            owner_id=str(self.icpper2.id),
+            github_owner_id=_get_github_user_id('test_dao2'),
+            github_owner_name='test_dao2'
         ).save()
 
         test_dao = DAO(
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper1.id)
+            owner_id=str(self.icpper1.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 
@@ -1530,14 +1554,18 @@ mutation($ownerEi: Decimal){
             name='test_dao2',
             logo='xxx.png2',
             desc='test_dao_desc2',
-            owner_id=str(self.icpper2.id)
+            owner_id=str(self.icpper2.id),
+            github_owner_id=_get_github_user_id('test_dao2'),
+            github_owner_name='test_dao2'
         ).save()
 
         test_dao = DAO(
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper1.id)
+            owner_id=str(self.icpper1.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 
@@ -1699,14 +1727,18 @@ mutation($ownerEi: Decimal){
             name='test_dao2',
             logo='xxx.png2',
             desc='test_dao_desc2',
-            owner_id=str(self.icpper2.id)
+            owner_id=str(self.icpper2.id),
+            github_owner_id=_get_github_user_id('test_dao2'),
+            github_owner_name='test_dao2'
         ).save()
 
         test_dao = DAO(
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper1.id)
+            owner_id=str(self.icpper1.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 
@@ -1809,14 +1841,18 @@ mutation($ownerEi: Decimal){
             name='test_dao2',
             logo='xxx.png2',
             desc='test_dao_desc2',
-            owner_id=str(self.icpper1.id)
+            owner_id=str(self.icpper1.id),
+            github_owner_id=_get_github_user_id('test_dao2'),
+            github_owner_name='test_dao2'
         ).save()
 
         test_dao = DAO(
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper1.id)
+            owner_id=str(self.icpper1.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 
@@ -1901,7 +1937,9 @@ mutation($ownerEi: Decimal){
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper.id)
+            owner_id=str(self.icpper.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 
@@ -2000,14 +2038,18 @@ mutation($ownerEi: Decimal){
             name='test_dao2',
             logo='xxx.png2',
             desc='test_dao_desc2',
-            owner_id=str(self.icpper1.id)
+            owner_id=str(self.icpper1.id),
+            github_owner_id=_get_github_user_id('test_dao2'),
+            github_owner_name='test_dao2'
         ).save()
 
         test_dao = DAO(
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper1.id)
+            owner_id=str(self.icpper1.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 
@@ -2092,7 +2134,9 @@ mutation($ownerEi: Decimal){
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper.id)
+            owner_id=str(self.icpper.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 

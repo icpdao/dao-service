@@ -1,12 +1,12 @@
 import time
 import os
+import random
 
 from graphene import ObjectType, String, Field, Int, \
     Float, List, Boolean, Mutation
 from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
 
-from app.common.schema import BaseObjectArgs
 from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
 
 from app.routes.cycles import CyclesQuery
@@ -21,6 +21,35 @@ from app.common.utils.github_rest_api import org_member_role_is_admin, check_icp
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
     DAOsSortedTypeEnum, CycleFilterEnum, CyclesQueryArgs
 from app.routes.follow import DAOFollowUDSchema
+
+
+def _get_github_user_id(github_login):
+    random.seed(github_login)
+    github_user_id = int(random.random() * 10000)
+    random.seed()
+    return github_user_id
+
+
+def get_github_owner_app_info(user, github_owner_name):
+    github_org_id = None
+    is_icp_app_installed = False
+    is_github_org_owner = False
+
+    ugt = UserGithubToken.objects(github_user_id=user.github_user_id).first()
+    access_token = ugt.access_token
+    github_login = user.github_login
+
+    github_org_id = get_github_org_id(access_token, github_owner_name)
+    jwt = get_icp_app_jwt(ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY)
+    is_icp_app_installed = check_icp_app_installed_status_of_org(jwt, github_owner_name)
+
+    if is_icp_app_installed:
+        is_github_org_owner = org_member_role_is_admin(access_token, github_owner_name, github_login)
+    else:
+        # 当 app 没有安装时，查不多用户信息，干脆直接设置为 false
+        is_github_org_owner = False
+
+    return github_org_id, is_icp_app_installed, is_github_org_owner
 
 
 class DAOStat(ObjectType):
@@ -204,8 +233,18 @@ class CreateDAO(Mutation):
     def mutate(root, info: ResolveInfo, **kwargs):
         current_user = get_current_user_by_graphql(info)
         check_is_icpper(current_user)
-        # TODO: check github app installed ?
+        # TODO: mock test data
+        if os.environ.get('IS_UNITEST') != 'yes':
+            github_org_id, is_icp_app_installed, is_github_org_owner = get_github_owner_app_info(current_user, kwargs['name'])
+
+            if not is_icp_app_installed or not is_github_org_owner:
+                raise ValueError("NOT ROLE")
+        else:
+            github_org_id = _get_github_user_id(kwargs['name'])
+
         record = DAOModel(
+            github_owner_id=github_org_id,
+            github_owner_name=kwargs['name'],
             name=kwargs['name'], logo=kwargs['logo'],
             desc=kwargs['desc'], owner_id=str(current_user.id)
         )
@@ -262,17 +301,13 @@ class DAOGithubAppStatus(ObjectType):
 
         ugt = UserGithubToken.objects(github_user_id=current_user.github_user_id).first()
 
+        github_org_id, is_icp_app_installed, is_github_org_owner = get_github_owner_app_info(current_user, name)
+
         dao = DAOModel.objects(name=name).first()
         self.is_exists = not not dao
 
-        self.github_org_id = get_github_org_id(ugt.access_token, name)
+        self.github_org_id = github_org_id
+        self.is_icp_app_installed = is_icp_app_installed
+        self.is_github_org_owner = is_github_org_owner
 
-        jwt = get_icp_app_jwt(ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY)
-        self.is_icp_app_installed = check_icp_app_installed_status_of_org(jwt, name)
-
-        if self.is_icp_app_installed:
-            self.is_github_org_owner = org_member_role_is_admin(ugt.access_token, name, current_user.github_login)
-        else:
-            # 当 app 没有安装时，查不多用户信息，干脆直接设置为 false
-            self.is_github_org_owner = False
         return self

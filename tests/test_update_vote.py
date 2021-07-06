@@ -72,7 +72,11 @@ mutation {
         self.icpper3 = self.create_icpper_user('mockicpper3', 'mockicpper3')
         self.icpper4 = self.create_icpper_user('mockicpper4', 'mockicpper4')
         self.icpper5 = self.create_icpper_user('mockicpper5', 'mockicpper5')
-        mockdao = DAO(name='mockdao', owner_id=str(self.icpper1.id))
+        mockdao = DAO(
+            name='mockdao', owner_id=str(self.icpper1.id),
+            github_owner_id=_get_github_user_id('mockdao'),
+            github_owner_name='mockdao'
+        )
         mockdao.save()
         dao_id = str(mockdao.id)
         cycle = Cycle(

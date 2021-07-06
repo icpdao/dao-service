@@ -1,4 +1,5 @@
 import decimal
+import os
 import time
 from collections import defaultdict
 
@@ -15,6 +16,7 @@ from app.common.schema.icpdao import JobSchema, JobPRSchema
 from app.common.utils.github_app.client import GithubAppClient
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.common.utils import check_size
+from app.controllers.task import delete_issue_comment
 from app.routes.schema import SortedTypeEnum, UpdateJobVoteTypeByOwnerArgumentPairTypeEnum
 
 from app.controllers.job import delete_job_pr, update_job_by_size, add_job_pr, \
@@ -137,7 +139,8 @@ class UpdateJob(Mutation):
         app_token = GithubAppToken.get_token(
             app_id=settings.ICPDAO_GITHUB_APP_ID,
             app_private_key=settings.ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY,
-            dao_name=dao.name
+            github_owner_name=dao.github_owner_name,
+            github_owner_id=dao.github_owner_id,
         )
         if app_token is None:
             raise ValueError('NOT APP TOKEN')
@@ -176,14 +179,36 @@ class DeleteJob(Mutation):
         if job.status != JobStatusEnum.AWAITING_MERGER.value:
             raise ValueError('NOT SUPPORT')
 
+        need_delete_bot_comment_info_list = []
+        github_repo_owner = job.github_repo_owner
+        need_delete_bot_comment_info_list.append({
+            "repo_name": job.github_repo_owner,
+            "comment_id": job.bot_comment_database_id
+        })
         prs = JobPRModel.objects(job_id=id).all()
         for pr in prs:
+            for job_pr_comment in JobPRComment.objects(
+                github_repo_id=pr.github_repo_id,
+                github_pr_number=pr.github_pr_number
+            ):
+                need_delete_bot_comment_info_list.append({
+                    "repo_name": pr.github_repo_owner,
+                    "comment_id": job_pr_comment.bot_comment_database_id
+                })
+
             JobPRComment.objects(
                 github_repo_id=pr.github_repo_id,
                 github_pr_number=pr.github_pr_number
             ).delete()
         JobPRModel.objects(job_id=id).delete()
         job.delete()
+
+        if os.environ.get('IS_UNITEST') != 'yes':
+            info.context["background"].add_task(
+                delete_issue_comment, dao_id=str(dao.id),
+                github_repo_owner=github_repo_owner,
+                need_delete_bot_comment_info_list=need_delete_bot_comment_info_list)
+
         return DeleteJob(ok=True)
 
 

@@ -1,8 +1,16 @@
 import time
+import random
 
 from app.common.models.icpdao.cycle import Cycle, CycleVotePairTask, CycleVotePairTaskStatus
 from app.common.models.icpdao.dao import DAO
 from tests.base import Base
+
+
+def _get_github_user_id(github_login):
+    random.seed(github_login)
+    github_user_id = int(random.random() * 10000)
+    random.seed()
+    return github_user_id
 
 
 class TestCycleVotePair(Base):
@@ -36,7 +44,9 @@ mutation{
             name='test_dao',
             logo='xxx.png',
             desc='test_dao_desc',
-            owner_id=str(self.icpper.id)
+            owner_id=str(self.icpper.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
         )
         test_dao.save()
 
