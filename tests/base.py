@@ -1,9 +1,18 @@
+import random
+
 from fastapi.testclient import TestClient
 from mongoengine.connection import get_db
 
 from app import app, graph_route
 from app.common.models.icpdao.github_app_token import GithubAppToken
 from app.common.models.icpdao.user import User, UserStatus
+
+
+def _get_github_user_id(github_login):
+    random.seed(github_login)
+    github_user_id = int(random.random() * 10000)
+    random.seed()
+    return github_user_id
 
 
 class Base:
@@ -23,9 +32,11 @@ class Base:
 
     @staticmethod
     def create_icpper_user(nickname='test_icpper', github_login='test_github_login'):
+        github_user_id = _get_github_user_id(github_login)
         record = User(
             nickname=nickname,
             github_login=github_login,
+            github_user_id=github_user_id,
             status=UserStatus.ICPPER.value,
             avatar='test_avatar'
         )
@@ -34,9 +45,11 @@ class Base:
 
     @staticmethod
     def create_normal_user(nickname='test_user'):
+        github_user_id = _get_github_user_id(nickname)
         record = User(
             nickname=nickname,
             github_login='test_github_login',
+            github_user_id=github_user_id,
             status=UserStatus.NORMAL.value,
             avatar='test_avatar'
         )

@@ -1,12 +1,20 @@
 import decimal
 from datetime import datetime, timezone, timedelta
 import time
+import random
 
 from app.common.models.icpdao.cycle import CycleVotePairTask, CycleVote, CycleIcpperStat, Cycle, CycleVoteType, \
     VoteResultTypeAll, VoteResultTypeAllResultType, CycleVotePairTaskStatus
 from app.common.models.icpdao.dao import DAO, DAOJobConfig, DAOFollow
 from app.common.models.icpdao.job import Job, JobPR, JobPRComment, JobStatusEnum, JobPairTypeEnum, JobPRStatusEnum
 from app.common.models.icpdao.user import User, UserStatus
+
+
+def _get_github_user_id(github_login):
+    random.seed(github_login)
+    github_user_id = int(random.random() * 10000)
+    random.seed()
+    return github_user_id
 
 
 class DeleteDaoMock:
@@ -1695,6 +1703,7 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
         user = User(
             nickname=mock_user_name,
             github_login=mock_user_name,
+            github_user_id=_get_github_user_id(mock_user_name),
             avatar='/xxxx',
             status=UserStatus.ICPPER.value
         ).save()
