@@ -29,7 +29,7 @@ def update_job_by_size(info, app_client: GithubAppClient, current_user, job, siz
                 tasks.add_task(
                     update_issue_comment, app_client=app_client, job=job)
                 return job
-            raise PermissionError('JOB MERGED, USER ONLY CAN REDUCE SIZE')
+            raise PermissionError('error.update_job_size.only_reduce')
         prs = JobPRModel.objects(
             job_id=str(job.id), status=JobPRStatusEnum.MERGED.value
         ).distinct('merged_user_github_user_id')
@@ -140,12 +140,12 @@ def create_job(info, issue_link, size):
 
     issue_info = parse_issue(issue_link)
     if issue_info is False:
-        raise ValueError('ILLEGAL ISSUE LINK')
+        raise ValueError('error.mark_job.error_link')
 
     dao = DAOModel.objects(
         name=issue_info['parse']['github_repo_owner']).first()
     if not dao:
-        raise ValueError('NOT DAO')
+        raise ValueError('error.mark_job.unknown_dao')
 
     app_token = GithubAppToken.get_token(
         app_id=settings.ICPDAO_GITHUB_APP_ID,
@@ -162,7 +162,7 @@ def create_job(info, issue_link, size):
         github_issue_number=issue_info['parse']['github_issue_number'],
     ).first()
     if exist:
-        raise ValueError('THIS ISSUE HAD EXIST')
+        raise ValueError('error.mark_job.same_link')
 
     success, issue = app_client.get_issue(
         issue_info['parse']['github_repo_name'],

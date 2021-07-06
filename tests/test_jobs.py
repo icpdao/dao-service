@@ -210,7 +210,7 @@ mutation {
             str(self.icpper.id),
             self.create_job % (mark_issue, str(mark_size))
         )
-        assert res.json()['errors'][0]['message'] == 'THIS ISSUE HAD EXIST'
+        assert res.json()['errors'][0]['message'] == 'error.mark_job.same_link'
 
         res = self.graph_query(
             str(self.normal_user.id),
@@ -222,7 +222,7 @@ mutation {
             str(self.icpper.id),
             self.create_job % (mark_issue, str(mark_size))
         )
-        assert res.json()['errors'][0]['message'] == 'THIS ISSUE HAD EXIST'
+        assert res.json()['errors'][0]['message'] == 'error.mark_job.same_link'
 
         responses.add(
             responses.GET,

@@ -27,6 +27,10 @@ class CyclesQueryArgs(BaseObjectArgs):
     filter: Optional[int]
 
 
+class DAOJobConfigQueryArgs(BaseObjectArgs):
+    dao_id: str
+
+
 class DAOsSortedEnum(Enum):
     number = 0
     following = 2
