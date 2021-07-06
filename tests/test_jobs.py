@@ -175,7 +175,12 @@ mutation {
         responses.add(
             responses.GET,
             "https://api.github.com/repos/mockdao/mockrepo",
-            json={"id": 222}
+            json={
+                "id": 222,
+                "owner": {
+                    "id": _get_github_user_id("mockdao")
+                }
+            }
         )
         responses.add(
             responses.GET,
@@ -242,7 +247,12 @@ mutation {
         responses.add(
             responses.GET,
             "https://api.github.com/repos/mockdao/mockrepo",
-            json={"id": 222}
+            json={
+                "id": 222,
+                "owner": {
+                    "id": _get_github_user_id("mockdao")
+                }
+            }
         )
         responses.add(
             responses.GET,
@@ -337,7 +347,12 @@ mutation {
         responses.add(
             responses.GET,
             "https://api.github.com/repos/mockdao/mockrepo",
-            json={'id': 222}
+            json={
+                'id': 222,
+                "owner": {
+                    "id": _get_github_user_id("mockdao")
+                }
+            }
         )
         responses.add(
             responses.GET,
@@ -407,7 +422,8 @@ mutation {
                 "id": 222,
                 "name": "mockrepo",
                 "owner": {
-                    "login": "mockdao"
+                    "login": "mockdao",
+                    "id": _get_github_user_id("mockdao")
                 }
             }
         }
@@ -435,6 +451,7 @@ mutation {
             body_text="111111",
             github_repo_owner="mocklogin1",
             github_repo_name="mockreponame",
+            github_repo_owner_id=_get_github_user_id('mocklogin1'),
             github_repo_id=1,
             github_issue_number=1,
             bot_comment_database_id=1,
@@ -447,6 +464,7 @@ mutation {
             body_text="222222",
             github_repo_owner="mocklogin2",
             github_repo_name="mockreponame",
+            github_repo_owner_id=_get_github_user_id('mocklogin2'),
             github_repo_id=1,
             github_issue_number=2,
             bot_comment_database_id=2,
@@ -458,6 +476,7 @@ mutation {
             title="1111111_pr",
             github_repo_owner="mocklogin1",
             github_repo_name="mockreponame",
+            github_repo_owner_id=_get_github_user_id('mocklogin1'),
             github_repo_id=1,
             github_pr_number=3
         ).save()
@@ -467,6 +486,7 @@ mutation {
             title="222222_pr",
             github_repo_owner="mocklogin2",
             github_repo_name="mockreponame",
+            github_repo_owner_id=_get_github_user_id('mocklogin2'),
             github_repo_id=1,
             github_pr_number=4
         ).save()

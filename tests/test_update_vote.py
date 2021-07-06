@@ -1,10 +1,18 @@
 import random
 import time
+import random
 
 from app.common.models.icpdao.cycle import Cycle, CycleVote
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job
 from tests.base import Base
+
+
+def _get_github_user_id(github_login):
+    random.seed(github_login)
+    github_user_id = int(random.random() * 10000)
+    random.seed()
+    return github_user_id
 
 
 class TestUpdateVote(Base):
@@ -30,6 +38,7 @@ mutation {
             size=random.randint(1, 10),
             github_repo_owner='mockdao',
             github_repo_name='mockrepo',
+            github_repo_owner_id=_get_github_user_id("mockdao"),
             github_repo_id=1,
             github_issue_number=1,
             bot_comment_database_id=1,

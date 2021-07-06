@@ -44,7 +44,7 @@ class GithubWebhooksApp:
     async def handler_pr(self, data, background):
         need_check_jobs = set()
         repo_owner = data['repository']['owner']['login']
-        repo_name = data['repository']['name']
+        repo_owner_id = data['repository']['owner']['id']
         repo_id = data['repository']['id']
         pr_title = data['pull_request']['title']
         if data.get('action') == 'closed' and data['pull_request']['merged'] is True:
@@ -53,8 +53,7 @@ class GithubWebhooksApp:
             merged_at = int(
                 merged_time.replace(tzinfo=datetime.timezone.utc).timestamp())
             JobPR.objects(
-                github_repo_owner=repo_owner,
-                github_repo_name=repo_name,
+                github_repo_owner_id=repo_owner_id,
                 github_repo_id=repo_id,
                 github_pr_number=data['pull_request']['number']
             ).update(
@@ -64,8 +63,7 @@ class GithubWebhooksApp:
                 merged_at=merged_at
             )
             job_ids = JobPR.objects(
-                github_repo_owner=repo_owner,
-                github_repo_name=repo_name,
+                github_repo_owner_id=repo_owner_id,
                 github_repo_id=repo_id,
                 github_pr_number=data['pull_request']['number']
             ).distinct('job_id')
