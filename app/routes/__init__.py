@@ -1,9 +1,8 @@
 from graphene import ObjectType, String, Field, Int
 
 from app.common.models.icpdao.dao import DAOJobConfig as DAOJobConfigModel
-from app.common.schema.icpdao import DAOJobConfigSchema
 from app.common.utils.route_helper import get_current_user_by_graphql
-from app.routes.config import UpdateDAOJobConfig
+from app.routes.config import UpdateDAOJobConfig, DAOJobConfig
 from app.routes.cycles import CycleQuery, CreateCycleVotePairTaskByOwner, \
     ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner, CreateCycleVoteResultPublishTaskByOwner
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus
@@ -11,7 +10,7 @@ from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob, UpdateJobVoteTypeByOwner, UpdateIcpperStatOwnerEi, DeleteJob
 from app.routes.mock import CreateMock
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
-    DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum
+    DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum, DAOJobConfigQueryArgs
 from app.routes.vote import UpdatePairVote, UpdateALLVote
 
 
@@ -33,7 +32,7 @@ class Query(ObjectType):
     )
 
     dao_job_config = Field(
-        DAOJobConfigSchema,
+        DAOJobConfig,
         dao_id=String(required=True)
     )
 
@@ -69,11 +68,7 @@ class Query(ObjectType):
 
     @staticmethod
     def resolve_dao_job_config(root, info, dao_id):
-        current_user = get_current_user_by_graphql(info)
-        if not current_user:
-            raise PermissionError('NOT LOGIN')
-        record = DAOJobConfigModel.objects(dao_id=dao_id).first()
-        return record
+        return DAOJobConfig(_args=DAOJobConfigQueryArgs(dao_id=dao_id))
 
     @staticmethod
     def resolve_dao(root, info, id=None, name=None):
