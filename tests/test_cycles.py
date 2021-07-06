@@ -1,5 +1,6 @@
 import time
 from decimal import Decimal
+import random
 
 from app.common.models.icpdao.job import Job, JobStatusEnum, JobPairTypeEnum
 from app.routes.schema import CycleVotePairTaskStatusEnum, CycleVoteResultStatTaskStatusEnum, \
@@ -10,6 +11,13 @@ from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType, VoteResultTypeAll, \
     VoteResultTypeAllResultType, CycleVotePairTask, CycleVotePairTaskStatus, CycleVoteResultStatTask, \
     CycleVoteResultStatTaskStatus, CycleVoteResultPublishTask, CycleVoteResultPublishTaskStatus
+
+
+def _get_github_user_id(github_login):
+    random.seed(github_login)
+    github_user_id = int(random.random() * 10000)
+    random.seed()
+    return github_user_id
 
 
 class TestCycles(Base):
@@ -956,6 +964,7 @@ mutation($ownerEi: Decimal){
             size=Decimal("1.0"),
             github_repo_owner="icpdao",
             github_repo_name="public",
+            github_repo_owner_id=_get_github_user_id('icpdao'),
             github_repo_id=1,
             github_issue_number=1,
             bot_comment_database_id=1,
@@ -973,6 +982,7 @@ mutation($ownerEi: Decimal){
             size=Decimal("1.1"),
             github_repo_owner="icpdao",
             github_repo_name="public",
+            github_repo_owner_id=_get_github_user_id('icpdao'),
             github_repo_id=2,
             github_issue_number=2,
             bot_comment_database_id=2,
@@ -990,6 +1000,7 @@ mutation($ownerEi: Decimal){
             size=Decimal("1.2"),
             github_repo_owner="icpdao",
             github_repo_name="public",
+            github_repo_owner_id=_get_github_user_id('icpdao'),
             github_repo_id=3,
             github_issue_number=3,
             bot_comment_database_id=3,
@@ -1084,6 +1095,7 @@ mutation($ownerEi: Decimal){
             size=Decimal("1.0"),
             github_repo_owner="icpdao",
             github_repo_name="public",
+            github_repo_owner_id=_get_github_user_id('icpdao'),
             github_repo_id=1,
             github_issue_number=1,
             bot_comment_database_id=1,
@@ -1101,6 +1113,7 @@ mutation($ownerEi: Decimal){
             size=Decimal("1.1"),
             github_repo_owner="icpdao",
             github_repo_name="public",
+            github_repo_owner_id=_get_github_user_id('icpdao'),
             github_repo_id=2,
             github_issue_number=2,
             bot_comment_database_id=2,
@@ -1118,6 +1131,7 @@ mutation($ownerEi: Decimal){
             size=Decimal("1.2"),
             github_repo_owner="icpdao",
             github_repo_name="public",
+            github_repo_owner_id=_get_github_user_id('icpdao'),
             github_repo_id=3,
             github_issue_number=3,
             bot_comment_database_id=3,
@@ -1467,6 +1481,7 @@ mutation($ownerEi: Decimal){
             size=Decimal("1.0"),
             github_repo_owner="icpdao",
             github_repo_name="public",
+            github_repo_owner_id=_get_github_user_id('icpdao'),
             github_repo_id=1,
             github_issue_number=1,
             bot_comment_database_id=1,
@@ -1559,6 +1574,7 @@ mutation($ownerEi: Decimal){
             size=Decimal("1.0"),
             github_repo_owner="icpdao",
             github_repo_name="public",
+            github_repo_owner_id=_get_github_user_id('icpdao'),
             github_repo_id=1,
             github_issue_number=1,
             bot_comment_database_id=1,
@@ -1576,6 +1592,7 @@ mutation($ownerEi: Decimal){
             size=Decimal("1.1"),
             github_repo_owner="icpdao",
             github_repo_name="public",
+            github_repo_owner_id=_get_github_user_id('icpdao'),
             github_repo_id=2,
             github_issue_number=2,
             bot_comment_database_id=2,
@@ -1593,6 +1610,7 @@ mutation($ownerEi: Decimal){
             size=Decimal("1.2"),
             github_repo_owner="icpdao",
             github_repo_name="public",
+            github_repo_owner_id=_get_github_user_id('icpdao'),
             github_repo_id=3,
             github_issue_number=3,
             bot_comment_database_id=3,
