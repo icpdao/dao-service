@@ -1,10 +1,12 @@
 import datetime
+import decimal
 import time
 
 import responses
 
 from app import webhooks_route
 from app.common.models.icpdao.dao import DAO
+from app.common.models.icpdao.job import Job, JobPR, JobPRComment
 from tests.base import Base
 
 
@@ -110,6 +112,14 @@ mutation {
         }
       }
     }
+  }
+}
+"""
+
+    delete_job = """
+mutation {
+  deleteJob(id: "%s") {
+    ok
   }
 }
 """
@@ -402,3 +412,88 @@ mutation {
             json=request_data
         )
         assert res.json()['success'] is True
+
+    def test_delete_job(self):
+        self.__class__.clear_db()
+        self.icpper = self.__class__.create_icpper_user(nickname='icpper', github_login='iccper')
+        self.icpper1 = self.__class__.create_icpper_user(nickname='icpper1', github_login='iccper1')
+        self.icpper2 = self.__class__.create_icpper_user(nickname='icpper2', github_login='iccper2')
+        dao_id = self.get_or_create_dao()
+        job1 = Job(
+            dao_id=dao_id,
+            user_id=str(self.icpper1.id),
+            title="111111",
+            body_text="111111",
+            github_repo_owner="mocklogin1",
+            github_repo_name="mockreponame",
+            github_repo_id=1,
+            github_issue_number=1,
+            bot_comment_database_id=1,
+            size=decimal.Decimal("1")
+        ).save()
+        job2 = Job(
+            dao_id=dao_id,
+            user_id=str(self.icpper2.id),
+            title="222222",
+            body_text="222222",
+            github_repo_owner="mocklogin2",
+            github_repo_name="mockreponame",
+            github_repo_id=1,
+            github_issue_number=2,
+            bot_comment_database_id=2,
+            size=decimal.Decimal("1")
+        ).save()
+        job_pr1 = JobPR(
+            job_id=str(job1.id),
+            user_id=str(self.icpper1.id),
+            title="1111111_pr",
+            github_repo_owner="mocklogin1",
+            github_repo_name="mockreponame",
+            github_repo_id=1,
+            github_pr_number=3
+        ).save()
+        job_pr2 = JobPR(
+            job_id=str(job2.id),
+            user_id=str(self.icpper2.id),
+            title="222222_pr",
+            github_repo_owner="mocklogin2",
+            github_repo_name="mockreponame",
+            github_repo_id=1,
+            github_pr_number=4
+        ).save()
+        job_pr_comment1 = JobPRComment(
+            github_repo_id=1,
+            github_pr_number=job_pr1.github_pr_number,
+            bot_comment_database_id=1
+        ).save()
+        job_pr_comment2 = JobPRComment(
+            github_repo_id=1,
+            github_pr_number=job_pr2.github_pr_number,
+            bot_comment_database_id=1
+        ).save()
+
+        res = self.graph_query(
+            str(self.icpper1.id),
+            self.delete_job % str(job1.id)
+        )
+
+        assert res.json()['data']['deleteJob']['ok'] is True
+        assert Job.objects.count() == 1
+        assert JobPR.objects.count() == 1
+        assert JobPRComment.objects.count() == 1
+        assert Job.objects(id=str(job1.id)).first() is None
+        assert JobPR.objects(id=str(job_pr1.id)).first() is None
+        assert JobPRComment.objects(id=str(job_pr_comment1.id)).first() is None
+
+        res = self.graph_query(
+            str(self.icpper1.id),
+            self.delete_job % str(job2.id)
+        )
+
+        assert res.json()['data']['deleteJob'] is None
+        assert Job.objects.count() == 1
+        assert JobPR.objects.count() == 1
+        assert JobPRComment.objects.count() == 1
+        assert Job.objects(id=str(job1.id)).first() is None
+        assert JobPR.objects(id=str(job_pr1.id)).first() is None
+        assert JobPRComment.objects(id=str(job_pr_comment1.id)).first() is None

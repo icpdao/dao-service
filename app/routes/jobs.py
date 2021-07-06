@@ -7,7 +7,7 @@ from graphene import ObjectType, List, Int, Float, String, Field, Mutation, Bool
 import settings
 from app.common.models.icpdao.cycle import CycleIcpperStat, Cycle
 from app.common.models.icpdao.github_app_token import GithubAppToken
-from app.common.models.icpdao.job import Job as JobModel, JobPR as JobPRModel
+from app.common.models.icpdao.job import Job as JobModel, JobPR as JobPRModel, JobStatusEnum, JobPRComment
 from app.common.models.icpdao.dao import DAO as DAOModel
 from app.common.models.icpdao.user import User
 
@@ -153,6 +153,38 @@ class UpdateJob(Mutation):
         prs = JobPRModel.objects(job_id=id).all()
 
         return UpdateJob(job=Job(node=job, prs=list(prs)))
+
+
+class DeleteJob(Mutation):
+    class Arguments:
+        id = String(required=True)
+
+    ok = Boolean()
+
+    def mutate(root, info, id):
+        current_user = get_current_user_by_graphql(info)
+        if not current_user:
+            raise PermissionError('NOT LOGIN')
+        job = JobModel.objects(id=id).first()
+        if not job:
+            raise FileNotFoundError('NOT JOB')
+        dao = DAOModel.objects(id=job.dao_id).first()
+        if not dao:
+            raise ValueError('NOT DAO')
+        if job.user_id != str(current_user.id):
+            raise ValueError('NOT ROLE')
+        if job.status != JobStatusEnum.AWAITING_MERGER.value:
+            raise ValueError('NOT SUPPORT')
+
+        prs = JobPRModel.objects(job_id=id).all()
+        for pr in prs:
+            JobPRComment.objects(
+                github_repo_id=pr.github_repo_id,
+                github_pr_number=pr.github_pr_number
+            ).delete()
+        JobPRModel.objects(job_id=id).delete()
+        job.delete()
+        return DeleteJob(ok=True)
 
 
 class UpdateJobVoteTypeByOwner(Mutation):
