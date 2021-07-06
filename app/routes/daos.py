@@ -260,7 +260,7 @@ class DAOGithubAppStatus(ObjectType):
 
         self.github_app_name = ICPDAO_GITHUB_APP_NAME
 
-        ugt = UserGithubToken.objects(github_login=current_user.github_login).first()
+        ugt = UserGithubToken.objects(github_user_id=current_user.github_user_id).first()
 
         dao = DAOModel.objects(name=name).first()
         self.is_exists = not not dao

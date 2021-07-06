@@ -60,7 +60,7 @@ class GithubWebhooksApp:
             ).update(
                 status=JobPRStatusEnum.MERGED.value,
                 title=pr_title,
-                merged_user_github_login=data['pull_request']['merged_by']['login'],
+                merged_user_github_user_id=data['pull_request']['merged_by']['id'],
                 merged_at=merged_at
             )
             job_ids = JobPR.objects(

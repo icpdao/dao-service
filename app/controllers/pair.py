@@ -38,20 +38,17 @@ def get_data_by_cycle(cycle):
 
     # 找到所有用户
     user_ids = set()
-    github_login_list = set()
+    github_user_id_list = set()
     for job in job_list:
         user_ids.add(job.user_id)
     for job_pr in job_pr_list:
         user_ids.add(job_pr.user_id)
-        github_login_list.add(job_pr.merged_user_github_login)
+        github_user_id_list.add(job_pr.merged_user_github_user_id)
 
     userid_2_user = {}
-    githublogin_2_user = {}
-
     for user in User.objects(
-            Q(id__in=list(user_ids)) | Q(github_login__in=list(github_login_list))):
+            Q(id__in=list(user_ids)) | Q(github_user_id__in=list(github_user_id_list))):
         userid_2_user[str(user.id)] = user
-        githublogin_2_user[str(user.github_login)] = user
 
     type_all_jobs = []
     type_pair_jobs = []
@@ -70,15 +67,15 @@ def get_data_by_cycle(cycle):
 
         # TODO LABLES
         contributer = EiUser(
-            id=user_id,
-            name=user.github_login,
+            id=str(user.id),
+            name=str(user.id),
             labels=[],
         )
 
         # TODO LABLES
         reviewer = EiUser(
-            id=job_pr.merged_user_github_login,
-            name=job_pr.merged_user_github_login,
+            id=job_pr.merged_user_github_user_id,
+            name=job_pr.merged_user_github_user_id,
             labels=[],
         )
 

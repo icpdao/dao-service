@@ -1,6 +1,7 @@
 import datetime
 import decimal
 import time
+import random
 
 import responses
 
@@ -8,6 +9,13 @@ from app import webhooks_route
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job, JobPR, JobPRComment
 from tests.base import Base
+
+
+def _get_github_user_id(github_login):
+    random.seed(github_login)
+    github_user_id = int(random.random() * 10000)
+    random.seed()
+    return github_user_id
 
 
 class TestJobs(Base):
@@ -172,7 +180,7 @@ mutation {
         responses.add(
             responses.GET,
             "https://api.github.com/repos/mockdao/mockrepo/issues/1",
-            json={"user": {"login": "mockicpper"}, "state": "open", "title": "xxx", "body": "xxx"}
+            json={"user": {"login": "mockicpper", "id": _get_github_user_id("mockicpper")}, "state": "open", "title": "xxx", "body": "xxx"}
         )
         responses.add(
             responses.POST,
@@ -214,7 +222,7 @@ mutation {
         responses.add(
             responses.GET,
             "https://api.github.com/repos/mockdao/mockrepo/issues/2",
-            json={"user": {"login": "xxx"}, "state": "open", "title": "xxx", "body": "xxx"}
+            json={"user": {"login": "xxx", "id": _get_github_user_id("xxx")}, "state": "open", "title": "xxx", "body": "xxx"}
         )
         mark_issue = "https://github.com/mockdao/mockrepo/issues/2"
         responses.add(
@@ -239,7 +247,7 @@ mutation {
         responses.add(
             responses.GET,
             "https://api.github.com/repos/mockdao/mockrepo/issues/3",
-            json={"user": {"login": "mockicpper"}, "state": "open", "title": "xxx", "body": "xxx"}
+            json={"user": {"login": "mockicpper", "id": _get_github_user_id("mockicpper")}, "state": "open", "title": "xxx", "body": "xxx"}
         )
         responses.add(
             responses.POST,
@@ -249,7 +257,7 @@ mutation {
         responses.add(
             responses.GET,
             "https://api.github.com/repos/mockdao/mockrepo/issues/4",
-            json={"user": {"login": "mockicpper"}, "state": "open", "title": "xxx", "body": "xxx"}
+            json={"user": {"login": "mockicpper", "id": _get_github_user_id("mockicpper")}, "state": "open", "title": "xxx", "body": "xxx"}
         )
         responses.add(
             responses.POST,
@@ -317,7 +325,7 @@ mutation {
             responses.GET,
             "https://api.github.com/repos/mockdao/mockrepo/pulls/10",
             json={
-                'user': {'login': "mockicpper"},
+                'user': {'login': "mockicpper", "id": _get_github_user_id("mockicpper")},
                 'id': 555,
                 'node_id': 'xxx',
                 'number': 10,
@@ -392,6 +400,7 @@ mutation {
                 "merged": True,
                 "merged_by": {
                     "login": "mockuser1",
+                    "id": _get_github_user_id("mockuser1")
                 },
             },
             "repository": {

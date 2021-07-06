@@ -31,9 +31,9 @@ def update_job_by_size(info, app_client: GithubAppClient, current_user, job, siz
                 return job
             raise PermissionError('JOB MERGED, USER ONLY CAN REDUCE SIZE')
         prs = JobPRModel.objects(
-            job_id=id, status=JobPRStatusEnum.MERGED.value
-        ).distinct('merged_user_github_login')
-        if current_user.github_login in prs:
+            job_id=str(job.id), status=JobPRStatusEnum.MERGED.value
+        ).distinct('merged_user_github_user_id')
+        if current_user.github_user_id in prs:
             if size > job.size:
                 job.size = size
                 job.save()
@@ -78,12 +78,12 @@ def add_job_pr(info, app_client: GithubAppClient, current_user, job, pr_link):
         if ret['closed_at'] and not ret['merged_at']:
             raise ValueError('PR ALREADY CLOSED')
         if ret['state'] == JobPRStatusEnum.MERGED.value and str(
-                current_user.github_login) != ret['merged_login']:
+                current_user.github_user_id) != ret['merged_user_github_user_id']:
             raise ValueError('ONLY MERGED LOGIN CAN OP MERGED PR')
         if ret['state'] == JobPRStatusEnum.AWAITING_MERGER.value:
-            if current_user.github_login not in ret[
-                'can_link_logins'] or job_user.github_login not in ret[
-                  'can_link_logins']:
+            if current_user.github_user_id not in ret[
+                'can_link_github_user_id_list'] or job_user.github_user_id not in ret[
+                  'can_link_github_user_id_list']:
                 raise ValueError('CURRENT USER OR JOB USER NOT IN PR')
         pr_record = JobPRModel(
             job_id=str(job.id),
@@ -94,7 +94,7 @@ def add_job_pr(info, app_client: GithubAppClient, current_user, job, pr_link):
             github_repo_id=repo['id'],
             github_pr_number=parse_info['github_pr_number'],
             status=ret['state'],
-            merged_user_github_login=ret['merged_login'],
+            merged_user_github_user_id=ret['merged_user_github_user_id'],
             merged_at=ret['merged_at'],
         )
         pr_record.save()
@@ -167,7 +167,7 @@ def create_job(info, issue_link, size):
         issue_info['parse']['github_issue_number'])
     if not success:
         raise ValueError('NOT GET ISSUE')
-    if issue['user']['login'] != current_user.github_login:
+    if issue['user']['id'] != current_user.github_user_id:
         raise ValueError('ONLY ISSUE USER CAN MARK THIS ISSUE')
     if issue['state'] != 'open':
         raise ValueError('ONLY OPEN ISSUE CAN MARK')
