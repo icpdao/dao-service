@@ -41,10 +41,10 @@ class UpdateDAOJobConfig(Mutation):
             setattr(record, field, value)
         if len(kwargs) > 0:
             record.update_at = int(time.time())
-        if float(f'{record.deadline_day}.{record.deadline_time}') < float(
-                f'{record.pair_begin_day}.{record.pair_begin_hour}') < float(
-            f'{record.pair_end_day}.{record.pair_end_hour}') < float(
-            f'{record.voting_begin_day}.{record.voting_begin_hour}') < float(
+        if float(f'{record.deadline_day}.{record.deadline_time}') <= float(
+                f'{record.pair_begin_day}.{record.pair_begin_hour}') <= float(
+            f'{record.pair_end_day}.{record.pair_end_hour}') <= float(
+            f'{record.voting_begin_day}.{record.voting_begin_hour}') <= float(
               f'{record.voting_end_day}.{record.voting_end_hour}'):
             record.save()
             return UpdateDAOJobConfig(ok=True)
