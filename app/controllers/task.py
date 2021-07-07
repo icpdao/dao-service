@@ -1,4 +1,5 @@
 import time
+import traceback
 from collections import defaultdict
 
 import settings
@@ -175,21 +176,29 @@ def sync_job_pr(app_client, job_pr, job_ids):
 
 
 def delete_issue_comment(dao_id, github_repo_owner, need_delete_bot_comment_info_list):
-    dao = DAO.objects(id=dao_id).first()
-    if not dao:
-        raise ValueError('NOT DAO')
+    try:
+        dao = DAO.objects(id=dao_id).first()
+        if not dao:
+            raise ValueError('NOT DAO')
 
-    app_token = GithubAppToken.get_token(
-        app_id=settings.ICPDAO_GITHUB_APP_ID,
-        app_private_key=settings.ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY,
-        github_owner_name=dao.github_owner_name,
-        github_owner_id=dao.github_owner_id
-    )
-    if app_token is None:
-        raise ValueError('NOT APP TOKEN')
-    app_client = GithubAppClient(app_token, github_repo_owner)
+        app_token = GithubAppToken.get_token(
+            app_id=settings.ICPDAO_GITHUB_APP_ID,
+            app_private_key=settings.ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY,
+            github_owner_name=dao.github_owner_name,
+            github_owner_id=dao.github_owner_id
+        )
+        if app_token is None:
+            raise ValueError('NOT APP TOKEN')
+        app_client = GithubAppClient(app_token, github_repo_owner)
 
-    for need_delete_bot_comment_info in need_delete_bot_comment_info_list:
-        repo_name = need_delete_bot_comment_info['repo_name']
-        comment_id = need_delete_bot_comment_info['comment_id']
-        app_client.delete_comment(repo_name, comment_id)
+        for need_delete_bot_comment_info in need_delete_bot_comment_info_list:
+            repo_name = need_delete_bot_comment_info['repo_name']
+            comment_id = need_delete_bot_comment_info['comment_id']
+            app_client.delete_comment(repo_name, comment_id)
+    except Exception as ex:
+        msg = traceback.format_exc()
+        print("need_delete_bot_comment_info_list", need_delete_bot_comment_info_list)
+        print("github_repo_owner", github_repo_owner)
+        print('exception log_exception' + str(ex))
+        print(msg)
+        raise ex
