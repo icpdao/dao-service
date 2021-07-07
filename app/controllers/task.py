@@ -196,7 +196,7 @@ def delete_issue_comment(dao_id, github_repo_owner, need_delete_bot_comment_info
             repo_name = need_delete_bot_comment_info['repo_name']
             comment_id = need_delete_bot_comment_info['comment_id']
             success, data = app_client.delete_comment(repo_name, comment_id)
-            print("delete_comment", repo_name, comment_id, success, data)
+            print("delete_comment", app_token, repo_name, comment_id, success, data)
         print("delete_issue_comment end")
     except Exception as ex:
         msg = traceback.format_exc()
