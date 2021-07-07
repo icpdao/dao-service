@@ -185,7 +185,7 @@ def delete_issue_comment(dao_id, github_repo_owner, need_delete_bot_comment_info
         app_token = GithubAppToken.get_token(
             app_id=settings.ICPDAO_GITHUB_APP_ID,
             app_private_key=settings.ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY,
-            github_owner_name=dao.github_owner_name,
+            github_owner_name=github_repo_owner,
             github_owner_id=dao.github_owner_id
         )
         if app_token is None:
