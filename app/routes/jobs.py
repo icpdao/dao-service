@@ -182,7 +182,7 @@ class DeleteJob(Mutation):
         need_delete_bot_comment_info_list = []
         github_repo_owner = job.github_repo_owner
         need_delete_bot_comment_info_list.append({
-            "repo_name": job.github_repo_owner,
+            "repo_name": job.github_repo_name,
             "comment_id": job.bot_comment_database_id
         })
         prs = JobPRModel.objects(job_id=id).all()
@@ -192,7 +192,7 @@ class DeleteJob(Mutation):
                 github_pr_number=pr.github_pr_number
             ):
                 need_delete_bot_comment_info_list.append({
-                    "repo_name": pr.github_repo_owner,
+                    "repo_name": pr.github_repo_name,
                     "comment_id": job_pr_comment.bot_comment_database_id
                 })
 
