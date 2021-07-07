@@ -183,6 +183,7 @@ def run_pair_task(task_id):
         cycle.update_at = int(time.time())
         cycle.save()
 
+        raise ValueError("tmp for test")
         task.status = CycleVotePairTaskStatus.SUCCESS.value
         task.update_at = int(time.time())
         task.save()
