@@ -24,7 +24,12 @@ def update_job_by_size(info, app_client: GithubAppClient, current_user, job, siz
             return job
         raise PermissionError('JOB NOT MERGED, ONLY USER CAN UPDATE SIZE')
     if job.status == JobStatusEnum.MERGED.value:
-        if str(current_user.id) == job.user_id:
+        prs = JobPRModel.objects(
+            job_id=str(job.id), status=JobPRStatusEnum.MERGED.value
+        ).distinct('merged_user_github_user_id')
+        is_merged_user = current_user.github_user_id in prs
+        is_job_owner = str(current_user.id) == job.user_id
+        if is_job_owner and not is_merged_user:
             if size < job.size:
                 job.size = size
                 job.save()
@@ -32,10 +37,7 @@ def update_job_by_size(info, app_client: GithubAppClient, current_user, job, siz
                     update_issue_comment, app_client=app_client, job=job)
                 return job
             raise PermissionError('error.update_job_size.only_reduce')
-        prs = JobPRModel.objects(
-            job_id=str(job.id), status=JobPRStatusEnum.MERGED.value
-        ).distinct('merged_user_github_user_id')
-        if current_user.github_user_id in prs:
+        if is_merged_user:
             if size > job.size:
                 job.size = size
                 job.save()
@@ -86,8 +88,8 @@ def add_job_pr(info, app_client: GithubAppClient, current_user, job, pr_link):
             raise ValueError('NOT GET PR')
         if ret['closed_at'] and not ret['merged_at']:
             raise ValueError('PR ALREADY CLOSED')
-        if ret['state'] == JobPRStatusEnum.MERGED.value and str(
-                current_user.github_user_id) != ret['merged_user_github_user_id']:
+        if ret['state'] == JobPRStatusEnum.MERGED.value and \
+                current_user.github_user_id != ret['merged_user_github_user_id']:
             raise ValueError('ONLY MERGED LOGIN CAN OP MERGED PR')
         if ret['state'] == JobPRStatusEnum.AWAITING_MERGER.value:
             if current_user.github_user_id not in ret[
