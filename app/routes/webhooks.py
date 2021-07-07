@@ -73,7 +73,8 @@ class GithubWebhooksApp:
             app_token = GithubAppToken.get_token(
                 app_id=settings.ICPDAO_GITHUB_APP_ID,
                 app_private_key=settings.ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY,
-                dao_name=repo_owner
+                github_owner_name=repo_owner,
+                github_owner_id=repo_owner_id,
             )
             if app_token is None:
                 raise ValueError('NOT APP TOKEN')

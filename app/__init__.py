@@ -1,11 +1,11 @@
 import os
-
+import traceback
 import graphene
 import settings
 
 from fastapi import FastAPI, Request
 from mangum import Mangum
-from fastapi.responses import PlainTextResponse, JSONResponse
+from fastapi.responses import JSONResponse
 
 from app.common.utils.base_graphql import BaseGraphQLApp
 from app.common.utils.route_helper import find_current_user, path_join
@@ -60,6 +60,10 @@ async def add_global_process(request: Request, call_next):
     except Exception as ex:
         if os.environ.get('IS_UNITEST') == 'yes':
             raise ex
+
+        msg = traceback.format_exc()
+        print('exception log_exception' + str(ex))
+        print(msg)
 
         return build_response(200, {
             "success": False,
