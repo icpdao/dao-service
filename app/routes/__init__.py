@@ -1,7 +1,5 @@
 from graphene import ObjectType, String, Field, Int
 
-from app.common.models.icpdao.dao import DAOJobConfig as DAOJobConfigModel
-from app.common.utils.route_helper import get_current_user_by_graphql
 from app.routes.config import UpdateDAOJobConfig, DAOJobConfig
 from app.routes.cycles import CycleQuery, CreateCycleVotePairTaskByOwner, \
     ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner, CreateCycleVoteResultPublishTaskByOwner
