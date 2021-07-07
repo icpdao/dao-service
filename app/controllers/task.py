@@ -177,6 +177,7 @@ def sync_job_pr(app_client, job_pr, job_ids):
 
 def delete_issue_comment(dao_id, github_repo_owner, need_delete_bot_comment_info_list):
     try:
+        print("delete_issue_comment begin", dao_id, github_repo_owner, need_delete_bot_comment_info_list)
         dao = DAO.objects(id=dao_id).first()
         if not dao:
             raise ValueError('NOT DAO')
@@ -194,7 +195,9 @@ def delete_issue_comment(dao_id, github_repo_owner, need_delete_bot_comment_info
         for need_delete_bot_comment_info in need_delete_bot_comment_info_list:
             repo_name = need_delete_bot_comment_info['repo_name']
             comment_id = need_delete_bot_comment_info['comment_id']
-            app_client.delete_comment(repo_name, comment_id)
+            success, data = app_client.delete_comment(repo_name, comment_id)
+            print("delete_comment", repo_name, comment_id, success, data)
+        print("delete_issue_comment end")
     except Exception as ex:
         msg = traceback.format_exc()
         print("need_delete_bot_comment_info_list", need_delete_bot_comment_info_list)
