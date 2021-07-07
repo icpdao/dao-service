@@ -66,13 +66,17 @@ class DeleteDaoMock:
 
 
 def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
+    if dao_name == 'icpdao-test-icp':
+        github_owner_id = 85466462
+    else:
+        github_owner_id = _get_github_user_id(dao_name)
     # DAO
     dao = DAO(
         name=dao_name,
         logo='https://s3.amazonaws.com/dev.files.icpdao/avatar/rc-upload-1623139230084-2',
         desc='{}_{}_{}'.format(dao_name, dao_name, dao_name),
         owner_id=str(owner_user.id),
-        github_owner_id=_get_github_user_id(dao_name),
+        github_owner_id=github_owner_id,
         github_owner_name=dao_name
     )
     dao.save()
