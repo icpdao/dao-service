@@ -1,12 +1,15 @@
 import time
 from collections import defaultdict
 
+import settings
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat
-from app.common.models.icpdao.dao import DAOJobConfig
+from app.common.models.icpdao.dao import DAOJobConfig, DAO
+from app.common.models.icpdao.github_app_token import GithubAppToken
 from app.common.models.icpdao.user import User as UserModel
 from app.common.models.icpdao.job import Job as JobModel, JobPR as JobPRModel, \
     JobStatusEnum, JobPRComment, JobPRStatusEnum
 from app.common.utils import get_next_time
+from app.common.utils.github_app import GithubAppClient
 from app.controllers.sync_cycle_icppper_stat import sync_one_cycle_icppper_stat
 
 
@@ -169,3 +172,24 @@ def sync_job_pr(app_client, job_pr, job_ids):
 
     sync_job_pr_comment(app_client, job_pr, job_ids)
     sync_job_issue_status_comment(app_client, job_ids)
+
+
+def delete_issue_comment(dao_id, github_repo_owner, need_delete_bot_comment_info_list):
+    dao = DAO.objects(id=dao_id).first()
+    if not dao:
+        raise ValueError('NOT DAO')
+
+    app_token = GithubAppToken.get_token(
+        app_id=settings.ICPDAO_GITHUB_APP_ID,
+        app_private_key=settings.ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY,
+        github_owner_name=dao.github_owner_name,
+        github_owner_id=dao.github_owner_id
+    )
+    if app_token is None:
+        raise ValueError('NOT APP TOKEN')
+    app_client = GithubAppClient(app_token, github_repo_owner)
+
+    for need_delete_bot_comment_info in need_delete_bot_comment_info_list:
+        repo_name = need_delete_bot_comment_info['repo_name']
+        comment_id = need_delete_bot_comment_info['comment_id']
+        app_client.delete_comment(repo_name, comment_id)

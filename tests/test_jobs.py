@@ -8,6 +8,7 @@ import responses
 from app import webhooks_route
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job, JobPR, JobPRComment
+from app.common.models.icpdao.user_github_token import UserGithubToken
 from tests.base import Base
 
 
@@ -147,6 +148,14 @@ mutation {
         )
         cls.icpper = cls.create_icpper_user("mockicpper", "mockicpper")
         cls.normal_user = cls.create_normal_user('mockuser1')
+        UserGithubToken(
+            github_user_id=cls.icpper.github_user_id,
+            github_login=cls.icpper.github_login,
+            access_token="xxxx",
+            expires_in=1,
+            refresh_token="xxx",
+            refresh_token_expires_in=1
+        ).save()
 
     def get_or_create_dao(self):
         dao = DAO.objects(name="mockdao").first()
@@ -174,11 +183,20 @@ mutation {
         dao_id = self.get_or_create_dao()
         responses.add(
             responses.GET,
+            "https://api.github.com/orgs/mockdao",
+            json={
+                'id': _get_github_user_id('mockdao')
+            }
+        )
+        responses.add(
+            responses.GET,
             "https://api.github.com/repos/mockdao/mockrepo",
             json={
                 "id": 222,
+                "name": "mockrepo",
                 "owner": {
-                    "id": _get_github_user_id("mockdao")
+                    "id": _get_github_user_id("mockdao"),
+                    "login": "mockdao"
                 }
             }
         )
@@ -246,11 +264,20 @@ mutation {
         dao_id = self.get_or_create_dao()
         responses.add(
             responses.GET,
+            "https://api.github.com/orgs/mockdao",
+            json={
+                'id': _get_github_user_id('mockdao')
+            }
+        )
+        responses.add(
+            responses.GET,
             "https://api.github.com/repos/mockdao/mockrepo",
             json={
                 "id": 222,
+                "name": "mockrepo",
                 "owner": {
-                    "id": _get_github_user_id("mockdao")
+                    "id": _get_github_user_id("mockdao"),
+                    "login": "mockdao"
                 }
             }
         )
@@ -333,6 +360,13 @@ mutation {
     def test_update_job_pr(self):
         responses.add(
             responses.GET,
+            "https://api.github.com/orgs/mockdao",
+            json={
+                'id': _get_github_user_id('mockdao')
+            }
+        )
+        responses.add(
+            responses.GET,
             "https://api.github.com/repos/mockdao/mockrepo/pulls/10",
             json={
                 'user': {'login': "mockicpper", "id": _get_github_user_id("mockicpper")},
@@ -349,8 +383,10 @@ mutation {
             "https://api.github.com/repos/mockdao/mockrepo",
             json={
                 'id': 222,
+                "name": "mockrepo",
                 "owner": {
-                    "id": _get_github_user_id("mockdao")
+                    "id": _get_github_user_id("mockdao"),
+                    "login": "mockdao"
                 }
             }
         )
@@ -378,6 +414,7 @@ mutation {
             str(self.icpper.id),
             self.query_jobs % ("mockdao", "0", str(int(time.time())))
         )
+        item_list = [item for item in Job.objects.all()]
         job_id = res.json()['data']['jobs']['job'][0]['node']['id']
         res = self.graph_query(
             str(self.icpper.id),
