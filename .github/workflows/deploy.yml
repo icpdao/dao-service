@@ -104,3 +104,50 @@ jobs:
         npm install -g serverless@2.35.0
         npm install
         sls deploy --stage dev
+
+  deploy_prod:
+    needs: [test]
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/feature/fushang318_deploy_prod'
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: checkout submodules
+      shell: bash
+      run: |
+        git submodule sync --recursive
+        git -c protocol.version=2 submodule update --init --force --recursive --depth=1
+
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+
+    - name: Use Node.js 14
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+
+    - name: Configure AWS credentials from Test account
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: deploy
+      env:
+        SERVERLESS_ACCESS_KEY: ${{secrets.SERVERLESS_ACCESS_KEY}}
+        ICPDAO_GITHUB_APP_ID: ${{secrets.PROD__ICPDAO_GITHUB_APP_ID}}
+        ICPDAO_GITHUB_APP_NAME: ${{secrets.PROD__ICPDAO_GITHUB_APP_NAME}}
+        ICPDAO_GITHUB_APP_CLIENT_ID: ${{secrets.PROD__ICPDAO_GITHUB_APP_CLIENT_ID}}
+        ICPDAO_GITHUB_APP_CLIENT_SECRET: ${{secrets.PROD__ICPDAO_GITHUB_APP_CLIENT_SECRET}}
+        API_GATEWAY_BASE_PATH: ${{secrets.PROD__API_GATEWAY_BASE_PATH}}
+        AWS_AUTHORIZER_ARN: ${{secrets.PROD__AWS_AUTHORIZER_ARN}}
+        ICPDAO_MONGODB_ICPDAO_HOST: ${{secrets.PROD__ICPDAO_MONGODB_ICPDAO_HOST}}
+        ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY: ${{secrets.PROD__ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY}}
+      run: |
+        npm install -g serverless@2.35.0
+        npm install
+        sls deploy --stage prod
