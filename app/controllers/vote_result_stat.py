@@ -255,10 +255,16 @@ def run_vote_result_stat_task(task_id):
                     vote_job_id_list.append(cycle_vote.left_job_id)
                     continue
 
-        # 统计 vote size
-        userid_2_vote_size = {}
+        # 找到 jobid_2_job
+        jobid_2_job = {}
         vote_job_list = list(Job.objects(id__in=vote_job_id_list))
         for job in vote_job_list:
+            jobid_2_job[str(job.id)] = job
+
+        # 统计 vote size
+        userid_2_vote_size = {}
+        for job_id in vote_job_id_list:
+            job = jobid_2_job[job_id]
             userid_2_vote_size.setdefault(job.user_id, decimal.Decimal('0'))
             userid_2_vote_size[job.user_id] += job.size
 
@@ -302,3 +308,15 @@ def run_vote_result_stat_task(task_id):
         task.update_at = time.time()
         task.save()
     print("run_vote_result_stat_task end")
+
+# import settings
+# from app.common.models.icpdao import init_mongo
+
+# init_mongo({
+#     'icpdao': {
+#         'host': settings.ICPDAO_MONGODB_ICPDAO_HOST,
+#         'alias': 'icpdao',
+#     }
+# })
+
+# run_vote_result_stat_task("xxx")
