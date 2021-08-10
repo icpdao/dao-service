@@ -44,6 +44,19 @@ class Base:
         return record
 
     @staticmethod
+    def create_pre_icpper_user(nickname='test_pre_icpper', github_login='test_pre_icpper_github_login'):
+        github_user_id = _get_github_user_id(github_login)
+        record = User(
+            nickname=nickname,
+            github_login=github_login,
+            github_user_id=github_user_id,
+            status=UserStatus.PRE_ICPPER.value,
+            avatar='test_avatar'
+        )
+        record.save()
+        return record
+
+    @staticmethod
     def create_normal_user(nickname='test_user'):
         github_user_id = _get_github_user_id(nickname)
         record = User(
