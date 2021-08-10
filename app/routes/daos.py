@@ -7,6 +7,8 @@ from graphene import ObjectType, String, Field, Int, \
 from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
 
+from app.common.models.icpdao.user import UserStatus
+from app.common.models.logic.user_helper import pre_icpper_to_icpper
 from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
 
 from app.routes.cycles import CyclesQuery
@@ -232,7 +234,9 @@ class CreateDAO(Mutation):
     @staticmethod
     def mutate(root, info: ResolveInfo, **kwargs):
         current_user = get_current_user_by_graphql(info)
-        check_is_icpper(current_user)
+        if not current_user or current_user.status == UserStatus.NORMAL.value:
+            raise PermissionError('NO ROLE')
+
         # TODO: mock test data
         if os.environ.get('IS_UNITEST') != 'yes':
             github_org_id, is_icp_app_installed, is_github_org_owner = get_github_owner_app_info(current_user, kwargs['name'])
@@ -253,6 +257,7 @@ class CreateDAO(Mutation):
             dao_id=str(record.id), time_zone=kwargs['time_zone'],
             time_zone_region=kwargs['time_zone_region']
         ).save()
+        pre_icpper_to_icpper(str(current_user.id))
         return CreateDAO(dao=record)
 
 
