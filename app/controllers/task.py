@@ -9,6 +9,7 @@ from app.common.models.icpdao.github_app_token import GithubAppToken
 from app.common.models.icpdao.user import User as UserModel
 from app.common.models.icpdao.job import Job as JobModel, JobPR as JobPRModel, \
     JobStatusEnum, JobPRComment, JobPRStatusEnum
+from app.common.models.logic.user_helper import pre_icpper_to_icpper
 from app.common.utils import get_next_time
 from app.common.utils.github_app import GithubAppClient
 from app.controllers.sync_cycle_icppper_stat import sync_one_cycle_icppper_stat
@@ -110,6 +111,7 @@ def sync_job_issue_status_comment(app_client, job_ids):
                     job.cycle_id = str(link_cycle.id)
                 job.save()
                 need_update_comment_jobs.append(job)
+                pre_icpper_to_icpper(job.user_id)
         else:
             if not job.cycle_id:
                 raise ValueError("NOT AWAITING MERGED JOB NOT CYCLE")

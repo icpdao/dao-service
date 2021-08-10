@@ -146,8 +146,8 @@ def create_job(info, issue_link, size):
     current_user = get_current_user_by_graphql(info)
     if not current_user:
         raise PermissionError('NOT LOGIN')
-    if current_user.status != UserStatus.ICPPER.value:
-        raise PermissionError('ONLY ICPPER CAN MARK JOB')
+    if current_user.status == UserStatus.NORMAL.value:
+        raise PermissionError('ONLY PRE-ICPPER AND ICPPER CAN MARK JOB')
 
     issue_info = parse_issue(issue_link)
     if issue_info is False:
