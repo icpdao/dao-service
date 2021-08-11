@@ -138,7 +138,7 @@ mutation {
         assert ret.status_code == 200
 
     def test_query_token_config(self):
-        ret = self.graph_query(self.icpper.id, self.create_dao % 'test_dao_2')
+        ret = self.graph_query(self.icpper.id, self.create_dao % 'test_dao_3')
         dao_id = ret.json()['data']['createDao']['dao']['id']
         ret = self.graph_query(
             self.user_2.id,
