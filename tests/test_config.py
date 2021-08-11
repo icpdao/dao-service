@@ -55,6 +55,14 @@ query {
 }  
 """
 
+    query_token_config = """
+query {
+  daoTokenConfig(daoId: "%s") {
+    ethDaoId
+  }
+}  
+"""
+
     update_job_config = """
 mutation {
   updateDaoJobConfig(daoId: "%s", %s) {
@@ -128,3 +136,30 @@ mutation {
             )
         )
         assert ret.status_code == 200
+
+    def test_query_token_config(self):
+        ret = self.graph_query(self.icpper.id, self.create_dao % 'test_dao_2')
+        dao_id = ret.json()['data']['createDao']['dao']['id']
+        ret = self.graph_query(
+            self.user_2.id,
+            self.query_token_config % dao_id
+        )
+        assert ret.status_code == 400
+        data = ret.json()
+        assert data['errors'][0]['message'] == 'NOT RIGHT OWNER ACCESS'
+
+        ret = self.graph_query(
+            self.icpper.id,
+            self.query_token_config % dao_id
+        )
+        assert ret.status_code == 200
+        data = ret.json()
+        edi = data['data']['daoTokenConfig']['ethDaoId']
+        assert edi != ''
+        for i in range(10):
+            ret = self.graph_query(
+                self.icpper.id,
+                self.query_token_config % dao_id
+            )
+            assert edi == ret.json()['data']['daoTokenConfig']['ethDaoId']
+
