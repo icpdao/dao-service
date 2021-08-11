@@ -53,7 +53,7 @@ class Query(ObjectType):
         sorted_type=SortedTypeEnum(),
         first=Int(default_value=20),
         offset=Int(default_value=0),
-        user_name=String(),
+        user_id=String(),
     )
 
     @staticmethod

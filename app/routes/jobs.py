@@ -41,18 +41,18 @@ class Jobs(ObjectType):
 
     def get_query_job_list(self, info, dao_name=None, begin_time=None,
                            end_time=None, sorted=None, sorted_type=None,
-                           first=20, offset=0, user_name=None):
+                           first=20, offset=0, user_id=None):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
             raise PermissionError('NOT LOGIN')
-        user_id = str(current_user.id)
-        if user_name is not None:
-            user = User.objects(github_login=user_name).first()
+        query_user_id = str(current_user.id)
+        if user_id is not None:
+            user = User.objects(id=user_id).first()
             if not user:
-                raise ValueError("NOT FIND QUERY USER NAME")
-            user_id = str(user.id)
+                raise ValueError("NOT FIND QUERY USER ID")
+            query_user_id = str(user.id)
 
-        _filter = {'user_id': user_id}
+        _filter = {'user_id': query_user_id}
         if dao_name:
             dao = DAOModel.objects(name=dao_name).first()
             if dao:
