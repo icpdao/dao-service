@@ -20,7 +20,8 @@ class Query(ObjectType):
         sorted_type=DAOsSortedTypeEnum(),
         search=String(),
         first=Int(default_value=20),
-        offset=Int(default_value=0)
+        offset=Int(default_value=0),
+        user_name=String()
     )
 
     dao = Field(
@@ -53,7 +54,7 @@ class Query(ObjectType):
         sorted_type=SortedTypeEnum(),
         first=Int(default_value=20),
         offset=Int(default_value=0),
-        user_id=String(),
+        user_name=String(),
     )
 
     @staticmethod
