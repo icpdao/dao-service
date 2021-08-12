@@ -73,7 +73,7 @@ query {
 
     query_other_user_jobs = """
     query {
-      jobs(daoName: "%s", beginTime: %s, endTime: %s, sorted: size, sortedType: desc, userId: "%s") {
+      jobs(daoName: "%s", beginTime: %s, endTime: %s, sorted: size, sortedType: desc, userName: "%s") {
         job {
           ... on Job {
             node {
@@ -475,7 +475,7 @@ mutation {
 
         res = self.graph_query(
             str(self.normal_user.id),
-            self.query_other_user_jobs % ("mockdao", "0", str(int(time.time())), self.icpper.id)
+            self.query_other_user_jobs % ("mockdao", "0", str(int(time.time())), self.icpper.github_login)
         )
         assert len(res.json()['data']['jobs']['job']) == 3
         assert res.json()['data']['jobs']['stat']['size'] == 2.3 + 4.3 + 5.3
