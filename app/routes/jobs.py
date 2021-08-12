@@ -45,14 +45,14 @@ class Jobs(ObjectType):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
             raise PermissionError('NOT LOGIN')
-        user_id = str(current_user.id)
+        query_user_id = str(current_user.id)
         if user_name is not None:
             user = User.objects(github_login=user_name).first()
             if not user:
                 raise ValueError("NOT FIND QUERY USER NAME")
-            user_id = str(user.id)
+            query_user_id = str(user.id)
 
-        _filter = {'user_id': user_id}
+        _filter = {'user_id': query_user_id}
         if dao_name:
             dao = DAOModel.objects(name=dao_name).first()
             if dao:

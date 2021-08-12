@@ -106,19 +106,19 @@ def get_predict_cycle(dao_id, begin_at):
     config = DAOJobConfigModel.objects(dao_id=dao_id).first()
     end_at = get_next_time(
         config.time_zone, int(time.time()),
-        config.deadline_day, config.deadline_time)
+        config.deadline_day, config.deadline_time, False)
     pair_begin_at = get_next_time(
         config.time_zone, end_at,
-        config.pair_begin_day, config.pair_begin_hour)
+        config.pair_begin_day, config.pair_begin_hour, True)
     pair_end_at = get_next_time(
         config.time_zone, pair_begin_at,
-        config.pair_end_day, config.pair_end_hour)
+        config.pair_end_day, config.pair_end_hour, False)
     vote_begin_at = get_next_time(
         config.time_zone, pair_end_at,
-        config.voting_begin_day, config.voting_begin_hour)
+        config.voting_begin_day, config.voting_begin_hour, True)
     vote_end_at = get_next_time(
         config.time_zone, vote_begin_at,
-        config.voting_end_day, config.voting_end_hour)
+        config.voting_end_day, config.voting_end_hour, False)
 
     return DAOJobThisCycle(
         time_zone=config.time_zone,
