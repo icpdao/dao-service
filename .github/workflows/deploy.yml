@@ -54,8 +54,7 @@ jobs:
         ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY: ${{secrets.DEV__ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY}}
       run: |
         npm install
-        pip install -r requirements.txt
-        pip install pytest
+        pip install -r requirements_dev.txt
         pytest tests
 
   deploy_dev:

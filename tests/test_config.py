@@ -1,7 +1,10 @@
 import os
+import time
 
+from app.common.models.icpdao.cycle import Cycle
 from tests.base import Base
 from unittest import TestCase
+from freezegun import freeze_time
 
 TESTS_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 
@@ -9,7 +12,7 @@ TESTS_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 class TestJobConfig(Base):
     create_dao = """
 mutation {
-  createDao( name: "%s", desc: "test_dao_1", logo:"test_dao_1", timeZone: 8, timeZoneRegion: "Asia/Shanghai") {
+  createDao( name: "%s", desc: "test_dao_1", logo:"test_dao_1", timeZone: 480, timeZoneRegion: "Asia/Shanghai") {
     dao {
       id
       name
@@ -51,6 +54,35 @@ query {
       voteBeginAt
       voteEndAt
     }
+    existedLastCycle {
+      timeZone
+      beginAt
+      endAt
+      pairBeginAt
+      pairEndAt
+      voteBeginAt
+      voteEndAt
+    }
+    
+    previewNextCycle(%s) {
+      timeZone
+      beginAt
+      endAt
+      pairBeginAt
+      pairEndAt
+      voteBeginAt
+      voteEndAt
+    }
+    
+    getNextCycle {
+      timeZone
+      beginAt
+      endAt
+      pairBeginAt
+      pairEndAt
+      voteBeginAt
+      voteEndAt    
+    }
   }
 }  
 """
@@ -71,23 +103,67 @@ mutation {
         cls.user_2 = cls.create_normal_user('test_user_2')
         cls.user_3 = cls.create_normal_user('test_user_3')
 
+    def _get_preview_next_cycle(self):
+        return "timeZone: 480, deadlineDay: 10, deadlineTime: 0, pairBeginDay: 10, pairBeginHour: 0, pairEndDay: 12, pairEndHour: 0, votingBeginDay: 12, votingBeginHour: 0, votingEndDay: 14, votingEndHour: 0"
+
     def test_query_job_config(self):
+        with freeze_time("2012-01-12 12:00:01", tz_offset=8):
+            ret = self.graph_query(self.icpper.id, self.create_dao % 'test_dao_1')
+            dao_id = ret.json()['data']['createDao']['dao']['id']
 
-        ret = self.graph_query(self.icpper.id, self.create_dao % 'test_dao_1')
-        dao_id = ret.json()['data']['createDao']['dao']['id']
+            ret = self.graph_query(self.user_2.id, self.query_job_config % (dao_id, self._get_preview_next_cycle()))
+            # if normal user can't read dao job config,
+            # this status_code should be 400
+            assert ret.status_code == 200
 
-        ret = self.graph_query(self.user_2.id, self.query_job_config % dao_id)
-        # if normal user can't read dao job config,
-        # this status_code should be 400
-        assert ret.status_code == 200
+            ret2 = self.graph_query(self.icpper.id, self.query_job_config % (dao_id, self._get_preview_next_cycle()))
+            assert ret2.status_code == 200
+            TestCase().assertDictEqual(ret.json()['data']['daoJobConfig']['datum'], ret2.json()['data']['daoJobConfig']['datum'])
+            assert ret.json()['data']['daoJobConfig']['datum']['timeZone'] == 480
+            assert ret.json()['data']['daoJobConfig']['datum']['daoId'] == dao_id
+            assert ret.json()['data']['daoJobConfig']['datum']['deadlineDay'] == 1
+            assert ret.json()['data']['daoJobConfig']['datum']['deadlineTime'] == 12
 
-        ret2 = self.graph_query(self.icpper.id, self.query_job_config % dao_id)
-        assert ret2.status_code == 200
-        TestCase().assertDictEqual(ret.json()['data']['daoJobConfig']['datum'], ret2.json()['data']['daoJobConfig']['datum'])
-        assert ret.json()['data']['daoJobConfig']['datum']['timeZone'] == 8
-        assert ret.json()['data']['daoJobConfig']['datum']['daoId'] == dao_id
-        assert ret.json()['data']['daoJobConfig']['datum']['deadlineDay'] == 1
-        assert ret.json()['data']['daoJobConfig']['datum']['deadlineTime'] == 12
+            assert ret.json()['data']['daoJobConfig']['existedLastCycle'] is None
+
+            assert ret.json()['data']['daoJobConfig']['previewNextCycle']['timeZone'] == 480
+            assert ret.json()['data']['daoJobConfig']['getNextCycle']['timeZone'] == 480
+
+            assert ret.json()['data']['daoJobConfig']['previewNextCycle']['beginAt'] == 1326369601
+            assert ret.json()['data']['daoJobConfig']['previewNextCycle']['endAt'] == 1328803200
+
+            assert ret.json()['data']['daoJobConfig']['getNextCycle']['beginAt'] == 1326369601
+            assert ret.json()['data']['daoJobConfig']['getNextCycle']['endAt'] == 1328068800
+
+            Cycle(
+                dao_id=dao_id,
+                time_zone=ret.json()['data']['daoJobConfig']['getNextCycle']['timeZone'],
+                begin_at=ret.json()['data']['daoJobConfig']['getNextCycle']['beginAt'],
+                end_at=ret.json()['data']['daoJobConfig']['getNextCycle']['endAt'],
+                pair_begin_at=ret.json()['data']['daoJobConfig']['getNextCycle']['pairBeginAt'],
+                pair_end_at=ret.json()['data']['daoJobConfig']['getNextCycle']['pairEndAt'],
+                vote_begin_at=ret.json()['data']['daoJobConfig']['getNextCycle']['voteBeginAt'],
+                vote_end_at=ret.json()['data']['daoJobConfig']['getNextCycle']['voteEndAt']
+            ).save()
+
+            ret = self.graph_query(self.icpper.id, self.query_job_config % (dao_id, self._get_preview_next_cycle()))
+            assert ret.status_code == 200
+            assert ret.json()['data']['daoJobConfig']['datum']['timeZone'] == 480
+            assert ret.json()['data']['daoJobConfig']['datum']['daoId'] == dao_id
+            assert ret.json()['data']['daoJobConfig']['datum']['deadlineDay'] == 1
+            assert ret.json()['data']['daoJobConfig']['datum']['deadlineTime'] == 12
+
+            assert ret.json()['data']['daoJobConfig']['existedLastCycle']['timeZone'] == 480
+            assert ret.json()['data']['daoJobConfig']['existedLastCycle']['endAt'] == 1328068800
+
+            assert ret.json()['data']['daoJobConfig']['previewNextCycle']['timeZone'] == 480
+            assert ret.json()['data']['daoJobConfig']['getNextCycle']['timeZone'] == 480
+
+            assert ret.json()['data']['daoJobConfig']['previewNextCycle']['beginAt'] == 1328068800
+            assert ret.json()['data']['daoJobConfig']['previewNextCycle']['endAt'] == 1328803200
+
+            assert ret.json()['data']['daoJobConfig']['getNextCycle']['beginAt'] == 1328068800
+            assert ret.json()['data']['daoJobConfig']['getNextCycle']['endAt'] == 1330574400
 
     def test_update_job_config(self):
         ret = self.graph_query(self.icpper.id, self.create_dao % 'test_dao_2')
