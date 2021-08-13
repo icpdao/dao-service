@@ -63,6 +63,15 @@ class DAOJobThisCycle(ObjectType):
     vote_end_at = Int()
 
 
+class DAOJobCycle(ObjectType):
+    time_zone = Int()
+    begin_at = Int()
+    end_at = Int()
+    pair_begin_at = Int()
+    pair_end_at = Int()
+    vote_begin_at = Int()
+    vote_end_at = Int()
+
 class DAOTokenConfig(BaseObjectType):
     eth_dao_id = String()
 
@@ -83,6 +92,22 @@ class DAOTokenConfig(BaseObjectType):
 class DAOJobConfig(BaseObjectType):
     datum = Field(DAOJobConfigSchema)
     this_cycle = Field(DAOJobThisCycle)
+    existed_last_cycle = Field(DAOJobCycle)
+    preview_next_cycle = Field(
+        DAOJobCycle,
+        time_zone=Int(),
+        deadline_day=Int(),
+        deadline_time=Int(),
+        pair_begin_day=Int(),
+        pair_begin_hour=Int(),
+        pair_end_day=Int(),
+        pair_end_hour=Int(),
+        voting_begin_day=Int(),
+        voting_begin_hour=Int(),
+        voting_end_day=Int(),
+        voting_end_hour=Int()
+    )
+    get_next_cycle = Field(DAOJobCycle)
 
     def resolve_datum(self, info):
         current_user = get_current_user_by_graphql(info)
@@ -119,6 +144,100 @@ class DAOJobConfig(BaseObjectType):
             begin_at = newest_cycle.end_at
             return get_predict_cycle(self._args.dao_id, begin_at)
         raise ValueError('NOT MATCH CYCLE')
+
+    def resolve_existed_last_cycle(self, info):
+        last_cycle = Cycle.objects(
+            dao_id=self._args.dao_id
+        ).order_by("-begin_at").first()
+
+        if last_cycle:
+            return DAOJobCycle(
+                time_zone=last_cycle.time_zone,
+                begin_at=last_cycle.begin_at,
+                end_at=last_cycle.end_at,
+                pair_begin_at=last_cycle.pair_begin_at,
+                pair_end_at=last_cycle.pair_end_at,
+                vote_begin_at=last_cycle.vote_begin_at,
+                vote_end_at=last_cycle.vote_end_at,
+            )
+        else:
+            return None
+
+    def resolve_preview_next_cycle(
+        self,
+        info,
+        time_zone=None,
+        deadline_day=None,
+        deadline_time=None,
+        pair_begin_day=None,
+        pair_begin_hour=None,
+        pair_end_day=None,
+        pair_end_hour=None,
+        voting_begin_day=None,
+        voting_begin_hour=None,
+        voting_end_day=None,
+        voting_end_hour=None
+    ):
+        if time_zone is None or \
+            deadline_day is None or deadline_time is None or \
+            pair_begin_day is None or pair_begin_hour is None or \
+            pair_end_day is None or pair_end_hour is None or \
+            voting_begin_day is None or voting_begin_hour is None or \
+            voting_end_day is None or voting_end_hour is None:
+            raise ValueError('PARAMS INVLID')
+
+        return _get_next_cycle(
+            self._args.dao_id, time_zone,
+            deadline_day, deadline_time,
+            pair_begin_day, pair_begin_hour, pair_end_day, pair_end_hour,
+            voting_begin_day, voting_begin_hour, voting_end_day, voting_end_hour
+        )
+
+    def resolve_get_next_cycle(self, info):
+        config = DAOJobConfigModel.objects(dao_id=self._args.dao_id).first()
+        return _get_next_cycle(
+            self._args.dao_id, config.time_zone,
+            config.deadline_day, config.deadline_time,
+            config.pair_begin_day, config.pair_begin_hour, config.pair_end_day, config.pair_end_hour,
+            config.voting_begin_day, config.voting_begin_hour, config.voting_end_day, config.voting_end_hour
+        )
+
+
+def _get_next_cycle(
+    dao_id, time_zone,
+    deadline_day, deadline_time,
+    pair_begin_day, pair_begin_hour, pair_end_day, pair_end_hour,
+    voting_begin_day, voting_begin_hour, voting_end_day, voting_end_hour
+):
+    begin_at = int(time.time())
+
+    last_cycle = Cycle.objects(
+        dao_id=dao_id
+    ).order_by("-begin_at").first()
+    if last_cycle:
+        begin_at = last_cycle.end_at
+
+    end_at = get_next_time(
+        time_zone, begin_at,
+        deadline_day, deadline_time, False)
+    pair_begin_at = get_next_time(
+        time_zone, end_at,
+        pair_begin_day, pair_begin_hour, True)
+    pair_end_at = get_next_time(
+        time_zone, pair_begin_at,
+        pair_end_day, pair_end_hour, False)
+    vote_begin_at = get_next_time(
+        time_zone, pair_end_at,
+        voting_begin_day, voting_begin_hour, True)
+    vote_end_at = get_next_time(
+        time_zone, vote_begin_at,
+        voting_end_day, voting_end_hour, False)
+
+    return DAOJobThisCycle(
+        time_zone=time_zone,
+        begin_at=begin_at, end_at=end_at,
+        pair_begin_at=pair_begin_at, pair_end_at=pair_end_at,
+        vote_begin_at=vote_begin_at, vote_end_at=vote_end_at)
 
 
 def get_predict_cycle(dao_id, begin_at):
