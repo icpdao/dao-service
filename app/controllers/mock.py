@@ -704,7 +704,7 @@ def _create_job(dao, cycle, user, repo_name, repo_id, start_number, pair_type):
     job = Job(
         dao_id=str(dao.id),
         user_id=str(user.id),
-        title="{}:{}:{}:1".format(dao.name, "not_pair_cycle", user.github_login),
+        title="{}:{}:{}:{}".format(dao.name, "not_pair_cycle", user.github_login, start_number),
         body_text="xxxxx",
         size=decimal.Decimal('1.0'),
         github_repo_owner=dao.name,
@@ -940,7 +940,7 @@ def create_in_vote_time_cycle_data(owner_user, icpper_user, dao_name):
             cycle_id=str(cycle.id),
             left_job_id=str(left_job.id),
             right_job_id=str(right_job.id),
-            vote_type=CycleVoteType.ALL.value,
+            vote_type=CycleVoteType.PAIR.value,
             voter_id=str(owner_user.id)
         ).save()
 
