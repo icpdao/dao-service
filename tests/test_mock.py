@@ -41,7 +41,7 @@ mutation{
         self.get_cycle_vote_list_is_myself = """
         query{
             cycle(id: "%s"){
-                votes(isMyself: true){
+                votes(isMyself: true, first: %s, offset: 0){
                     nodes{
                         datum{
                             id
@@ -55,7 +55,7 @@ mutation{
         """
 
         res = self.graph_query(
-            self.icpper1.id, self.get_cycle_vote_list_is_myself % str(vote_cycle.id)
+            self.icpper1.id, self.get_cycle_vote_list_is_myself % (str(vote_cycle.id), 30)
         )
         votes_list = res.json()['data']['cycle']['votes']['nodes']
         vote_id_list = []
@@ -96,7 +96,7 @@ mutation{
                 assert data['data']['updatePairVote']['ok'] is True
 
         res = self.graph_query(
-            self.icpper1.id, self.get_cycle_vote_list_is_myself % str(vote_cycle.id)
+            self.icpper1.id, self.get_cycle_vote_list_is_myself % (str(vote_cycle.id), 20)
         )
         votes_list = res.json()['data']['cycle']['votes']['nodes']
         vote_id_list = []
