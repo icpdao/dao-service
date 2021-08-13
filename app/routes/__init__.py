@@ -1,6 +1,6 @@
 from graphene import ObjectType, String, Field, Int
 
-from app.routes.config import UpdateDAOJobConfig, DAOJobConfig
+from app.routes.config import UpdateDAOJobConfig, DAOJobConfig, DAOTokenConfig
 from app.routes.cycles import CycleQuery, CreateCycleVotePairTaskByOwner, \
     ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner, CreateCycleVoteResultPublishTaskByOwner
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus
@@ -32,6 +32,11 @@ class Query(ObjectType):
 
     dao_job_config = Field(
         DAOJobConfig,
+        dao_id=String(required=True)
+    )
+
+    dao_token_config = Field(
+        DAOTokenConfig,
         dao_id=String(required=True)
     )
 
@@ -68,6 +73,10 @@ class Query(ObjectType):
     @staticmethod
     def resolve_dao_job_config(root, info, dao_id):
         return DAOJobConfig(_args=DAOJobConfigQueryArgs(dao_id=dao_id))
+
+    @staticmethod
+    def resolve_dao_token_config(root, info, dao_id):
+        return DAOTokenConfig(_args=DAOJobConfigQueryArgs(dao_id=dao_id))
 
     @staticmethod
     def resolve_dao(root, info, id=None, name=None):
