@@ -10,6 +10,7 @@ from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, Cy
     CycleVoteResultPublishTaskStatus
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job, JobStatusEnum
+from app.common.models.icpdao.user import User
 from app.common.schema import BaseObjectType
 from app.common.schema.icpdao import CycleSchema, CycleIcpperStatSchema, UserSchema, JobSchema, CycleVoteSchema
 from app.common.utils.route_helper import get_custom_attr_by_graphql, set_custom_attr_by_graphql, \
@@ -197,6 +198,86 @@ class JobsQuery(ObjectType):
         set_custom_attr_by_graphql(info, 'user_loader', UserLoader())
 
         return [JobQuery(datum=item) for item in query.limit(self.first).skip(self.offset)]
+
+
+class UserIcpperStatsQuery(ObjectType):
+    nodes = List(IcpperStatQuery)
+    total = Int()
+
+    @property
+    def dao_name(self):
+        return getattr(self, '_dao_name')
+
+    @dao_name.setter
+    def dao_name(self, dao_name):
+        setattr(self, '_dao_name', dao_name)
+
+    @property
+    def user_name(self):
+        return getattr(self, '_user_name')
+
+    @user_name.setter
+    def user_name(self, user_name):
+        setattr(self, '_user_name', user_name)
+
+    @property
+    def first(self):
+        return getattr(self, '_first')
+
+    @first.setter
+    def first(self, first):
+        setattr(self, '_first', first)
+
+    @property
+    def offset(self):
+        return getattr(self, '_offset')
+
+    @offset.setter
+    def offset(self, offset):
+        setattr(self, '_offset', offset)
+
+    def _get_info_from_db(self):
+        _info = getattr(self, '_get_info_from_db_cache', None)
+        if _info:
+            return _info
+        else:
+            dao = DAO.objects(github_owner_name=self.dao_name).first()
+            user = User.objects(github_login=self.user_name).first()
+            un_show_cycle_list = Cycle.objects(dao_id=str(dao.id), vote_result_published_at__exists=False)
+            un_showw_cycle_id_list = []
+            for cycle in un_show_cycle_list:
+                un_showw_cycle_id_list.append(str(cycle.id))
+            _info = {
+                "dao": dao,
+                "user": user,
+                "un_showw_cycle_id_list": un_showw_cycle_id_list
+            }
+            setattr(self, '_get_info_from_db_cache', _info)
+            return _info
+
+    def resolve_total(self, info):
+        _db_info = self._get_info_from_db()
+        return CycleIcpperStat.objects(
+            dao_id=str(_db_info["dao"].id),
+            user_id=str(_db_info["user"].id),
+            cycle_id__nin=_db_info["un_showw_cycle_id_list"]
+        ).count()
+
+    def resolve_nodes(self, info):
+        _db_info = self._get_info_from_db()
+        dao = _db_info["dao"]
+        user = _db_info["user"]
+        un_showw_cycle_id_list = _db_info["un_showw_cycle_id_list"]
+        query = CycleIcpperStat.objects(
+            dao_id=str(dao.id),
+            user_id=str(user.id),
+            cycle_id__nin=un_showw_cycle_id_list
+        ).order_by("-create_at")
+
+        set_custom_attr_by_graphql(info, 'dao_owner_id', dao.owner_id)
+        set_custom_attr_by_graphql(info, 'user_loader', UserLoader())
+
+        return [IcpperStatQuery(datum=item) for item in query.limit(self.first).skip(self.offset)]
 
 
 class JobItemQuery(ObjectType):
