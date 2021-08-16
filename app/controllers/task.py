@@ -95,11 +95,14 @@ def sync_job_issue_status_comment(app_client, job_ids):
                     merged_at = merged_at_list[-1]
                     newest_cycle = Cycle.objects(dao_id=job.dao_id).order_by("-begin_at").first()
                     if not newest_cycle:
-                        begin_at = merged_at
+                        # dao first cycle begin_at 1970 1 1
+                        begin_at = 0
                         link_cycle = create_cycle_by_params(job.dao_id, begin_at)
                     elif newest_cycle and newest_cycle.begin_at <= merged_at and merged_at < newest_cycle.end_at:
+                        # current job in newest_cycle range
                         link_cycle = newest_cycle
                     elif newest_cycle and merged_at >= newest_cycle.end_at:
+                        # current job in next cycle
                         begin_at = newest_cycle.end_at
                         link_cycle = create_cycle_by_params(job.dao_id, begin_at)
                     else:
