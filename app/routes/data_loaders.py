@@ -1,6 +1,7 @@
 from promise import Promise
 from promise.dataloader import DataLoader
 
+from app.common.models.icpdao.cycle import Cycle
 from app.common.models.icpdao.job import Job
 from app.common.models.icpdao.user import User
 
@@ -23,3 +24,8 @@ class UserLoader(BaseModelLoader):
 class JobLoader(BaseModelLoader):
     def get_model(self):
         return Job
+
+
+class CycleLoader(BaseModelLoader):
+    def get_model(self):
+        return Cycle
