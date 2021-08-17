@@ -32,6 +32,20 @@ class TestUserIcpperStats(Base):
                 haveTwoTimesLt08
                 unVotedAllVote
               }
+              cycle {
+                id
+                timeZone
+                beginAt
+                endAt
+                pairBeginAt
+                pairEndAt
+                voteBeginAt
+                voteEndAt
+                pairedAt
+                voteResultPublishedAt
+                createAt
+                updateAt
+              }
               icpper {
                 id
                 avatar
@@ -133,3 +147,5 @@ class TestUserIcpperStats(Base):
         total = res.json()['data']['icpperStats']['total']
         assert len(icpper_stat_list) == 2
         assert total == 3
+
+        assert icpper_stat_list[0]['cycle']['id']
