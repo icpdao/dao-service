@@ -18,7 +18,7 @@ from app.common.utils.route_helper import get_custom_attr_by_graphql, set_custom
 from app.controllers.pair import run_pair_task
 from app.controllers.vote_result_publish import run_vote_result_publish_task
 from app.controllers.vote_result_stat import run_vote_result_stat_task
-from app.routes.data_loaders import UserLoader, JobLoader
+from app.routes.data_loaders import UserLoader, JobLoader, CycleLoader
 from app.routes.schema import CycleIcpperStatSortedTypeEnum, CycleIcpperStatSortedEnum, JobsQuerySortedEnum, \
     JobsQuerySortedTypeEnum, JobsQueryPairTypeEnum, CycleVotePairTaskStatusEnum, \
     CreateCycleVotePairTaskByOwnerStatusEnum, CycleFilterEnum, CreateCycleVoteResultStatTaskByOwnerStatusEnum, \
@@ -30,6 +30,7 @@ class IcpperStatQuery(ObjectType):
     datum = Field(CycleIcpperStatSchema)
     last_ei = Decimal()
     icpper = Field(lambda: UserSchema)
+    cycle = Field(lambda: CycleSchema)
     be_reviewer_has_warning_users = List(lambda: UserSchema)
 
     def resolve_last_ei(self, info):
@@ -41,6 +42,10 @@ class IcpperStatQuery(ObjectType):
     def resolve_icpper(self, info):
         user_loader = get_custom_attr_by_graphql(info, 'user_loader')
         return user_loader.load(self.datum.user_id)
+
+    def resolve_cycle(self, info):
+        cycle_loader = get_custom_attr_by_graphql(info, 'cycle_loader')
+        return cycle_loader.load(self.datum.cycle_id)
 
     def resolve_be_reviewer_has_warning_users(self, info):
         if self.datum.be_reviewer_has_warning_user_ids:
@@ -111,6 +116,7 @@ class IcpperStatsQuery(ObjectType):
 
         set_custom_attr_by_graphql(info, 'dao_owner_id', dao_owner_id)
         set_custom_attr_by_graphql(info, 'user_loader', UserLoader())
+        set_custom_attr_by_graphql(info, 'cycle_loader', CycleLoader())
 
         return [IcpperStatQuery(datum=item) for item in query.limit(self.first).skip(self.offset)]
 
@@ -276,6 +282,7 @@ class UserIcpperStatsQuery(ObjectType):
 
         set_custom_attr_by_graphql(info, 'dao_owner_id', dao.owner_id)
         set_custom_attr_by_graphql(info, 'user_loader', UserLoader())
+        set_custom_attr_by_graphql(info, 'cycle_loader', CycleLoader())
 
         return [IcpperStatQuery(datum=item) for item in query.limit(self.first).skip(self.offset)]
 
