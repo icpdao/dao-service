@@ -20,6 +20,7 @@ class CycleFilterEnum(Enum):
     processing = 0
     pairing = 1
     voting = 2
+    un_vote_end = 3
 
 
 class CyclesQueryArgs(BaseObjectArgs):

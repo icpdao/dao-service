@@ -593,6 +593,10 @@ class CyclesQuery(BaseObjectType):
                         vote_end_at__gt=now_time,
                         paired_at__gt=0
                     ))
+                if item == CycleFilterEnum.un_vote_end:
+                    filter_query_list.append(Q(
+                        vote_end_at__gt=now_time
+                    ))
             filter_query = reduce(lambda x, y: x | y, filter_query_list)
             query = query & filter_query
 
