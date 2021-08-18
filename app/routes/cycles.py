@@ -1,6 +1,7 @@
 import decimal
 import os
 import time
+from functools import reduce
 
 from graphene import ObjectType, Field, List, Int, Decimal, Boolean, Mutation, String
 from mongoengine import Q
@@ -570,20 +571,32 @@ class CyclesQuery(BaseObjectType):
     nodes = List(CycleQuery)
 
     def resolve_nodes(self, info):
-        query = dict(dao_id=self._args.dao_id)
+        query = Q(dao_id=self._args.dao_id)
         now_time = int(time.time())
-        if self._args.get('filter') == CycleFilterEnum.processing:
-            query['begin_at__lte'] = now_time
-            query['end_at__gt'] = now_time
-        if self._args.get('filter') == CycleFilterEnum.pairing:
-            query['pair_begin_at__lte'] = now_time
-            query['pair_end_at__gt'] = now_time
-        if self._args.get('filter') == CycleFilterEnum.voting:
-            query['vote_begin_at__lte'] = now_time
-            query['vote_end_at__gt'] = now_time
-            query['paired_at__gt'] = 0
 
-        cycle_list = Cycle.objects(**query).order_by('-begin_at')
+        if self._args.get('filter'):
+            filter_query_list = []
+            for item in self._args.get('filter'):
+                if item == CycleFilterEnum.processing:
+                    filter_query_list.append(Q(
+                        begin_at__lte=now_time,
+                        end_at__gt=now_time
+                    ))
+                if item == CycleFilterEnum.pairing:
+                    filter_query_list.append(Q(
+                        pair_begin_at__lte=now_time,
+                        pair_end_at__gt=now_time
+                    ))
+                if item == CycleFilterEnum.voting:
+                    filter_query_list.append(Q(
+                        vote_begin_at__lte=now_time,
+                        vote_end_at__gt=now_time,
+                        paired_at__gt=0
+                    ))
+            filter_query = reduce(lambda x, y: x | y, filter_query_list)
+            query = query & filter_query
+
+        cycle_list = Cycle.objects(query).order_by('-begin_at')
         return [CycleQuery(datum=i, cycle_id=str(i.id)) for i in cycle_list]
 
 

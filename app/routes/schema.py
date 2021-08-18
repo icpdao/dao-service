@@ -24,7 +24,7 @@ class CycleFilterEnum(Enum):
 
 class CyclesQueryArgs(BaseObjectArgs):
     dao_id: str
-    filter: Optional[int]
+    filter: Optional[list]
 
 
 class DAOJobConfigQueryArgs(BaseObjectArgs):
