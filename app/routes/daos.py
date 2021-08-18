@@ -102,7 +102,7 @@ class DAOItem(ObjectType):
 class DAO(ObjectType):
     datum = Field(DAOSchema)
     following = Field(DAOFollowUDSchema)
-    cycles = Field(CyclesQuery, filter=CycleFilterEnum())
+    cycles = Field(CyclesQuery, filter=List(CycleFilterEnum))
 
     def get_query(self, info, id=None, name=None):
         current_user = get_current_user_by_graphql(info)
@@ -135,7 +135,6 @@ class DAO(ObjectType):
     @staticmethod
     def resolve_cycles(parent, info, filter=None):
         dao = getattr(parent, 'query')
-
         return CyclesQuery(_args=CyclesQueryArgs(
           dao_id=str(dao.id), filter=filter))
 

@@ -647,6 +647,23 @@ mutation($ownerEi: Decimal){
     }
     """
 
+    get_cycles_by_filter = """
+    query{
+        dao(id: "%s"){
+            cycles(filter: %s){
+                nodes {
+                    datum{
+                        id
+                        beginAt
+                        endAt
+                        voteBeginAt
+                        voteEndAt
+                    }
+                }
+            }
+        }
+    }
+    """
     @staticmethod
     def get_cycle_time_by_end_at(end_at):
         begin_at = end_at - 30 * 24 * 60 * 60
@@ -2234,3 +2251,62 @@ mutation($ownerEi: Decimal){
         assert res.json()['data']['createCycleVoteResultPublishTaskByOwner']['status'] == 'INIT'
         assert CycleVoteResultPublishTask.objects.count() == 3
         assert CycleVoteResultPublishTask.objects.order_by('-id').first().status == CycleVoteResultPublishTaskStatus.INIT.value
+
+    def test_get_cycles_by_filter(self):
+        self.__class__.clear_db()
+        self.icpper = self.__class__.create_icpper_user()
+
+        test_dao = DAO(
+            name='test_dao',
+            logo='xxx.png',
+            desc='test_dao_desc',
+            owner_id=str(self.icpper.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
+        )
+        test_dao.save()
+
+        res = self.graph_query(
+            self.icpper.id, self.get_cycles % str(test_dao.id)
+        )
+
+        assert len(res.json()['data']['dao']['cycles']['nodes']) == 0
+
+        now_at = int(time.time())
+        test_cycle_2 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=now_at - 5 * 60 * 60,
+            end_at=now_at - 4 * 60 * 60,
+            pair_begin_at=now_at - 3 * 60 * 60,
+            pair_end_at=now_at - 2 * 60 * 60,
+            vote_begin_at=now_at - 1 * 60 * 60,
+            vote_end_at=now_at + 1 * 60 * 60,
+            paired_at=now_at - 1 * 60 * 60
+        )
+        test_cycle_2.save()
+
+        test_cycle_1 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=now_at - 1 * 60 * 60,
+            end_at=now_at + 1 * 60 * 60,
+            pair_begin_at=now_at + 2 * 60 * 60,
+            pair_end_at=now_at + 3 * 60 * 60,
+            vote_begin_at=now_at + 4 * 60 * 60,
+            vote_end_at=now_at + 5 * 60 * 60,
+        )
+        test_cycle_1.save()
+
+        res = self.graph_query(
+            self.icpper.id, self.get_cycles_by_filter % (str(test_dao.id), "[voting, processing]")
+        )
+        assert len(res.json()['data']['dao']['cycles']['nodes']) == 2
+
+        res = self.graph_query(
+            self.icpper.id, self.get_cycles_by_filter % (str(test_dao.id), "[voting]")
+        )
+        assert len(res.json()['data']['dao']['cycles']['nodes']) == 1
+
+        res = self.graph_query(
+            self.icpper.id, self.get_cycles_by_filter % (str(test_dao.id), "voting")
+        )
+        assert len(res.json()['data']['dao']['cycles']['nodes']) == 1
