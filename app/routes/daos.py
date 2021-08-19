@@ -7,7 +7,7 @@ from graphene import ObjectType, String, Field, Int, \
 from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
 
-from app.common.models.icpdao.user import UserStatus
+from app.common.models.icpdao.user import UserStatus, User
 from app.common.models.logic.user_helper import pre_icpper_to_icpper
 from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
 
@@ -102,7 +102,7 @@ class DAOItem(ObjectType):
 class DAO(ObjectType):
     datum = Field(DAOSchema)
     following = Field(DAOFollowUDSchema)
-    cycles = Field(CyclesQuery, filter=CycleFilterEnum())
+    cycles = Field(CyclesQuery, filter=List(CycleFilterEnum))
 
     def get_query(self, info, id=None, name=None):
         current_user = get_current_user_by_graphql(info)
@@ -135,7 +135,6 @@ class DAO(ObjectType):
     @staticmethod
     def resolve_cycles(parent, info, filter=None):
         dao = getattr(parent, 'query')
-
         return CyclesQuery(_args=CyclesQueryArgs(
           dao_id=str(dao.id), filter=filter))
 
@@ -147,6 +146,13 @@ class DAOs(ObjectType):
 
     def get_query_dao_list(self, info, **kwargs):
         current_user = get_current_user_by_graphql(info)
+        query_user = current_user
+        query_user_name = kwargs.get('user_name')
+        if query_user_name:
+            user = User.objects(github_login=query_user_name).first()
+            if not user:
+                raise PermissionError("userName'USER NOT FOUND")
+            query_user = user
 
         _filter = kwargs.get('filter')
         _sorted = kwargs.get('sorted')
@@ -160,18 +166,18 @@ class DAOs(ObjectType):
         search = None
         if _filter:
             if _filter != DAOsFilterEnum.all:
-                if not current_user:
+                if not query_user:
                     raise PermissionError('NOT LOGIN')
             if _filter == DAOsFilterEnum.owner:
-                query = Q(owner_id=str(current_user.id))
+                query = Q(owner_id=str(query_user.id))
             if _filter == DAOsFilterEnum.following:
-                dao_id_list = [item.dao_id for item in DAOFollowModel.objects(user_id=str(current_user.id))]
+                dao_id_list = [item.dao_id for item in DAOFollowModel.objects(user_id=str(query_user.id))]
                 query = Q(id__in=dao_id_list)
             if _filter == DAOsFilterEnum.following_and_owner:
-                dao_id_list = [item.dao_id for item in DAOFollowModel.objects(user_id=str(current_user.id))]
-                query = (Q(owner_id=str(current_user.id)) | Q(id__in=dao_id_list))
+                dao_id_list = [item.dao_id for item in DAOFollowModel.objects(user_id=str(query_user.id))]
+                query = (Q(owner_id=str(query_user.id)) | Q(id__in=dao_id_list))
             if _filter == DAOsFilterEnum.member:
-                dao_id_list = JobModel.objects(user_id=str(current_user.id)).distinct('dao_id')
+                dao_id_list = JobModel.objects(user_id=str(query_user.id)).distinct('dao_id')
                 query = Q(id__in=dao_id_list)
 
         if _search:

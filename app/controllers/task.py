@@ -31,19 +31,19 @@ def create_cycle_by_params(dao_id, begin_at):
     config = DAOJobConfig.objects(dao_id=dao_id).first()
     end_at = get_next_time(
         config.time_zone, int(time.time()),
-        config.deadline_day, config.deadline_time)
+        config.deadline_day, config.deadline_time, False)
     pair_begin_at = get_next_time(
         config.time_zone, end_at,
-        config.pair_begin_day, config.pair_begin_hour)
+        config.pair_begin_day, config.pair_begin_hour, True)
     pair_end_at = get_next_time(
         config.time_zone, pair_begin_at,
-        config.pair_end_day, config.pair_end_hour)
+        config.pair_end_day, config.pair_end_hour, False)
     vote_begin_at = get_next_time(
         config.time_zone, pair_end_at,
-        config.voting_begin_day, config.voting_begin_hour)
+        config.voting_begin_day, config.voting_begin_hour, True)
     vote_end_at = get_next_time(
         config.time_zone, vote_begin_at,
-        config.voting_end_day, config.voting_end_hour)
+        config.voting_end_day, config.voting_end_hour, False)
 
     cycle = Cycle(
         dao_id=dao_id,
@@ -95,11 +95,14 @@ def sync_job_issue_status_comment(app_client, job_ids):
                     merged_at = merged_at_list[-1]
                     newest_cycle = Cycle.objects(dao_id=job.dao_id).order_by("-begin_at").first()
                     if not newest_cycle:
-                        begin_at = merged_at
+                        # dao first cycle begin_at 1970 1 1
+                        begin_at = 0
                         link_cycle = create_cycle_by_params(job.dao_id, begin_at)
                     elif newest_cycle and newest_cycle.begin_at <= merged_at and merged_at < newest_cycle.end_at:
+                        # current job in newest_cycle range
                         link_cycle = newest_cycle
                     elif newest_cycle and merged_at >= newest_cycle.end_at:
+                        # current job in next cycle
                         begin_at = newest_cycle.end_at
                         link_cycle = create_cycle_by_params(job.dao_id, begin_at)
                     else:

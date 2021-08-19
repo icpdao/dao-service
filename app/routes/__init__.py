@@ -2,7 +2,8 @@ from graphene import ObjectType, String, Field, Int
 
 from app.routes.config import UpdateDAOJobConfig, DAOJobConfig, DAOTokenConfig
 from app.routes.cycles import CycleQuery, CreateCycleVotePairTaskByOwner, \
-    ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner, CreateCycleVoteResultPublishTaskByOwner
+    ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner, CreateCycleVoteResultPublishTaskByOwner, \
+    UserIcpperStatsQuery
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus
 from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob, UpdateJobVoteTypeByOwner, UpdateIcpperStatOwnerEi, DeleteJob
@@ -20,7 +21,8 @@ class Query(ObjectType):
         sorted_type=DAOsSortedTypeEnum(),
         search=String(),
         first=Int(default_value=20),
-        offset=Int(default_value=0)
+        offset=Int(default_value=0),
+        user_name=String()
     )
 
     dao = Field(
@@ -58,7 +60,15 @@ class Query(ObjectType):
         sorted_type=SortedTypeEnum(),
         first=Int(default_value=20),
         offset=Int(default_value=0),
-        user_id=String(),
+        user_name=String(),
+    )
+
+    icpper_stats = Field(
+        UserIcpperStatsQuery,
+        dao_name=String(),
+        user_name=String(),
+        first=Int(default_value=20),
+        offset=Int(default_value=0)
     )
 
     @staticmethod
@@ -88,6 +98,10 @@ class Query(ObjectType):
     @staticmethod
     def resolve_cycle(root, info, id):
         return CycleQuery(cycle_id=id)
+
+    @staticmethod
+    def resolve_icpper_stats(root, info, **kwargs):
+        return UserIcpperStatsQuery(**kwargs)
 
 
 class Mutations(ObjectType):

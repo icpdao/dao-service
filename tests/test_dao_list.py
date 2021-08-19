@@ -142,6 +142,7 @@ mutation {
         self.clear_db()
         self.icpper1 = self.create_icpper_user('icpper1')
         self.icpper2 = self.create_icpper_user('icpper2')
+        self.icpper3 = self.create_icpper_user('icpper3')
 
         daos_params = [
             [self.icpper1, "test_icpper1_dao1"],
@@ -210,3 +211,9 @@ mutation {
         res = ret.json()
         assert len(res['data']['daos']['dao']) == 1
         assert res['data']['daos']['total'] == 3
+
+        # userName
+        ret = self.graph_query(self.icpper3.id, self.get_daos_by_params % 'filter: following_and_owner, userName: "{}"'.format(self.icpper1.github_login))
+        res = ret.json()
+        assert len(res['data']['daos']['dao']) == 2
+        assert res['data']['daos']['total'] == 2
