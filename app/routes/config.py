@@ -1,8 +1,10 @@
 import time
+import hashlib
 
 from graphene import Mutation, String, Field, Int, ObjectType, Boolean
 from graphql import ResolveInfo
 
+import settings
 from app.common.models.icpdao.dao import DAOJobConfig as DAOJobConfigModel
 from app.common.models.icpdao.cycle import Cycle
 from app.common.schema import BaseObjectType
@@ -59,6 +61,23 @@ class DAOJobThisCycle(ObjectType):
     pair_end_at = Int()
     vote_begin_at = Int()
     vote_end_at = Int()
+
+
+class DAOTokenConfig(BaseObjectType):
+    eth_dao_id = String()
+
+    def resolve_eth_dao_id(self, info):
+        current_user = get_current_user_by_graphql(info)
+        assert current_user, 'NOT LOGIN'
+        check_is_dao_owner(current_user, dao_id=self._args.dao_id)
+        dk = hashlib.pbkdf2_hmac(
+            'sha256',
+            bytes(self._args.dao_id, encoding='utf-8'),
+            bytes(settings.ICPDAO_ETH_DAO_ID_SALT, encoding='utf-8'),
+            100000,
+            12
+        )
+        return dk.hex()
 
 
 class DAOJobCycle(ObjectType):

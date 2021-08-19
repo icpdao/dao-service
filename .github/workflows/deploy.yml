@@ -52,6 +52,7 @@ jobs:
         AWS_AUTHORIZER_ARN: ${{secrets.DEV__AWS_AUTHORIZER_ARN}}
         ICPDAO_MONGODB_ICPDAO_HOST: mongodb://127.0.0.1:27017/icpdao
         ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY: ${{secrets.DEV__ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY}}
+        ICPDAO_ETH_DAO_ID_SALT: ${{secrets.DEV__ICPDAO_ETH_DAO_ID_SALT}}
       run: |
         npm install
         pip install -r requirements_dev.txt
@@ -99,6 +100,7 @@ jobs:
         AWS_AUTHORIZER_ARN: ${{secrets.DEV__AWS_AUTHORIZER_ARN}}
         ICPDAO_MONGODB_ICPDAO_HOST: ${{secrets.DEV__ICPDAO_MONGODB_ICPDAO_HOST}}
         ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY: ${{secrets.DEV__ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY}}
+        ICPDAO_ETH_DAO_ID_SALT: ${{secrets.DEV__ICPDAO_ETH_DAO_ID_SALT}}
       run: |
         npm install -g serverless@2.35.0
         npm install
@@ -146,6 +148,7 @@ jobs:
         AWS_AUTHORIZER_ARN: ${{secrets.PROD__AWS_AUTHORIZER_ARN}}
         ICPDAO_MONGODB_ICPDAO_HOST: ${{secrets.PROD__ICPDAO_MONGODB_ICPDAO_HOST}}
         ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY: ${{secrets.PROD__ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY}}
+        ICPDAO_ETH_DAO_ID_SALT: ${{secrets.PROD__ICPDAO_ETH_DAO_ID_SALT}}
       run: |
         npm install -g serverless@2.35.0
         npm install
