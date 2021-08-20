@@ -217,3 +217,31 @@ mutation {
         res = ret.json()
         assert len(res['data']['daos']['dao']) == 2
         assert res['data']['daos']['total'] == 2
+
+    def test_get_daos_by_no_login(self):
+        # all
+        self.clear_db()
+        self.icpper1 = self.create_icpper_user('icpper1')
+        self.icpper2 = self.create_icpper_user('icpper2')
+        self.icpper3 = self.create_icpper_user('icpper3')
+
+        daos_params = [
+            [self.icpper1, "test_icpper1_dao1"],
+            [self.icpper2, "test_icpper2_dao1"],
+            [self.icpper2, "test_icpper2_dao2"]
+        ]
+        for param in daos_params:
+            user = param[0]
+            name = param[1]
+            self.graph_query(
+                user.id, self.create_dao % name
+            )
+
+        test_icpper2_dao1 = DAO.objects(name='test_icpper2_dao1').first()
+        DAOFollow(dao_id=str(test_icpper2_dao1.id), user_id=str(self.icpper1.id)).save()
+
+        ret = self.graph_query_no_login(self.get_daos_by_params % 'filter: all')
+        res = ret.json()
+        assert len(res['data']['daos']['dao']) == 3
+        assert res['data']['daos']['total'] == 3
+        assert res['data']['daos']['dao'][0]["datum"]["id"] != None

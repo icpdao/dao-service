@@ -78,6 +78,15 @@ class Base:
             }
         )
 
+    def graph_query_no_login(self, query, variables=None):
+        return self.client.post(
+            graph_route,
+            json={
+                'query': query,
+                'variables': variables
+            }
+        )
+
     def gen_github_app_token(self):
         with open(
                 './github_app.pem', 'r') as f:
