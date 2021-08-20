@@ -86,7 +86,7 @@ class DAOItem(ObjectType):
     def resolve_is_following(parent, info):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
-            raise PermissionError('NOT LOGIN')
+            return False
 
         obj = DAOFollowModel.objects(dao_id=str(parent.datum.id), user_id=str(current_user.id)).first()
         return not not obj
@@ -95,7 +95,7 @@ class DAOItem(ObjectType):
     def resolve_is_owner(parent, info):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
-            raise PermissionError('NOT LOGIN')
+            return False
         return str(current_user.id) == parent.datum.owner_id
 
 
