@@ -3,13 +3,13 @@ from graphene import ObjectType, String, Field, Int
 from app.routes.config import UpdateDAOJobConfig, DAOJobConfig, DAOTokenConfig
 from app.routes.cycles import CycleQuery, CreateCycleVotePairTaskByOwner, \
     ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner, CreateCycleVoteResultPublishTaskByOwner, \
-    UserIcpperStatsQuery
+    UserIcpperStatsQuery, CycleByTokenUnreleasedQuery, MarkCyclesTokenReleased
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus
 from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob, UpdateJobVoteTypeByOwner, UpdateIcpperStatOwnerEi, DeleteJob
 from app.routes.mock import CreateMock
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
-    DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum, DAOJobConfigQueryArgs
+    DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum, DAOJobConfigQueryArgs, CyclesTokenUnreleasedQueryArgs
 from app.routes.vote import UpdatePairVote, UpdateALLVote
 
 
@@ -49,6 +49,11 @@ class Query(ObjectType):
     cycle = Field(
         CycleQuery,
         id=String(required=True)
+    )
+
+    cycles_by_token_unreleased = Field(
+        CycleByTokenUnreleasedQuery,
+        last_timestamp=Int(required=True)
     )
 
     jobs = Field(
@@ -100,6 +105,12 @@ class Query(ObjectType):
         return CycleQuery(cycle_id=id)
 
     @staticmethod
+    def resolve_cycles_by_token_unreleased(root, info, last_timestamp):
+        return CycleByTokenUnreleasedQuery(
+            _args=CyclesTokenUnreleasedQueryArgs(last_timestamp=last_timestamp)
+        )
+
+    @staticmethod
     def resolve_icpper_stats(root, info, **kwargs):
         return UserIcpperStatsQuery(**kwargs)
 
@@ -121,3 +132,4 @@ class Mutations(ObjectType):
     create_mock = CreateMock.Field()
     createCycleVoteResultStatTaskByOwner = CreateCycleVoteResultStatTaskByOwner.Field()
     createCycleVoteResultPublishTaskByOwner = CreateCycleVoteResultPublishTaskByOwner.Field()
+    mark_cycles_token_released = MarkCyclesTokenReleased.Field()

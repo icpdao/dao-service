@@ -2,8 +2,8 @@ import decimal
 import os
 import time
 from functools import reduce
-
-from graphene import ObjectType, Field, List, Int, Decimal, Boolean, Mutation, String
+from collections import defaultdict
+from graphene import ObjectType, Field, List, Int, Decimal, Boolean, Mutation, String, Float
 from mongoengine import Q
 
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType, CycleVotePairTask, \
@@ -14,6 +14,7 @@ from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.models.icpdao.user import User
 from app.common.schema import BaseObjectType
 from app.common.schema.icpdao import CycleSchema, CycleIcpperStatSchema, UserSchema, JobSchema, CycleVoteSchema
+from app.common.utils.access import check_is_dao_owner
 from app.common.utils.route_helper import get_custom_attr_by_graphql, set_custom_attr_by_graphql, \
     get_current_user_by_graphql
 from app.controllers.pair import run_pair_task
@@ -604,6 +605,17 @@ class CyclesQuery(BaseObjectType):
         return [CycleQuery(datum=i, cycle_id=str(i.id)) for i in cycle_list]
 
 
+class CycleByTokenUnreleasedQuery(BaseObjectType):
+    nodes = List(CycleQuery)
+
+    def resolve_nodes(self, info):
+        last_timestamp = self._args.get('last_timestamp')
+        query = Q(token_released_at__exists=False) & Q(
+            end_at__gt=last_timestamp) & Q(vote_result_published_at__exists=True)
+        cycle_list = Cycle.objects(query).order_by('-begin_at')
+        return [CycleQuery(datum=i, cycle_id=str(i.id)) for i in cycle_list]
+
+
 class ChangeVoteResultPublic(Mutation):
     class Arguments:
         id = String(required=True)
@@ -748,3 +760,44 @@ class CreateCycleVoteResultPublishTaskByOwner(Mutation):
             background_tasks = info.context['background']
             background_tasks.add_task(run_vote_result_publish_task, str(task.id))
         return CreateCycleVoteResultPublishTaskByOwner(status=task.status)
+
+
+class MarkCyclesTokenReleased(Mutation):
+    class Arguments:
+        dao_id = String(required=True)
+        cycle_ids = List(String, required=True)
+        unit_size_value = String(required=True)
+
+    ok = Boolean()
+
+    def mutate(self, info, dao_id, cycle_ids, unit_size_value):
+        check_is_dao_owner(get_current_user_by_graphql(info), dao_id=dao_id)
+        decimal_unit = decimal.Decimal(unit_size_value)
+        for cid in cycle_ids:
+            cycle = Cycle.objects(
+                id=cid, dao_id=dao_id, token_released_at__exists=False, vote_result_published_at__exists=True).first()
+            if not cycle:
+                raise ValueError('error.mark_cycles_token_released.checked_fail')
+
+        stats = CycleIcpperStat.objects(cycle_id__in=cycle_ids, dao_id=dao_id).all()
+        jobs = Job.objects(dao_id=dao_id, cycle_id__in=cycle_ids).all()
+        jobs_dict = defaultdict(lambda: defaultdict(list))
+
+        for job in jobs:
+            jobs_dict[job.cycle_id][job.user_id].append(job)
+
+        for ss in stats:
+            ss.income = decimal_unit * ss.size
+            uint_size = decimal.Decimal(0)
+            if ss.job_size > 0:
+                uint_size = ss.size / ss.job_size
+
+            for job in jobs_dict[ss.cycle_id][ss.user_id]:
+                job.income = job.size * uint_size * decimal_unit
+                job.status = JobStatusEnum.TOKEN_RELEASED.value
+                job.save()
+
+            ss.save()
+
+        Cycle.objects(id__in=cycle_ids).update(token_released_at=int(time.time()))
+        return MarkCyclesTokenReleased(ok=True)

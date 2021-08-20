@@ -664,6 +664,41 @@ mutation($ownerEi: Decimal){
         }
     }
     """
+
+    get_cycles_by_token_unreleased = """
+query {
+    cyclesByTokenUnreleased(lastTimestamp: 1) {
+        nodes {
+            datum {
+                daoId
+                beginAt
+                endAt
+                voteResultPublishedAt
+                tokenReleasedAt
+            }
+            icpperStats {
+                nodes {
+                    datum {
+                        userId
+                        jobSize
+                        size
+                        income
+                    }
+                }
+            }
+        }
+    }
+}
+"""
+
+    mark_cycles_token_released = """
+mutation{
+    markCyclesTokenReleased(daoId: "%s", cycleIds: ["%s"], unitSizeValue: "%s"){
+        ok
+    }
+}
+"""
+
     @staticmethod
     def get_cycle_time_by_end_at(end_at):
         begin_at = end_at - 30 * 24 * 60 * 60
@@ -831,7 +866,7 @@ mutation($ownerEi: Decimal){
             user_id=str(self.icpper1.id),
             job_count=1,
             size=Decimal('10'),
-            income=1000,
+            income=Decimal('1000'),
             vote_ei=1,
             owner_ei=Decimal('0.1'),
             ei=Decimal('1.1')
@@ -846,7 +881,7 @@ mutation($ownerEi: Decimal){
             user_id=str(self.icpper1.id),
             job_count=2,
             size=Decimal('5'),
-            income=500,
+            income=Decimal('500'),
             vote_ei=1,
             owner_ei=Decimal('0.1'),
             ei=Decimal('1.1'),
@@ -860,7 +895,7 @@ mutation($ownerEi: Decimal){
             user_id=str(self.icpper2.id),
             job_count=3,
             size=Decimal('7'),
-            income=700,
+            income=Decimal('700'),
             vote_ei=1,
             owner_ei=Decimal('0.2'),
             ei=Decimal('1.2'),
@@ -876,7 +911,7 @@ mutation($ownerEi: Decimal){
 
         assert len(icpper_stat_list) == 1
 
-        assert icpper_stat_list[0]['datum']['income'] == 1000
+        assert icpper_stat_list[0]['datum']['income'] == Decimal(1000)
         assert icpper_stat_list[0]['datum']['ei'] is not None
         assert icpper_stat_list[0]['datum']['voteEi'] is not None
         assert icpper_stat_list[0]['datum']['ownerEi'] is not None
@@ -998,7 +1033,7 @@ mutation($ownerEi: Decimal){
             github_issue_number=1,
             bot_comment_database_id=1,
             status=JobStatusEnum.MERGED.value,
-            income=10,
+            income=Decimal('10'),
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1016,7 +1051,7 @@ mutation($ownerEi: Decimal){
             github_issue_number=2,
             bot_comment_database_id=2,
             status=JobStatusEnum.MERGED.value,
-            income=20,
+            income=Decimal('20'),
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1034,7 +1069,7 @@ mutation($ownerEi: Decimal){
             github_issue_number=3,
             bot_comment_database_id=3,
             status=JobStatusEnum.MERGED.value,
-            income=30,
+            income=Decimal('30'),
             pair_type=JobPairTypeEnum.ALL.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1133,7 +1168,7 @@ mutation($ownerEi: Decimal){
             github_issue_number=1,
             bot_comment_database_id=1,
             status=JobStatusEnum.MERGED.value,
-            income=10,
+            income=Decimal('10'),
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1151,7 +1186,7 @@ mutation($ownerEi: Decimal){
             github_issue_number=2,
             bot_comment_database_id=2,
             status=JobStatusEnum.MERGED.value,
-            income=20,
+            income=Decimal('20'),
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1169,7 +1204,7 @@ mutation($ownerEi: Decimal){
             github_issue_number=3,
             bot_comment_database_id=3,
             status=JobStatusEnum.MERGED.value,
-            income=30,
+            income=Decimal('30'),
             pair_type=JobPairTypeEnum.ALL.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1527,7 +1562,7 @@ mutation($ownerEi: Decimal){
             github_issue_number=1,
             bot_comment_database_id=1,
             status=JobStatusEnum.MERGED.value,
-            income=10,
+            income=Decimal('10'),
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1624,7 +1659,7 @@ mutation($ownerEi: Decimal){
             github_issue_number=1,
             bot_comment_database_id=1,
             status=JobStatusEnum.MERGED.value,
-            income=10,
+            income=Decimal('10'),
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1642,7 +1677,7 @@ mutation($ownerEi: Decimal){
             github_issue_number=2,
             bot_comment_database_id=2,
             status=JobStatusEnum.MERGED.value,
-            income=20,
+            income=Decimal('20'),
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1660,7 +1695,7 @@ mutation($ownerEi: Decimal){
             github_issue_number=3,
             bot_comment_database_id=3,
             status=JobStatusEnum.MERGED.value,
-            income=30,
+            income=Decimal('30'),
             pair_type=JobPairTypeEnum.ALL.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1791,7 +1826,7 @@ mutation($ownerEi: Decimal){
             user_id=str(self.icpper1.id),
             job_count=2,
             size=Decimal('5'),
-            income=500,
+            income=Decimal('500'),
             vote_ei=1,
             owner_ei=Decimal('0.1'),
             ei=Decimal('1.1')
@@ -1804,7 +1839,7 @@ mutation($ownerEi: Decimal){
             user_id=str(self.icpper2.id),
             job_count=3,
             size=Decimal('7'),
-            income=700,
+            income=Decimal('700'),
             vote_ei=1,
             owner_ei=Decimal('0.2'),
             ei=Decimal('1.2')
@@ -2310,3 +2345,68 @@ mutation($ownerEi: Decimal){
             self.icpper.id, self.get_cycles_by_filter % (str(test_dao.id), "voting")
         )
         assert len(res.json()['data']['dao']['cycles']['nodes']) == 1
+
+    def test_get_cycles_by_token_unreleased(self):
+        self.__class__.clear_db()
+        self.icpper = self.__class__.create_icpper_user()
+        self.icpper1 = self.__class__.create_icpper_user(nickname='icpper1', github_login='iccper1')
+        test_dao = DAO(
+            name='test_dao',
+            logo='xxx.png',
+            desc='test_dao_desc',
+            owner_id=str(self.icpper.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
+        )
+        test_dao.save()
+
+        res = self.graph_query(
+            self.icpper.id, self.get_cycles % str(test_dao.id)
+        )
+
+        assert len(res.json()['data']['dao']['cycles']['nodes']) == 0
+
+        now_at = int(time.time())
+        test_cycle_1 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=now_at - 5 * 60 * 60,
+            end_at=now_at - 4 * 60 * 60,
+            pair_begin_at=now_at - 3 * 60 * 60,
+            pair_end_at=now_at - 2 * 60 * 60,
+            vote_begin_at=now_at - 1 * 60 * 60,
+            vote_end_at=now_at + 1 * 60 * 60,
+            paired_at=now_at - 1 * 60 * 60,
+            vote_result_published_at=now_at + 2 * 60 * 60,
+        )
+        test_cycle_1.save()
+
+        cycle_1_icpper1 = CycleIcpperStat(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_1.id),
+            user_id=str(self.icpper1.id),
+            job_count=1,
+            size=Decimal('10'),
+            income=Decimal('1000'),
+            vote_ei=1,
+            owner_ei=Decimal('0.1'),
+            ei=Decimal('1.1')
+        )
+        cycle_1_icpper1.save()
+
+        res = self.graph_query(
+            self.icpper.id, self.get_cycles_by_token_unreleased
+        )
+        assert len(res.json()['data']['cyclesByTokenUnreleased']['nodes']) == 1
+        return test_cycle_1
+
+    def test_mark_cycles_token_released(self):
+        cycle = self.test_get_cycles_by_token_unreleased()
+
+        res = self.graph_query(
+            self.icpper.id, self.mark_cycles_token_released % (cycle.dao_id, cycle.id, "23")
+        )
+        assert res.json()['data']['markCyclesTokenReleased']['ok'] is True
+        stats = CycleIcpperStat.objects(cycle_id=str(cycle.id)).first()
+        assert stats.income == Decimal('230')
+
+
