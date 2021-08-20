@@ -142,7 +142,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=1,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=100,
+        income=decimal.Decimal(100),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -173,7 +173,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=3,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=200,
+        income=decimal.Decimal(200),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -204,7 +204,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=5,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=100,
+        income=decimal.Decimal(100),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -235,7 +235,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=7,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=400,
+        income=decimal.Decimal(400),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -323,7 +323,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         size=decimal.Decimal('3.0'),
         job_size=decimal.Decimal('3.0'),
         un_voted_all_vote=False,
-        income=300,
+        income=decimal.Decimal(300),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.0'),
         ei=decimal.Decimal('1.0')
@@ -336,7 +336,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
         un_voted_all_vote=False,
-        income=500,
+        income=decimal.Decimal(500),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.1'),
         ei=decimal.Decimal('1.1')
@@ -396,7 +396,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=1,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=100,
+        income=decimal.Decimal(100),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -427,7 +427,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=3,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=200,
+        income=decimal.Decimal(200),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -458,7 +458,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=5,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=100,
+        income=decimal.Decimal(100),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -489,7 +489,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=7,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=400,
+        income=decimal.Decimal(400),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -570,7 +570,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=1,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=100,
+        income=decimal.Decimal(100),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -601,7 +601,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=3,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=200,
+        income=decimal.Decimal(200),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -632,7 +632,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=5,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=100,
+        income=decimal.Decimal(100),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -663,7 +663,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=7,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=400,
+        income=decimal.Decimal(400),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -714,7 +714,7 @@ def _create_job(dao, cycle, user, repo_name, repo_id, start_number, pair_type):
         github_issue_number=start_number * 2,
         bot_comment_database_id=start_number,
         status=JobStatusEnum.MERGED.value,
-        income=100,
+        income=decimal.Decimal(100),
         pair_type=pair_type,
         cycle_id=str(cycle.id),
     ).save()
@@ -797,7 +797,7 @@ def create_in_vote_time_cycle_data(owner_user, icpper_user, dao_name):
     #     github_issue_number=1,
     #     bot_comment_database_id=1,
     #     status=JobStatusEnum.MERGED.value,
-    #     income=100,
+    #     income=decimal.Decimal(100,
     #     pair_type=JobPairTypeEnum.PAIR.value,
     #     cycle_id=str(cycle.id),
     # ).save()
@@ -828,7 +828,7 @@ def create_in_vote_time_cycle_data(owner_user, icpper_user, dao_name):
     #     github_issue_number=3,
     #     bot_comment_database_id=1,
     #     status=JobStatusEnum.MERGED.value,
-    #     income=200,
+    #     income=decimal.Decimal(200,
     #     pair_type=JobPairTypeEnum.ALL.value,
     #     cycle_id=str(cycle.id),
     # ).save()
@@ -859,7 +859,7 @@ def create_in_vote_time_cycle_data(owner_user, icpper_user, dao_name):
     #     github_issue_number=5,
     #     bot_comment_database_id=1,
     #     status=JobStatusEnum.MERGED.value,
-    #     income=100,
+    #     income=decimal.Decimal(100,
     #     pair_type=JobPairTypeEnum.PAIR.value,
     #     cycle_id=str(cycle.id),
     # ).save()
@@ -890,7 +890,7 @@ def create_in_vote_time_cycle_data(owner_user, icpper_user, dao_name):
     #     github_issue_number=7,
     #     bot_comment_database_id=1,
     #     status=JobStatusEnum.MERGED.value,
-    #     income=400,
+    #     income=decimal.Decimal(400,
     #     pair_type=JobPairTypeEnum.ALL.value,
     #     cycle_id=str(cycle.id),
     # ).save()
@@ -1007,7 +1007,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=1,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=100,
+        income=decimal.Decimal(100),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -1038,7 +1038,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=3,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=200,
+        income=decimal.Decimal(200),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -1069,7 +1069,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=5,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=100,
+        income=decimal.Decimal(100),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -1100,7 +1100,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=7,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=400,
+        income=decimal.Decimal(400),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -1277,7 +1277,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         github_issue_number=1,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=100,
+        income=decimal.Decimal(100),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -1308,7 +1308,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         github_issue_number=3,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=200,
+        income=decimal.Decimal(200),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -1339,7 +1339,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         github_issue_number=5,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=100,
+        income=decimal.Decimal(100),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -1370,7 +1370,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         github_issue_number=7,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=400,
+        income=decimal.Decimal(400),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -1464,7 +1464,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         size=decimal.Decimal('3.0'),
         job_size=decimal.Decimal('3.0'),
         un_voted_all_vote=False,
-        income=300,
+        income=decimal.Decimal(300),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.0'),
         ei=decimal.Decimal('1.0')
@@ -1477,7 +1477,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
         un_voted_all_vote=False,
-        income=500,
+        income=decimal.Decimal(500),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.1'),
         ei=decimal.Decimal('1.1')
@@ -1492,7 +1492,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
             size=decimal.Decimal('5.0'),
             job_size=decimal.Decimal('5.0'),
             un_voted_all_vote=False,
-            income=500,
+            income=decimal.Decimal(500),
             vote_ei=decimal.Decimal('1.0'),
             owner_ei=decimal.Decimal('0.1'),
             ei=decimal.Decimal('1.1')
@@ -1506,7 +1506,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
         un_voted_all_vote=False,
-        income=500,
+        income=decimal.Decimal(500),
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.7')
@@ -1520,7 +1520,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
         un_voted_all_vote=False,
-        income=500,
+        income=decimal.Decimal(500),
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.3')
@@ -1568,7 +1568,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('3.0'),
         job_size=decimal.Decimal('3.0'),
-        income=300,
+        income=decimal.Decimal(300),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.0'),
         ei=decimal.Decimal('1.0'),
@@ -1588,7 +1588,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=500,
+        income=decimal.Decimal(500),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.3'),
         ei=decimal.Decimal('1.3'),
@@ -1608,7 +1608,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=500,
+        income=decimal.Decimal(500),
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.7'),
@@ -1629,7 +1629,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=500,
+        income=decimal.Decimal(500),
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.3'),
@@ -1650,7 +1650,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=500,
+        income=decimal.Decimal(500),
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.3'),
@@ -1672,7 +1672,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=500,
+        income=decimal.Decimal(500),
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.7'),
@@ -1694,7 +1694,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=500,
+        income=decimal.Decimal(500),
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.3'),
@@ -1716,7 +1716,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=500,
+        income=decimal.Decimal(500),
         vote_ei=decimal.Decimal('0.9'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.9'),
@@ -1737,7 +1737,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('4.0'),
         job_size=decimal.Decimal('5.0'),
-        income=500,
+        income=decimal.Decimal(500),
         vote_ei=decimal.Decimal('0.9'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.9'),

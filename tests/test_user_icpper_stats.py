@@ -125,7 +125,7 @@ class TestUserIcpperStats(Base):
                 user_id=str(self.icpper.id),
                 job_count=1,
                 size=Decimal('10') + Decimal(count),
-                income=1000,
+                income=Decimal('1000'),
                 vote_ei=1,
                 owner_ei=Decimal('0.1'),
                 ei=Decimal('1.1'),

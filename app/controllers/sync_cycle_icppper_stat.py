@@ -27,7 +27,7 @@ def create_or_update_cycle_icpper_stat(dao_id, cycle_id, user_id, job_count, job
             create_at__lt=cis.create_at
         ).order_by('-create_at').first()
 
-        cis.income = 0
+        cis.income = decimal.Decimal('0')
         cis.vote_ei = decimal.Decimal('0')
         cis.owner_ei = decimal.Decimal('0')
         cis.ei = decimal.Decimal('0')

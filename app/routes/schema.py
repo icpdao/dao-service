@@ -28,6 +28,10 @@ class CyclesQueryArgs(BaseObjectArgs):
     filter: Optional[list]
 
 
+class CyclesTokenUnreleasedQueryArgs(BaseObjectArgs):
+    last_timestamp: int
+
+
 class DAOJobConfigQueryArgs(BaseObjectArgs):
     dao_id: str
 
