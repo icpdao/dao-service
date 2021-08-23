@@ -112,6 +112,18 @@ mutation {
         ret = self.graph_query(self.icpper.id, self.query_dao % (dao_id))
         assert ret.status_code == 200
 
+    def test_query_dao_without_login(self):
+        dao_id = self.graph_query(
+            self.icpper.id, self.create_dao % 'test_dao_21'
+        ).json()['data']['createDao']['dao']['id']
+        ret = self.graph_query_no_login(self.query_dao % (dao_id))
+        assert ret.status_code == 200
+        data = ret.json()
+        assert data['data']['dao']['datum']['name'] == 'test_dao_21'
+        assert data['data']['dao']['datum']['ownerId'] == str(self.icpper.id)
+        assert data['data']['dao']['datum']['id']
+
+
     def test_update_dao_base_info(self):
         dao_id = self.graph_query(
             self.icpper.id, self.create_dao % 'test_dao_3'

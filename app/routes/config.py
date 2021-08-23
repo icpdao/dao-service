@@ -127,15 +127,10 @@ class DAOJobConfig(BaseObjectType):
     get_next_cycle = Field(DAOJobCycle)
 
     def resolve_datum(self, info):
-        current_user = get_current_user_by_graphql(info)
-        if not current_user:
-            raise PermissionError('NOT LOGIN')
         record = DAOJobConfigModel.objects(dao_id=self._args.dao_id).first()
         return record
 
     def resolve_this_cycle(self, info):
-        current_user = get_current_user_by_graphql(info)
-        assert current_user, 'NOT LOGIN'
         now_time = int(time.time())
         processing_cycle = Cycle.objects(
             dao_id=self._args.dao_id,
