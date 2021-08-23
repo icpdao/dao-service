@@ -10,7 +10,7 @@ from app.routes.jobs import Jobs, CreateJob, UpdateJob, UpdateJobVoteTypeByOwner
 from app.routes.mock import CreateMock
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
     DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum, DAOJobConfigQueryArgs, CyclesTokenUnreleasedQueryArgs
-from app.routes.vote import UpdatePairVote, UpdateALLVote
+from app.routes.vote import UpdatePairVote, UpdateALLVote, UpdateVoteConfirm
 
 
 class Query(ObjectType):
@@ -127,6 +127,7 @@ class Mutations(ObjectType):
     update_icpper_stat_owner_ei = UpdateIcpperStatOwnerEi.Field()
     update_pair_vote = UpdatePairVote.Field()
     update_all_vote = UpdateALLVote.Field()
+    update_vote_confirm = UpdateVoteConfirm.Field()
     create_cycle_vote_pair_task_by_owner = CreateCycleVotePairTaskByOwner.Field()
     change_vote_result_public = ChangeVoteResultPublic.Field()
     create_mock = CreateMock.Field()
