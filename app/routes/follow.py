@@ -17,6 +17,8 @@ class DAOFollowUDSchema(ObjectType):
     def resolve_followers(parent, info, user_id=''):
         dao_id = parent.dao_id
         current_user = get_current_user_by_graphql(info)
+        if not current_user:
+            raise ValueError("NO LOGIN")
         if not user_id:
             # query all, only owner can do
             check_is_dao_owner(current_user, dao_id=dao_id)
