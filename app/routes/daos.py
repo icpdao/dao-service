@@ -105,9 +105,6 @@ class DAO(ObjectType):
     cycles = Field(CyclesQuery, filter=List(CycleFilterEnum))
 
     def get_query(self, info, id=None, name=None):
-        current_user = get_current_user_by_graphql(info)
-        if not current_user:
-            raise PermissionError('NOT LOGIN')
         if not id and not name:
             raise ValueError('NO FILTER')
         _filter = {}
@@ -167,7 +164,7 @@ class DAOs(ObjectType):
         if _filter:
             if _filter != DAOsFilterEnum.all:
                 if not query_user:
-                    raise PermissionError('NOT LOGIN')
+                    raise ValueError('NOT QUERY USER')
             if _filter == DAOsFilterEnum.owner:
                 query = Q(owner_id=str(query_user.id))
             if _filter == DAOsFilterEnum.following:
