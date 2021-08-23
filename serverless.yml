@@ -47,12 +47,12 @@ functions:
           path: '{proxy+}'
           method: ANY
           cors: true
-#          authorizer:
-#            arn: ${env:AWS_AUTHORIZER_ARN}
-#            managedExternally: false
-#            resultTtlInSeconds: 3600
-#            identitySource: method.request.header.Authorization
-#            type: token
+          authorizer:
+            arn: ${env:AWS_AUTHORIZER_ARN}
+            managedExternally: false
+            resultTtlInSeconds: 3600
+            identitySource: method.request.header.Authorization
+            type: token
 
 custom:
   pythonRequirements:
