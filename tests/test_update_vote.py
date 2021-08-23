@@ -2,7 +2,7 @@ import random
 import time
 import random
 
-from app.common.models.icpdao.cycle import Cycle, CycleVote
+from app.common.models.icpdao.cycle import Cycle, CycleVote, CycleVoteConfirm, CycleVoteConfirmStatus
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job
 from tests.base import Base
@@ -66,6 +66,16 @@ mutation {
         record.save()
         return record
 
+    @staticmethod
+    def create_cycle_confirm(dao_id, cycle_id, voter):
+        record = CycleVoteConfirm(
+            dao_id=dao_id,
+            cycle_id=cycle_id,
+            voter_id=str(voter.id),
+            status=CycleVoteConfirmStatus.WAITING.value
+        ).save()
+        return record
+
     def create_vote(self):
         self.icpper1 = self.create_icpper_user('mockicpper1', 'mockicpper1')
         self.icpper2 = self.create_icpper_user('mockicpper2', 'mockicpper2')
@@ -104,6 +114,10 @@ mutation {
             dao_id, cycle_id, 0, self.job6, self.job7, self.icpper2)
         self.vote7 = self.create_cycle_vote(
             dao_id, cycle_id, 0, self.job7, self.job4, self.icpper2)
+        self.create_cycle_confirm(dao_id, cycle_id, self.icpper1)
+        self.create_cycle_confirm(dao_id, cycle_id, self.icpper2)
+        self.create_cycle_confirm(dao_id, cycle_id, self.icpper3)
+        self.create_cycle_confirm(dao_id, cycle_id, self.icpper4)
 
     def test_update_pair_vote(self):
         self.create_vote()

@@ -35,7 +35,8 @@ class UpdatePairVote(Mutation):
         if now_at < cycle.vote_begin_at or now_at > cycle.vote_end_at:
             raise ValueError('NOT VOTE TIME')
         cvc = CycleVoteConfirm.objects(cycle_id=str(cycle.id), voter_id=str(current_user.id)).first()
-        assert (cvc and cvc.status == CycleVoteConfirmStatus.WAITING.value), "errors.vote.already_confirm"
+        assert cvc, "errors.vote.no_confirm_record"
+        assert cvc.status == CycleVoteConfirmStatus.WAITING.value, "errors.vote.already_confirm"
         if vote_job_id != cycle_vote.left_job_id and vote_job_id != cycle_vote.right_job_id:
             raise ValueError('NOT RIGHT VOTE')
         cycle_vote.vote_job_id = vote_job_id
@@ -76,7 +77,8 @@ class UpdateALLVote(Mutation):
             raise ValueError('NOT PERMISSION VOTE')
 
         cvc = CycleVoteConfirm.objects(cycle_id=str(cycle.id), voter_id=str(current_user.id)).first()
-        assert (cvc and cvc.status == CycleVoteConfirmStatus.WAITING.value), "errors.vote.already_confirm"
+        assert cvc, "errors.vote.no_confirm_record"
+        assert cvc.status == CycleVoteConfirmStatus.WAITING.value, "errors.vote.already_confirm"
 
         vote_result = VoteResultTypeAllResultType.YES.value if vote else VoteResultTypeAllResultType.NO.value
         exist_vote = cycle_vote.vote_result_type_all.filter(
