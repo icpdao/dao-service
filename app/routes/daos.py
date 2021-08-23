@@ -269,6 +269,7 @@ class UpdateDAOBaseInfo(Mutation):
         id = String(required=True)
         desc = String()
         logo = String()
+        token_address = String()
 
     dao = Field(DAOSchema)
 

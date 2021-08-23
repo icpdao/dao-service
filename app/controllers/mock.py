@@ -4,7 +4,7 @@ import time
 import random
 
 from app.common.models.icpdao.cycle import CycleVotePairTask, CycleVote, CycleIcpperStat, Cycle, CycleVoteType, \
-    VoteResultTypeAll, VoteResultTypeAllResultType, CycleVotePairTaskStatus
+    VoteResultTypeAll, VoteResultTypeAllResultType, CycleVotePairTaskStatus, CycleVoteConfirm, CycleVoteConfirmStatus
 from app.common.models.icpdao.dao import DAO, DAOJobConfig, DAOFollow
 from app.common.models.icpdao.job import Job, JobPR, JobPRComment, JobStatusEnum, JobPairTypeEnum, JobPRStatusEnum
 from app.common.models.icpdao.user import User, UserStatus
@@ -45,6 +45,9 @@ class DeleteDaoMock:
     def delete_cycle_vote_pair_task(self):
         CycleVotePairTask.objects(dao_id=str(self.dao.id)).delete()
 
+    def delete_cycle_vote_confirm(self):
+        CycleVoteConfirm.objects(dao_id=str(self.dao.id)).delete()
+
     def delete_dao_config(self):
         DAOJobConfig.objects(dao_id=str(self.dao.id)).delete()
 
@@ -60,6 +63,7 @@ class DeleteDaoMock:
         self.delete_cycle_icpper_stat()
         self.delete_cycle_vote()
         self.delete_cycle_vote_pair_task()
+        self.delete_cycle_vote_confirm()
         self.delete_dao_follow()
         self.delete_dao_config()
         self.delete_dao()
@@ -259,6 +263,18 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
     4 4 ALL
     2 2 ALL
     """
+    CycleVoteConfirm(
+        dao_id=str(dao.id),
+        cycle_id=str(dao_end_cycle.id),
+        voter_id=str(icpper_user.id),
+        status=CycleVoteConfirmStatus.WAITING.value
+    ).save()
+    CycleVoteConfirm(
+        dao_id=str(dao.id),
+        cycle_id=str(dao_end_cycle.id),
+        voter_id=str(owner_user.id),
+        status=CycleVoteConfirmStatus.WAITING.value
+    ).save()
     CycleVote(
         dao_id=str(dao.id),
         cycle_id=str(dao_end_cycle.id),
@@ -932,6 +948,18 @@ def create_in_vote_time_cycle_data(owner_user, icpper_user, dao_name):
     4 4 ALL
     2 2 ALL
     """
+    CycleVoteConfirm(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        voter_id=str(icpper_user.id),
+        status=CycleVoteConfirmStatus.WAITING.value
+    ).save()
+    CycleVoteConfirm(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        voter_id=str(owner_user.id),
+        status=CycleVoteConfirmStatus.WAITING.value
+    ).save()
     for index, job in enumerate(owner_user_pair_job_list):
         left_job = owner_user_pair_job_list[index]
         right_job = icpper_user_pair_job_list[index]
@@ -1124,6 +1152,18 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
     4 4 ALL
     2 2 ALL
     """
+    CycleVoteConfirm(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        voter_id=str(icpper_user.id),
+        status=CycleVoteConfirmStatus.WAITING.value
+    ).save()
+    CycleVoteConfirm(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        voter_id=str(owner_user.id),
+        status=CycleVoteConfirmStatus.WAITING.value
+    ).save()
     CycleVote(
         dao_id=str(dao.id),
         cycle_id=str(cycle.id),
@@ -1394,6 +1434,18 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
     4 4 ALL
     2 2 ALL
     """
+    CycleVoteConfirm(
+        dao_id=str(dao.id),
+        cycle_id=str(dao_end_cycle.id),
+        voter_id=str(icpper_user.id),
+        status=CycleVoteConfirmStatus.WAITING.value
+    ).save()
+    CycleVoteConfirm(
+        dao_id=str(dao.id),
+        cycle_id=str(dao_end_cycle.id),
+        voter_id=str(owner_user.id),
+        status=CycleVoteConfirmStatus.WAITING.value
+    ).save()
     CycleVote(
         dao_id=str(dao.id),
         cycle_id=str(dao_end_cycle.id),

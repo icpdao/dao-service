@@ -1,7 +1,8 @@
 import time
 from mongoengine import Q
 
-from app.common.models.icpdao.cycle import CycleVotePairTask, CycleVotePairTaskStatus, Cycle, CycleVote, CycleVoteType
+from app.common.models.icpdao.cycle import CycleVotePairTask, CycleVotePairTaskStatus, Cycle, CycleVote, CycleVoteType, \
+    CycleVoteConfirm, CycleVoteConfirmStatus
 from app.common.models.icpdao.job import JobPairTypeEnum, Job, JobStatusEnum, JobPR, JobPRStatusEnum
 from app.common.models.icpdao.user import User
 from app.ei.logic.ei_processor import EiProcessor
@@ -96,7 +97,7 @@ def get_data_by_cycle(cycle):
         )
         ei_issue_list.append(ei_issue)
 
-    return ei_issue_list, type_all_jobs, type_pair_jobs
+    return ei_issue_list, type_all_jobs, type_pair_jobs, user_ids
 
 
 def run_pair_task(task_id):
@@ -128,7 +129,7 @@ def run_pair_task(task_id):
     task.save()
 
     try:
-        ei_issue_list, type_all_jobs, type_pair_jobs = get_data_by_cycle(cycle)
+        ei_issue_list, type_all_jobs, type_pair_jobs, user_ids = get_data_by_cycle(cycle)
         ep = EiProcessor('first', ei_issue_list)
         ep.process()
         success = ep.pair_success()
@@ -168,6 +169,12 @@ def run_pair_task(task_id):
         CycleVote.objects(cycle_id=str(cycle.id), dao_id=dao_id).delete()
         for vote in vote_list:
             vote.save()
+        # generate voter confirm data
+        for uid in user_ids:
+            CycleVoteConfirm.objects(
+                dao_id=dao_id, cycle_id=str(cycle.id), voter_id=uid
+            ).update(
+                upsert=True, create_at=int(time.time()), status=CycleVoteConfirmStatus.WAITING.value)
 
         # 所有 job 更改状态
         for job in type_all_jobs:
