@@ -2,7 +2,8 @@ import time
 from decimal import Decimal
 import random
 
-from app.common.models.icpdao.cycle import Cycle, CycleVotePairTask, CycleVote, CycleVoteType
+from app.common.models.icpdao.cycle import Cycle, CycleVotePairTask, CycleVote, CycleVoteType, CycleVoteConfirm, \
+    CycleVoteConfirmStatus
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job, JobStatusEnum, JobPairTypeEnum, JobPR, JobPRStatusEnum
 from app.common.models.icpdao.user import User
@@ -362,3 +363,8 @@ class TestPair(Base):
         for jobid in jobid_2_count:
             count = jobid_2_count[jobid]
             assert count <= 2
+
+        cyc = CycleVoteConfirm.objects().all()
+        assert len(cyc) == 3
+        for c in cyc:
+            assert c.status == CycleVoteConfirmStatus.WAITING.value

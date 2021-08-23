@@ -8,7 +8,7 @@ from mongoengine import Q
 
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType, CycleVotePairTask, \
     CycleVotePairTaskStatus, CycleVoteResultStatTask, CycleVoteResultStatTaskStatus, CycleVoteResultPublishTask, \
-    CycleVoteResultPublishTaskStatus
+    CycleVoteResultPublishTaskStatus, CycleVoteConfirm, CycleVoteConfirmStatus
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.models.icpdao.user import User
@@ -352,6 +352,7 @@ class CycleVoteQuery(ObjectType):
 
 class CycleVotesQuery(ObjectType):
     nodes = List(CycleVoteQuery)
+    confirm = Boolean()
     total = Int()
 
     @property
@@ -423,6 +424,18 @@ class CycleVotesQuery(ObjectType):
         query = self._base_queryset(info)
 
         return query.limit(self.first).skip(self.offset).count()
+
+    def resolve_confirm(self, info):
+        cycle = Cycle.objects(id=self.cycle_id).first()
+        if self.is_myself:
+            current_user = get_current_user_by_graphql(info)
+            assert current_user, "error.cycle_vote.confirm.illegal"
+            cvc = CycleVoteConfirm.objects(
+                dao_id=cycle.dao_id, cycle_id=self.cycle_id, voter_id=str(current_user.id)).first()
+            assert cvc, "error.cycle_vote.confirm.notfound"
+            return cvc.status == CycleVoteConfirmStatus.CONFIRM.value
+        all_status = set(CycleVoteConfirm.objects(dao_id=cycle.dao_id, cycle_id=self.cycle_id).distinct('status'))
+        return len(all_status) == 1 and all_status == {CycleVoteConfirmStatus.CONFIRM.value}
 
 
 class CycleStatQuery(ObjectType):
