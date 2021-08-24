@@ -1,6 +1,10 @@
 import os
+import time
+from decimal import Decimal
 
+from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.icppership import Icppership, IcppershipProgress, IcppershipStatus
+from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.models.icpdao.user import User, UserStatus
 from tests.base import Base
 
@@ -36,6 +40,70 @@ query {
   }
 }
 """
+
+    query_dao_icpper = """
+query {
+  dao(id: "%s") {
+    datum {
+      id
+      name
+      desc
+      logo
+      ownerId
+    }
+    icppers(sorted: %s, sortedType: %s, first: %s, offset: %s) {
+      nodes {
+        user {
+          id
+        }
+        jobCount
+        size
+        income
+        joinTime
+      }
+      stat {
+        icpperCount
+        jobCount
+        size
+        income
+      }
+      total
+    }
+  }
+}
+"""
+
+    query_dao_job = """
+    query {
+      dao(id: "%s") {
+        datum {
+          id
+          name
+          desc
+          logo
+          ownerId
+        }
+        jobs(sorted: %s, sortedType: %s, first: %s, offset: %s) {
+          nodes {
+            user {
+              id
+            }
+            datum {
+              id
+              title
+            }
+          }
+          stat {
+            icpperCount
+            jobCount
+            size
+            income
+          }
+          total
+        }
+      }
+    }
+    """
 
     update_dao_info = """
 mutation {
@@ -130,3 +198,48 @@ mutation {
         assert ret.status_code == 200
         data = ret.json()
         assert data['data']['updateDaoBaseInfo']['dao']['desc'] == "xxx"
+
+    def test_query_dao_icppers(self):
+        self.__class__.clear_db()
+        u1 = self.__class__.create_icpper_user("test_1", "test_github_login_1")
+        u2 = self.__class__.create_icpper_user("test_2", "test_github_login_2")
+        u3 = self.__class__.create_icpper_user("test_3", "test_github_login_3")
+        dao = DAO(name="d1", owner_id=str(u1.id), github_owner_id=1, github_owner_name="d1").save()
+        mock_data = [
+            {'uid': str(u1.id), 'size': '1', 'income': '1.111'},
+            {'uid': str(u1.id), 'size': '2.3', 'income': '222.222'},
+            {'uid': str(u2.id), 'size': '4.5', 'income': '33.333'},
+            {'uid': str(u2.id), 'size': '5.6', 'income': '4.44'},
+            {'uid': str(u3.id), 'size': '7.8', 'income': '5.5'},
+            {'uid': str(u3.id), 'size': '9.1', 'income': '6'},
+        ]
+        for d, i in enumerate(mock_data):
+            Job(
+                dao_id=str(dao.id), user_id=i['uid'], title=f'{d}-title',
+                size=Decimal(i['size']), income=Decimal(i['income']), create_at=1 if d % 2 == 0 else int(time.time()),
+                github_repo_owner="xxx", github_repo_name="xxx", github_repo_owner_id=1, github_repo_id=1,
+                github_issue_number=1, bot_comment_database_id=1,
+                status=JobStatusEnum.WAITING_FOR_TOKEN.value if d % 2 == 0 else JobStatusEnum.TOKEN_RELEASED.value
+            ).save()
+        res = self.graph_query(str(u1.id), self.query_dao_icpper % (str(dao.id), "joinTime", "desc", 20, 0))
+        nodes = res.json()['data']['dao']['icppers']['nodes']
+        stat = res.json()['data']['dao']['icppers']['stat']
+        total = res.json()['data']['dao']['icppers']['total']
+        assert total == 3
+        assert len(nodes) == 3
+        assert stat['icpperCount'] == 3
+        assert stat['jobCount'] == 6
+        assert int(float(stat['size'])) == int(float(sum([Decimal(d['size']) for d in mock_data])))
+        assert int(float(stat['income'])) == int(float(sum([Decimal(d['income']) for d in mock_data])))
+        return dao, u1
+
+    def test_query_dao_jobs(self):
+        dao, u1 = self.test_query_dao_icppers()
+        res = self.graph_query(str(u1.id), self.query_dao_job % (str(dao.id), "updateAt", "desc", 20, 0))
+        nodes = res.json()['data']['dao']['jobs']['nodes']
+        stat = res.json()['data']['dao']['jobs']['stat']
+        total = res.json()['data']['dao']['jobs']['total']
+        assert len(nodes) == 6
+        assert total == 6
+        assert stat['icpperCount'] == 3
+        assert stat['jobCount'] == 6
