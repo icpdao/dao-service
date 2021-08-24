@@ -1,27 +1,31 @@
+import decimal
 import time
 import os
 import random
 
 from graphene import ObjectType, String, Field, Int, \
-    Float, List, Boolean, Mutation
+    Float, List, Boolean, Mutation, Decimal
 from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
 
 from app.common.models.icpdao.user import UserStatus, User
 from app.common.models.logic.user_helper import pre_icpper_to_icpper
+from app.common.schema import BaseObjectType, BaseObjectArgs
+from app.routes.data_loaders import UserLoader
 from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
 
-from app.routes.cycles import CyclesQuery
+from app.routes.cycles import CyclesQuery, JobQuery, JobsQuery, JobStatQuery
 from app.common.models.icpdao.dao import DAO as DAOModel, DAOJobConfig
 from app.common.models.icpdao.dao import DAOFollow as DAOFollowModel
-from app.common.models.icpdao.job import Job as JobModel
-from app.common.schema.icpdao import DAOSchema
+from app.common.models.icpdao.job import Job as JobModel, JobStatusEnum
+from app.common.schema.icpdao import DAOSchema, UserSchema
 from app.common.models.icpdao.user_github_token import UserGithubToken
 from app.common.utils.access import check_is_icpper, check_is_dao_owner
-from app.common.utils.route_helper import get_current_user_by_graphql
+from app.common.utils.route_helper import get_current_user_by_graphql, set_custom_attr_by_graphql
 from app.common.utils.github_rest_api import org_member_role_is_admin, check_icp_app_installed_status_of_org, get_icp_app_jwt, get_github_org_id
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
-    DAOsSortedTypeEnum, CycleFilterEnum, CyclesQueryArgs
+    DAOsSortedTypeEnum, CycleFilterEnum, CyclesQueryArgs, ICPPERsQuerySortedEnum, ICPPERsQuerySortedTypeEnum, \
+    JobsQuerySortedEnum, JobsQuerySortedTypeEnum, CommonPaginationArgs
 from app.routes.follow import DAOFollowUDSchema
 
 
@@ -99,10 +103,47 @@ class DAOItem(ObjectType):
         return str(current_user.id) == parent.datum.owner_id
 
 
+class ICPPERStatQuery(ObjectType):
+    icpper_count = Int()
+    job_count = Int()
+    size = Decimal()
+    income = Decimal()
+
+
+class ICPPERQuery(BaseObjectType):
+    user = Field(lambda: UserSchema)
+    job_count = Int()
+    size = Decimal()
+    income = Decimal()
+    join_time = Int()
+
+
+class ICPPERsQuery(BaseObjectType):
+    nodes = List(ICPPERQuery)
+    stat = Field(ICPPERStatQuery)
+    total = Int()
+
+
 class DAO(ObjectType):
     datum = Field(DAOSchema)
     following = Field(DAOFollowUDSchema)
     cycles = Field(CyclesQuery, filter=List(CycleFilterEnum))
+    icppers = Field(
+        ICPPERsQuery,
+        sorted=ICPPERsQuerySortedEnum(default_value=0),
+        sorted_type=ICPPERsQuerySortedTypeEnum(default_value=1),
+        first=Int(default_value=20),
+        offset=Int(default_value=0)
+    )
+    jobs = Field(
+        JobsQuery,
+        sorted=JobsQuerySortedEnum(),
+        sorted_type=JobsQuerySortedTypeEnum(default_value=0),
+        first=Int(default_value=20),
+        offset=Int(default_value=0),
+        begin_time=Int(),
+        end_time=Int()
+    )
 
     def get_query(self, info, id=None, name=None):
         if not id and not name:
@@ -134,6 +175,78 @@ class DAO(ObjectType):
         dao = getattr(parent, 'query')
         return CyclesQuery(_args=CyclesQueryArgs(
           dao_id=str(dao.id), filter=filter))
+
+    @staticmethod
+    def resolve_icppers(parent, info, sorted_type, first, offset, sorted):
+        dao = getattr(parent, 'query')
+
+        format_sorted_type = 1 if sorted_type == ICPPERsQuerySortedTypeEnum.asc.value else -1
+        format_sorted = ICPPERsQuerySortedEnum.get(sorted).value
+
+        job_group_user = JobModel.objects(
+            dao_id=str(dao.id),
+            status__nin=[JobStatusEnum.AWAITING_MERGER.value]
+        ).aggregate([
+            {"$sort": {"create_at": 1}},
+            {"$group": {
+                "_id": "$user_id",
+                "size_sum": {"$sum": "$size"},
+                "job_count": {"$sum": 1},
+                "income_sum": {"$sum": "$income"},
+                "join_time": {"$first": "$create_at"}
+            }},
+            {"$sort": {format_sorted: format_sorted_type}}
+        ])
+
+        job_group_user = list(job_group_user)
+        count = len(job_group_user)
+        job_count = 0
+        size_stat = decimal.Decimal(0)
+        income_stat = decimal.Decimal(0)
+        for d in job_group_user:
+            job_count += d['job_count']
+            size_stat += decimal.Decimal(d['size_sum'])
+            income_stat += decimal.Decimal(d['income_sum'])
+
+        data = job_group_user[offset:first+offset]
+        nodes = []
+        user_loader = UserLoader()
+        for d in data:
+            nodes.append(ICPPERQuery(
+                user=user_loader.load(d['_id']), job_count=d['job_count'],
+                size=decimal.Decimal(d['size_sum']), income=decimal.Decimal(d['income_sum']), join_time=d['join_time']))
+
+        return ICPPERsQuery(
+            nodes=nodes,
+            stat=ICPPERStatQuery(icpper_count=count, job_count=job_count, size=size_stat, income=income_stat),
+            total=count)
+
+    @staticmethod
+    def _jobs_base_queryset(dao_id, sorted, sorted_type, begin_time, end_time):
+        query_dict = {'dao_id': dao_id, 'status__nin': [JobStatusEnum.AWAITING_MERGER.value]}
+        if begin_time is not None:
+            query_dict['create_at__gte'] = begin_time
+        if end_time is not None:
+            query_dict['create_at__lte'] = end_time
+        query = JobModel.objects.filter(**query_dict)
+        if sorted is not None:
+            sort_string = JobsQuerySortedEnum.get(sorted).value
+            if sorted_type == JobsQuerySortedTypeEnum.desc:
+                sort_string = '-{}'.format(sort_string)
+            query = query.order_by(sort_string)
+        return query
+
+    def resolve_jobs(self, info, sorted_type, first, offset, sorted, begin_time=None, end_time=None):
+        dao = getattr(self, 'query')
+        query = self._jobs_base_queryset(
+            dao_id=str(dao.id), sorted=sorted, sorted_type=sorted_type, begin_time=begin_time, end_time=end_time)
+
+        return JobsQuery(
+            _args=CommonPaginationArgs(query=query, first=first, offset=offset),
+            stat=JobStatQuery(
+                icpper_count=len(query.distinct('user_id')), job_count=query.count(),
+                size=decimal.Decimal(query.sum('size')), income=decimal.Decimal(query.sum('income')))
+        )
 
 
 class DAOs(ObjectType):
