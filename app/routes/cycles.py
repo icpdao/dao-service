@@ -451,6 +451,7 @@ class CycleQuery(ObjectType):
         first=Int(default_value=20),
         offset=Int(default_value=0)
     )
+    icpper_stat = Field(IcpperStatQuery)
     jobs = Field(
         JobsQuery,
         pair_type=JobsQueryPairTypeEnum(),
@@ -492,6 +493,13 @@ class CycleQuery(ObjectType):
         _sorted = kwargs.get('sorted', None)
         sorted_type = kwargs.get('sorted_type', None)
         return IcpperStatsQuery(cycle_id=self.cycle_id, first=first, offset=offset, sorted=_sorted, sorted_type=sorted_type)
+
+    def resolve_icpper_stat(self, info):
+        current_user = get_current_user_by_graphql(info)
+        assert current_user, "error.common.not_login"
+        record = CycleIcpperStat.objects(cycle_id=self.cycle_id, user_id=str(current_user.id)).first()
+        assert record, "error.icpper_stat.notfound"
+        return IcpperStatQuery(datum=record)
 
     @staticmethod
     def _jobs_base_queryset(cycle_id, sorted, sorted_type, pair_type):
