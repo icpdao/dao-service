@@ -24,7 +24,7 @@ from app.common.utils.access import check_is_icpper, check_is_dao_owner
 from app.common.utils.route_helper import get_current_user_by_graphql, set_custom_attr_by_graphql
 from app.common.utils.github_rest_api import org_member_role_is_admin, check_icp_app_installed_status_of_org, get_icp_app_jwt, get_github_org_id
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
-    DAOsSortedTypeEnum, CycleFilterEnum, CyclesQueryArgs, ICPPERsQuerySortedEnum, ICPPERsQuerySortedTypeEnum, \
+    DAOsSortedTypeEnum, CycleFilterEnum, CyclesQueryArgs, IcppersQuerySortedEnum, IcppersQuerySortedTypeEnum, \
     JobsQuerySortedEnum, JobsQuerySortedTypeEnum, CommonPaginationArgs
 from app.routes.follow import DAOFollowUDSchema
 
@@ -103,7 +103,7 @@ class DAOItem(ObjectType):
         return str(current_user.id) == parent.datum.owner_id
 
 
-class ICPPERStatQuery(ObjectType):
+class IcppersStatQuery(ObjectType):
     icpper_count = Int()
     job_count = Int()
     size = Decimal()
@@ -118,9 +118,9 @@ class ICPPERQuery(BaseObjectType):
     join_time = Int()
 
 
-class ICPPERsQuery(BaseObjectType):
+class IcppersQuery(BaseObjectType):
     nodes = List(ICPPERQuery)
-    stat = Field(ICPPERStatQuery)
+    stat = Field(IcppersStatQuery)
     total = Int()
 
 
@@ -129,9 +129,9 @@ class DAO(ObjectType):
     following = Field(DAOFollowUDSchema)
     cycles = Field(CyclesQuery, filter=List(CycleFilterEnum))
     icppers = Field(
-        ICPPERsQuery,
-        sorted=ICPPERsQuerySortedEnum(default_value=0),
-        sorted_type=ICPPERsQuerySortedTypeEnum(default_value=1),
+        IcppersQuery,
+        sorted=IcppersQuerySortedEnum(default_value=0),
+        sorted_type=IcppersQuerySortedTypeEnum(default_value=1),
         first=Int(default_value=20),
         offset=Int(default_value=0)
     )
@@ -180,8 +180,8 @@ class DAO(ObjectType):
     def resolve_icppers(parent, info, sorted_type, first, offset, sorted):
         dao = getattr(parent, 'query')
 
-        format_sorted_type = 1 if sorted_type == ICPPERsQuerySortedTypeEnum.asc.value else -1
-        format_sorted = ICPPERsQuerySortedEnum.get(sorted).value
+        format_sorted_type = 1 if sorted_type == IcppersQuerySortedTypeEnum.asc.value else -1
+        format_sorted = IcppersQuerySortedEnum.get(sorted).value
 
         job_group_user = JobModel.objects(
             dao_id=str(dao.id),
@@ -216,9 +216,9 @@ class DAO(ObjectType):
                 user=user_loader.load(d['_id']), job_count=d['job_count'],
                 size=decimal.Decimal(d['size_sum']), income=decimal.Decimal(d['income_sum']), join_time=d['join_time']))
 
-        return ICPPERsQuery(
+        return IcppersQuery(
             nodes=nodes,
-            stat=ICPPERStatQuery(icpper_count=count, job_count=job_count, size=size_stat, income=income_stat),
+            stat=IcppersStatQuery(icpper_count=count, job_count=job_count, size=size_stat, income=income_stat),
             total=count)
 
     @staticmethod
