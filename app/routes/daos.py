@@ -383,6 +383,8 @@ class UpdateDAOBaseInfo(Mutation):
         desc = String()
         logo = String()
         token_address = String()
+        token_name = String()
+        token_symbol = String()
 
     dao = Field(DAOSchema)
 
