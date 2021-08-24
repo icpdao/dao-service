@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 from enum import Enum as PyEnum
 from graphene import Enum
 
@@ -34,6 +34,12 @@ class CyclesTokenUnreleasedQueryArgs(BaseObjectArgs):
 
 class DAOJobConfigQueryArgs(BaseObjectArgs):
     dao_id: str
+
+
+class CommonPaginationArgs(BaseObjectArgs):
+    query: Any
+    first: int
+    offset: int
 
 
 class DAOsSortedEnum(Enum):
@@ -75,9 +81,22 @@ class CycleIcpperStatSortedTypeEnum(Enum):
     desc = 1
 
 
+class ICPPERsQuerySortedEnum(Enum):
+    joinTime = 'join_time'
+    jobCount = 'job_count'
+    size = 'size_sum'
+    income = 'income_sum'
+
+
+class ICPPERsQuerySortedTypeEnum(Enum):
+    asc = 0
+    desc = 1
+
+
 class JobsQuerySortedEnum(Enum):
-    size = 0
-    income = 1
+    size = 'size'
+    income = 'income'
+    updateAt = 'update_at'
 
 
 class JobsQuerySortedTypeEnum(Enum):

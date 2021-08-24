@@ -12,7 +12,7 @@ from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, Cy
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.models.icpdao.user import User
-from app.common.schema import BaseObjectType
+from app.common.schema import BaseObjectType, BaseObjectArgs
 from app.common.schema.icpdao import CycleSchema, CycleIcpperStatSchema, UserSchema, JobSchema, CycleVoteSchema
 from app.common.utils.access import check_is_dao_owner
 from app.common.utils.route_helper import get_custom_attr_by_graphql, set_custom_attr_by_graphql, \
@@ -25,7 +25,7 @@ from app.routes.schema import CycleIcpperStatSortedTypeEnum, CycleIcpperStatSort
     JobsQuerySortedTypeEnum, JobsQueryPairTypeEnum, CycleVotePairTaskStatusEnum, \
     CreateCycleVotePairTaskByOwnerStatusEnum, CycleFilterEnum, CreateCycleVoteResultStatTaskByOwnerStatusEnum, \
     CycleVoteResultStatTaskStatusEnum, CycleVoteResultTypeAllResultTypeEnum, \
-    CreateCycleVoteResultPublishTaskByOwnerStatusEnum, CycleVoteResultPublishTaskStatusEnum
+    CreateCycleVoteResultPublishTaskByOwnerStatusEnum, CycleVoteResultPublishTaskStatusEnum, CommonPaginationArgs
 
 
 class IcpperStatQuery(ObjectType):
@@ -132,80 +132,26 @@ class JobQuery(ObjectType):
         return user_loader.load(self.datum.user_id)
 
 
-class JobsQuery(ObjectType):
+class JobStatQuery(ObjectType):
+    icpper_count = Int()
+    job_count = Int()
+    size = Decimal()
+    income = Decimal()
+
+
+class JobsQuery(BaseObjectType):
     nodes = List(JobQuery)
+    stat = Field(JobStatQuery)
     total = Int()
 
-    @property
-    def cycle_id(self):
-        return getattr(self, '_cycle_id')
-
-    @cycle_id.setter
-    def cycle_id(self, cycle_id):
-        setattr(self, '_cycle_id', cycle_id)
-
-    @property
-    def sorted(self):
-        return getattr(self, '_sorted')
-
-    @sorted.setter
-    def sorted(self, _sorted):
-        setattr(self, '_sorted', _sorted)
-
-    @property
-    def sorted_type(self):
-        return getattr(self, '_sorted_type')
-
-    @sorted_type.setter
-    def sorted_type(self, sorted_type):
-        setattr(self, '_sorted_type', sorted_type)
-
-    @property
-    def pair_type(self):
-        return getattr(self, '_pair_type')
-
-    @pair_type.setter
-    def pair_type(self, pair_type):
-        setattr(self, '_pair_type', pair_type)
-
-    @property
-    def first(self):
-        return getattr(self, '_first')
-
-    @first.setter
-    def first(self, first):
-        setattr(self, '_first', first)
-
-    @property
-    def offset(self):
-        return getattr(self, '_offset')
-
-    @offset.setter
-    def offset(self, offset):
-        setattr(self, '_offset', offset)
-
-    def _base_queryset(self):
-        query = Job.objects.filter(cycle_id=self.cycle_id, status__nin=[JobStatusEnum.AWAITING_MERGER.value])
-
-        if self.pair_type is not None:
-            query = query.filter(pair_type=self.pair_type)
-
-        if self.sorted is not None:
-            sort_string = JobsQuerySortedEnum.get(self.sorted).name
-            if self.sorted_type == JobsQuerySortedTypeEnum.desc:
-                sort_string = '-{}'.format(sort_string)
-            query = query.order_by(sort_string)
-        return query
-
     def resolve_total(self, info):
-        query = self._base_queryset()
+        query = self._args.get('query')
         return query.count()
 
     def resolve_nodes(self, info):
-        query = self._base_queryset()
+        query = self._args.get('query')
         set_custom_attr_by_graphql(info, 'user_loader', UserLoader())
-
-        return [JobQuery(datum=item) for item in query.limit(self.first).skip(self.offset)]
+        return [JobQuery(datum=item) for item in query.limit(self._args.get('first')).skip(self._args.get('offset'))]
 
 
 class UserIcpperStatsQuery(ObjectType):
@@ -541,13 +487,29 @@ class CycleQuery(ObjectType):
         sorted_type = kwargs.get('sorted_type', None)
         return IcpperStatsQuery(cycle_id=self.cycle_id, first=first, offset=offset, sorted=_sorted, sorted_type=sorted_type)
 
+    @staticmethod
+    def _jobs_base_queryset(cycle_id, sorted, sorted_type, pair_type):
+        query = Job.objects.filter(cycle_id=cycle_id, status__nin=[JobStatusEnum.AWAITING_MERGER.value])
+
+        if pair_type is not None:
+            query = query.filter(pair_type=pair_type)
+
+        if sorted is not None:
+            sort_string = JobsQuerySortedEnum.get(sorted).value
+            if sorted_type == JobsQuerySortedTypeEnum.desc:
+                sort_string = '-{}'.format(sort_string)
+            query = query.order_by(sort_string)
+        return query
+
     def resolve_jobs(self, info, **kwargs):
         first = kwargs.get('first')
         offset = kwargs.get('offset')
         _sorted = kwargs.get('sorted', None)
         sorted_type = kwargs.get('sorted_type', None)
         pair_type = kwargs.get('pair_type', None)
-        return JobsQuery(cycle_id=self.cycle_id, first=first, offset=offset, sorted=_sorted, sorted_type=sorted_type, pair_type=pair_type)
+
+        query = self._jobs_base_queryset(cycle_id=self.cycle_id, sorted=_sorted, sorted_type=sorted_type, pair_type=pair_type)
+        return JobsQuery(_args=CommonPaginationArgs(query=query, first=first, offset=offset))
 
     def resolve_votes(self, info, **kwargs):
         first = kwargs.get('first')
