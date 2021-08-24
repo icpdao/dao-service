@@ -81,14 +81,14 @@ class CycleIcpperStatSortedTypeEnum(Enum):
     desc = 1
 
 
-class ICPPERsQuerySortedEnum(Enum):
+class IcppersQuerySortedEnum(Enum):
     joinTime = 'join_time'
     jobCount = 'job_count'
     size = 'size_sum'
     income = 'income_sum'
 
 
-class ICPPERsQuerySortedTypeEnum(Enum):
+class IcppersQuerySortedTypeEnum(Enum):
     asc = 0
     desc = 1
 
