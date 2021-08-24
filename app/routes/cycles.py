@@ -153,6 +153,12 @@ class JobsQuery(BaseObjectType):
         set_custom_attr_by_graphql(info, 'user_loader', UserLoader())
         return [JobQuery(datum=item) for item in query.limit(self._args.get('first')).skip(self._args.get('offset'))]
 
+    def resolve_stat(self, info):
+        query = self._args.get('query')
+        return JobStatQuery(
+            icpper_count=len(query.distinct('user_id')), job_count=query.count(),
+            size=decimal.Decimal(query.sum('size')), income=decimal.Decimal(query.sum('income')))
+
 
 class UserIcpperStatsQuery(ObjectType):
     nodes = List(IcpperStatQuery)
