@@ -3,6 +3,7 @@ from app.common.models.icpdao.github_app_token import GithubAppToken
 from app.common.models.icpdao.job import JobPRStatusEnum
 from app.common.models.icpdao.user import User as UserModel, UserStatus
 from app.common.models.icpdao.user_github_token import UserGithubToken
+from app.common.models.logic.user_helper import user_auth_follow_dao
 from app.common.utils.github_app.client import GithubAppClient
 from app.common.utils.github_app.utils import parse_pr, LinkType, parse_issue
 from app.common.utils.github_rest_api import get_github_org_id
@@ -216,4 +217,5 @@ by @icpdao
         bot_comment_database_id=res['id']
     )
     record.save()
+    user_auth_follow_dao(str(current_user.id), str(dao.id))
     return record

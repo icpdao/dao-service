@@ -6,7 +6,7 @@ import random
 import responses
 
 from app import webhooks_route
-from app.common.models.icpdao.dao import DAO
+from app.common.models.icpdao.dao import DAO, DAOFollow
 from app.common.models.icpdao.icppership import Icppership, IcppershipProgress, IcppershipStatus
 from app.common.models.icpdao.job import Job, JobPR, JobPRComment
 from app.common.models.icpdao.user import User, UserStatus
@@ -228,6 +228,7 @@ mutation {
 
     @responses.activate
     def test_create_job(self):
+        DAOFollow.drop_collection()
         dao_id = self.get_or_create_dao()
         responses.add(
             responses.GET,
@@ -260,6 +261,9 @@ mutation {
         )
         mark_issue = "https://github.com/mockdao/mockrepo/issues/1"
         mark_size = 2.3
+
+        assert DAOFollow.objects(user_id=str(self.icpper.id), dao_id=dao_id).first() is None
+
         res = self.graph_query(
             str(self.icpper.id),
             self.create_job % (mark_issue, str(mark_size))
@@ -271,6 +275,8 @@ mutation {
         assert data['data']['createJob']['job']['node']['githubRepoOwner'] == "mockdao"
         assert data['data']['createJob']['job']['node']['githubIssueNumber'] == 1
         assert data['data']['createJob']['job']['node']['size'] == 2.3
+
+        assert DAOFollow.objects(user_id=str(self.icpper.id), dao_id=dao_id).first() is not None
 
         res = self.graph_query(
             str(self.icpper.id),
