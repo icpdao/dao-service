@@ -3,7 +3,7 @@ from graphene import ObjectType, String, Field, Int
 from app.routes.config import UpdateDAOJobConfig, DAOJobConfig, DAOTokenConfig
 from app.routes.cycles import CycleQuery, CreateCycleVotePairTaskByOwner, \
     ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner, CreateCycleVoteResultPublishTaskByOwner, \
-    UserIcpperStatsQuery, CycleByTokenUnreleasedQuery, MarkCyclesTokenReleased
+    UserIcpperStatsQuery, CycleByTokenUnreleasedQuery, MarkCyclesTokenReleased, VotingCycleQuery
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus
 from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob, UpdateJobVoteTypeByOwner, UpdateIcpperStatOwnerEi, DeleteJob
@@ -56,6 +56,8 @@ class Query(ObjectType):
         last_timestamp=Int(required=True)
     )
 
+    voting_cycle = Field(VotingCycleQuery)
+
     jobs = Field(
         Jobs,
         dao_name=String(),
@@ -99,6 +101,10 @@ class Query(ObjectType):
     @staticmethod
     def resolve_dao_github_app_status(root, info, name):
         return DAOGithubAppStatus().get(info, name)
+
+    @staticmethod
+    def resolve_voting_cycle(root, info):
+        return VotingCycleQuery().get(info)
 
     @staticmethod
     def resolve_cycle(root, info, id):
