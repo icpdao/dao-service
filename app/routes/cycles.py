@@ -605,6 +605,23 @@ class CycleByTokenUnreleasedQuery(BaseObjectType):
         return [CycleQuery(datum=i, cycle_id=str(i.id)) for i in cycle_list]
 
 
+class VotingCycleQuery(BaseObjectType):
+    datum = Field(CycleSchema)
+
+    def get(self, info):
+        current_user = get_current_user_by_graphql(info)
+        assert current_user, 'NOT LOGIN'
+
+        now_at = int(time.time())
+        dao_id_list = Job.objects(user_id=str(current_user.id)).distinct('dao_id')
+        self.datum = Cycle.objects(
+            vote_begin_at__lte=now_at,
+            vote_end_at__gt=now_at,
+            dao_id__in=dao_id_list
+        ).order_by("vote_end_at").first()
+        return self
+
+
 class ChangeVoteResultPublic(Mutation):
     class Arguments:
         id = String(required=True)
