@@ -61,14 +61,14 @@ def get_github_owner_app_info(user, github_owner_name):
 class DAOStat(ObjectType):
     following = Int()
     job = Int()
-    size = Float()
-    token = String()
+    size = Decimal()
+    token = Decimal()
 
 
 class DAOsStat(ObjectType):
     icpper = Int()
-    size = Float()
-    income = Float()
+    size = Decimal()
+    income = Decimal()
 
 
 class DAOItem(ObjectType):
@@ -83,8 +83,12 @@ class DAOItem(ObjectType):
 
     @staticmethod
     def resolve_stat(parent, info):
-        # TODO:is mock
-        return DAOStat(following=0, job=0, size=0, token=0)
+        following = DAOFollowModel.objects(dao_id=str(parent.datum.id)).count()
+        job_query = JobModel.objects(dao_id=str(parent.datum.id), status__nin=[JobStatusEnum.AWAITING_MERGER.value])
+        job = job_query.count()
+        size = decimal.Decimal(job_query.sum('size'))
+        token = decimal.Decimal(job_query.sum('income'))
+        return DAOStat(following=following, job=job, size=size, token=token)
 
     @staticmethod
     def resolve_is_following(parent, info):
@@ -323,12 +327,11 @@ class DAOs(ObjectType):
         return [DAOItem(datum=item) for item in self.query_list]
 
     def resolve_stat(self, info):
-        # TODO is mock
         dao_ids = {str(item.id) for item in self.query_list}
-
         icpper = JobModel.objects(dao_id__in=dao_ids).distinct('user_id')
         size = JobModel.objects(dao_id__in=dao_ids).sum('size')
-        return DAOsStat(icpper=len(icpper), size=size, income=0)
+        income = JobModel.objects(dao_id__in=dao_ids).sum('income')
+        return DAOsStat(icpper=len(icpper), size=decimal.Decimal(size), income=decimal.Decimal(income))
 
     def resolve_total(self, info):
         return self.query_list.count()

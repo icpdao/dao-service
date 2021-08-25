@@ -118,10 +118,9 @@ mutation {
         res_daos = res['data']['daos']['dao']
         res_total = res['data']['daos']['total']
 
-        # TODO is mock
         assert res_stat['icpper'] == 0
-        assert res_stat['size'] == 0
-        assert res_stat['income'] == 0
+        assert res_stat['size'] == '0'
+        assert res_stat['income'] == '0'
 
         assert len(res_daos) == 2
         for dao_item in res_daos:
