@@ -1,5 +1,7 @@
+import decimal
 import os
 
+from app.common.models.icpdao.job import Job
 from tests.base import Base
 
 TESTS_ROOT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
@@ -157,7 +159,16 @@ mutation {
 
         test_icpper2_dao1 = DAO.objects(name='test_icpper2_dao1').first()
         DAOFollow(dao_id=str(test_icpper2_dao1.id), user_id=str(self.icpper1.id)).save()
-
+        Job(
+            dao_id=str(test_icpper2_dao1.id),
+            user_id=str(self.icpper1.id), title='xx',
+            size=decimal.Decimal('100'), github_repo_owner='xx',
+            github_repo_name='xx',
+            github_repo_owner_id=2,
+            github_repo_id=2,
+            github_issue_number=3,
+            bot_comment_database_id=3
+        ).save()
         ret = self.graph_query(self.icpper1.id, self.get_daos_by_params % 'filter: all')
         res = ret.json()
         assert len(res['data']['daos']['dao']) == 3
