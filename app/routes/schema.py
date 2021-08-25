@@ -23,6 +23,10 @@ class CycleFilterEnum(Enum):
     un_vote_end = 3
 
 
+class DAOQueryArgs(BaseObjectArgs):
+    query: Any
+
+
 class CyclesQueryArgs(BaseObjectArgs):
     dao_id: str
     filter: Optional[list]
@@ -43,11 +47,11 @@ class CommonPaginationArgs(BaseObjectArgs):
 
 
 class DAOsSortedEnum(Enum):
-    number = 0
-    following = 2
-    job = 3
-    size = 3
-    token = 3
+    number = 'number'
+    following = 'following'
+    job = 'job'
+    size = 'size'
+    token = 'token'
 
 
 class JobSortedEnum(Enum):

@@ -1,15 +1,20 @@
+import decimal
+
 from graphene import ObjectType, String, Field, Int
 
+from app.common.models.icpdao.job import Job
 from app.routes.config import UpdateDAOJobConfig, DAOJobConfig, DAOTokenConfig
 from app.routes.cycles import CycleQuery, CreateCycleVotePairTaskByOwner, \
     ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner, CreateCycleVoteResultPublishTaskByOwner, \
     UserIcpperStatsQuery, CycleByTokenUnreleasedQuery, MarkCyclesTokenReleased, VotingCycleQuery
-from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus
+from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus, DAOsStat, DAOItem, DAOStat, \
+    get_query_dao_list
 from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob, UpdateJobVoteTypeByOwner, UpdateIcpperStatOwnerEi, DeleteJob
 from app.routes.mock import CreateMock
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
-    DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum, DAOJobConfigQueryArgs, CyclesTokenUnreleasedQueryArgs
+    DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum, DAOJobConfigQueryArgs, CyclesTokenUnreleasedQueryArgs, \
+    DAOQueryArgs
 from app.routes.vote import UpdatePairVote, UpdateALLVote, UpdateVoteConfirm
 
 
@@ -80,7 +85,12 @@ class Query(ObjectType):
 
     @staticmethod
     def resolve_daos(root, info, **kwargs):
-        return DAOs().get_query_dao_list(info, **kwargs)
+        query_dao_list, all_dao_ids = get_query_dao_list(info, **kwargs)
+        icpper = Job.objects(dao_id__in=all_dao_ids).distinct('user_id')
+        size = Job.objects(dao_id__in=all_dao_ids).sum('size')
+        income = Job.objects(dao_id__in=all_dao_ids).sum('income')
+        stat = DAOsStat(icpper=len(icpper), size=decimal.Decimal(size), income=decimal.Decimal(income))
+        return DAOs(_args=DAOQueryArgs(query=query_dao_list), stat=stat, total=len(all_dao_ids))
 
     @staticmethod
     def resolve_jobs(root, info, **kwargs):

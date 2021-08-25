@@ -58,6 +58,77 @@ def get_github_owner_app_info(user, github_owner_name):
     return github_org_id, is_icp_app_installed, is_github_org_owner
 
 
+def get_query_dao_list(info, **kwargs):
+    current_user = get_current_user_by_graphql(info)
+    query_user = current_user
+    query_user_name = kwargs.get('user_name')
+    if query_user_name:
+        user = User.objects(github_login=query_user_name).first()
+        assert user, "error.dao_list.notfound.user"
+        query_user = user
+
+    _filter = kwargs.get('filter')
+    _sorted = kwargs.get('sorted')
+    _sorted_type = kwargs.get('sorted_type')
+    _search = kwargs.get('search')
+    _offset = kwargs.get('offset')
+    _first = kwargs.get('first')
+
+    query = None
+    if _filter:
+        if _filter != DAOsFilterEnum.all:
+            if not query_user:
+                raise ValueError('NOT QUERY USER')
+        if _filter == DAOsFilterEnum.owner:
+            query = Q(owner_id=str(query_user.id))
+        if _filter == DAOsFilterEnum.following:
+            dao_id_list = [item.dao_id for item in DAOFollowModel.objects(user_id=str(query_user.id))]
+            query = Q(id__in=dao_id_list)
+        if _filter == DAOsFilterEnum.following_and_owner:
+            dao_id_list = [item.dao_id for item in DAOFollowModel.objects(user_id=str(query_user.id))]
+            query = (Q(owner_id=str(query_user.id)) | Q(id__in=dao_id_list))
+        if _filter == DAOsFilterEnum.member:
+            dao_id_list = JobModel.objects(user_id=str(query_user.id)).distinct('dao_id')
+            query = Q(id__in=dao_id_list)
+
+    if _search:
+        if query:
+            query = query & Q(name__contains=_search)
+        else:
+            query = Q(name__contains=_search)
+
+    if query:
+        query_dao_list = DAOModel.objects(query)
+    else:
+        query_dao_list = DAOModel.objects()
+
+    dao_ids = query_dao_list.distinct('_id')
+
+    dao_list = []
+    for item in query_dao_list.all():
+        following = DAOFollowModel.objects(dao_id=str(item.id)).count()
+        job_query = JobModel.objects(dao_id=str(item.id), status__nin=[JobStatusEnum.AWAITING_MERGER.value])
+        job = job_query.count()
+        size = decimal.Decimal(job_query.sum('size'))
+        token = decimal.Decimal(job_query.sum('income'))
+        dao_list.append(dict(
+            following=following, job=job, size=size, token=token, number=item.number, datum=item,
+            stat=DAOStat(following=following, job=job, size=size, token=token)
+        ))
+
+    if _sorted is not None or _sorted_type is not None:
+        if _sorted is None:
+            _sorted = DAOsSortedEnum.number.value
+        if _sorted_type is None:
+            _sorted_type = DAOsSortedTypeEnum.asc.value
+
+        dao_list.sort(
+            key=lambda x: x[_sorted],
+            reverse=False if _sorted_type == DAOsSortedTypeEnum.asc.value else True)
+
+    return dao_list[_offset:_offset+_first], dao_ids
+
+
 class DAOStat(ObjectType):
     following = Int()
     job = Int()
@@ -253,88 +324,13 @@ class DAO(ObjectType):
         )
 
 
-class DAOs(ObjectType):
+class DAOs(BaseObjectType):
     dao = List(DAOItem)
     stat = Field(DAOsStat)
     total = Int()
 
-    def get_query_dao_list(self, info, **kwargs):
-        current_user = get_current_user_by_graphql(info)
-        query_user = current_user
-        query_user_name = kwargs.get('user_name')
-        if query_user_name:
-            user = User.objects(github_login=query_user_name).first()
-            if not user:
-                raise PermissionError("userName'USER NOT FOUND")
-            query_user = user
-
-        _filter = kwargs.get('filter')
-        _sorted = kwargs.get('sorted')
-        _sorted_type = kwargs.get('sorted_type')
-        _search = kwargs.get('search')
-        _offset = kwargs.get('offset')
-        _first = kwargs.get('first')
-
-        query = None
-        sort_string = None
-        search = None
-        if _filter:
-            if _filter != DAOsFilterEnum.all:
-                if not query_user:
-                    raise ValueError('NOT QUERY USER')
-            if _filter == DAOsFilterEnum.owner:
-                query = Q(owner_id=str(query_user.id))
-            if _filter == DAOsFilterEnum.following:
-                dao_id_list = [item.dao_id for item in DAOFollowModel.objects(user_id=str(query_user.id))]
-                query = Q(id__in=dao_id_list)
-            if _filter == DAOsFilterEnum.following_and_owner:
-                dao_id_list = [item.dao_id for item in DAOFollowModel.objects(user_id=str(query_user.id))]
-                query = (Q(owner_id=str(query_user.id)) | Q(id__in=dao_id_list))
-            if _filter == DAOsFilterEnum.member:
-                dao_id_list = JobModel.objects(user_id=str(query_user.id)).distinct('dao_id')
-                query = Q(id__in=dao_id_list)
-
-        if _search:
-            if query:
-                query = query & Q(name__contains=_search)
-            else:
-                query = Q(name__contains=_search)
-
-        if _sorted is not None or _sorted_type is not None:
-            if _sorted is None:
-                _sorted = DAOsSortedEnum.number
-            if _sorted_type is None:
-                _sorted_type = DAOsSortedTypeEnum.asc
-
-            # TODO 目前只支持 number 排序
-            if _sorted == DAOsSortedEnum.number:
-                sort_string = 'number'
-            if _sorted_type == DAOsSortedTypeEnum.desc:
-                sort_string = '-{}'.format(sort_string)
-
-        if query:
-            query_dao_list = DAOModel.objects(query)
-        else:
-            query_dao_list = DAOModel.objects
-        if sort_string:
-            query_dao_list = query_dao_list.order_by(sort_string)
-
-        query_dao_list = query_dao_list.limit(_first).skip(_offset)
-        setattr(self, 'query_list', query_dao_list)
-        return self
-
     def resolve_dao(self, info):
-        return [DAOItem(datum=item) for item in self.query_list]
-
-    def resolve_stat(self, info):
-        dao_ids = {str(item.id) for item in self.query_list}
-        icpper = JobModel.objects(dao_id__in=dao_ids).distinct('user_id')
-        size = JobModel.objects(dao_id__in=dao_ids).sum('size')
-        income = JobModel.objects(dao_id__in=dao_ids).sum('income')
-        return DAOsStat(icpper=len(icpper), size=decimal.Decimal(size), income=decimal.Decimal(income))
-
-    def resolve_total(self, info):
-        return self.query_list.count()
+        return [DAOItem(datum=item['datum'], stat=item['stat']) for item in self._args.get('query')]
 
 
 class CreateDAO(Mutation):
