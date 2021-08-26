@@ -394,6 +394,7 @@ class CycleStatQuery(ObjectType):
     icpper_count = Int()
     job_count = Int()
     size = Decimal()
+    income = Decimal()
 
     @property
     def cycle_id(self):
@@ -427,6 +428,13 @@ class CycleStatQuery(ObjectType):
         for item in icpper_stat_list:
             size += item.size
         return size
+
+    def resolve_income(self, info):
+        income = decimal.Decimal('0')
+        icpper_stat_list = self._get_icpper_stats(info)
+        for item in icpper_stat_list:
+            income += item.income
+        return income
 
 
 class CycleVotePairTaskQuery(ObjectType):
