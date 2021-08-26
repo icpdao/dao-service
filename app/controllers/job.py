@@ -1,9 +1,11 @@
+import os
+
 import settings
 from app.common.models.icpdao.github_app_token import GithubAppToken
 from app.common.models.icpdao.job import JobPRStatusEnum
 from app.common.models.icpdao.user import User as UserModel, UserStatus
 from app.common.models.icpdao.user_github_token import UserGithubToken
-from app.common.models.logic.user_helper import user_auth_follow_dao
+from app.common.models.logic.user_helper import user_auth_follow_dao, check_user_access_token
 from app.common.utils.github_app.client import GithubAppClient
 from app.common.utils.github_app.utils import parse_pr, LinkType, parse_issue
 from app.common.utils.github_rest_api import get_github_org_id
@@ -12,6 +14,10 @@ from app.controllers.task import update_issue_comment, sync_job_pr
 from app.common.models.icpdao.dao import DAO as DAOModel
 from app.common.models.icpdao.job import Job as JobModel, JobPR as JobPRModel, \
     JobStatusEnum
+from settings import (
+    ICPDAO_GITHUB_APP_CLIENT_ID,
+    ICPDAO_GITHUB_APP_CLIENT_SECRET
+)
 
 
 def update_job_by_size(info, app_client: GithubAppClient, current_user, job, size):
@@ -68,6 +74,9 @@ def add_job_pr(info, app_client: GithubAppClient, current_user, job, pr_link):
     link_info = parse_pr(pr_link)
     if link_info['success'] is False:
         raise ValueError(link_info['msg'])
+
+    if os.environ.get('IS_UNITEST') != 'yes':
+        check_user_access_token(current_user, ICPDAO_GITHUB_APP_CLIENT_ID, ICPDAO_GITHUB_APP_CLIENT_SECRET)
 
     ugt = UserGithubToken.objects(github_user_id=current_user.github_user_id).first()
     github_org_id = get_github_org_id(ugt.access_token, link_info["parse"]["github_repo_owner"])
@@ -149,6 +158,9 @@ def create_job(info, issue_link, size):
         raise PermissionError('NOT LOGIN')
     if current_user.status == UserStatus.NORMAL.value:
         raise PermissionError('ONLY PRE-ICPPER AND ICPPER CAN MARK JOB')
+
+    if os.environ.get('IS_UNITEST') != 'yes':
+        check_user_access_token(current_user, ICPDAO_GITHUB_APP_CLIENT_ID, ICPDAO_GITHUB_APP_CLIENT_SECRET)
 
     issue_info = parse_issue(issue_link)
     if issue_info is False:
