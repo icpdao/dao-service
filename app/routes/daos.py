@@ -9,7 +9,7 @@ from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
 
 from app.common.models.icpdao.user import UserStatus, User
-from app.common.models.logic.user_helper import pre_icpper_to_icpper
+from app.common.models.logic.user_helper import pre_icpper_to_icpper, check_user_access_token
 from app.common.schema import BaseObjectType, BaseObjectArgs
 from app.routes.data_loaders import UserLoader
 from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
@@ -27,6 +27,10 @@ from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
     DAOsSortedTypeEnum, CycleFilterEnum, CyclesQueryArgs, IcppersQuerySortedEnum, IcppersQuerySortedTypeEnum, \
     JobsQuerySortedEnum, JobsQuerySortedTypeEnum, CommonPaginationArgs
 from app.routes.follow import DAOFollowUDSchema
+from settings import (
+    ICPDAO_GITHUB_APP_CLIENT_ID,
+    ICPDAO_GITHUB_APP_CLIENT_SECRET
+)
 
 
 def _get_github_user_id(github_login):
@@ -354,6 +358,7 @@ class CreateDAO(Mutation):
 
         # TODO: mock test data
         if os.environ.get('IS_UNITEST') != 'yes':
+            check_user_access_token(current_user, ICPDAO_GITHUB_APP_CLIENT_ID, ICPDAO_GITHUB_APP_CLIENT_SECRET)
             github_org_id, is_icp_app_installed, is_github_org_owner = get_github_owner_app_info(current_user, kwargs['name'])
 
             if not is_icp_app_installed or not is_github_org_owner:
@@ -419,6 +424,8 @@ class DAOGithubAppStatus(ObjectType):
             self.is_github_org_owner = True
             self.is_icp_app_installed = True
             return self
+
+        check_user_access_token(current_user, ICPDAO_GITHUB_APP_CLIENT_ID, ICPDAO_GITHUB_APP_CLIENT_SECRET)
 
         self.github_app_name = ICPDAO_GITHUB_APP_NAME
 

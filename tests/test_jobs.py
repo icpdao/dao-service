@@ -186,7 +186,8 @@ mutation {
             access_token="xxxx",
             expires_in=1,
             refresh_token="xxx",
-            refresh_token_expires_in=1
+            refresh_token_expires_in=1,
+            token_at=int(time.time())
         ).save()
         UserGithubToken(
             github_user_id=cls.pre_icpper.github_user_id,
@@ -194,7 +195,8 @@ mutation {
             access_token="xxxx",
             expires_in=1,
             refresh_token="xxx",
-            refresh_token_expires_in=1
+            refresh_token_expires_in=1,
+            token_at=int(time.time())
         ).save()
 
         Icppership(
