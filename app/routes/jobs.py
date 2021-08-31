@@ -3,7 +3,7 @@ import os
 import time
 from collections import defaultdict
 
-from graphene import ObjectType, List, Int, Float, String, Field, Mutation, Boolean, Decimal
+from graphene import ObjectType, List, Int, Float, String, Field, Mutation, Boolean, Decimal, InputObjectType
 
 import settings
 from app.common.models.icpdao.cycle import CycleIcpperStat, Cycle
@@ -16,11 +16,10 @@ from app.common.schema.icpdao import JobSchema, JobPRSchema
 from app.common.utils.github_app.client import GithubAppClient
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.common.utils import check_size
-from app.controllers.task import delete_issue_comment
+from app.controllers.task import delete_issue_comment, sync_job_pr
 from app.routes.schema import SortedTypeEnum, UpdateJobVoteTypeByOwnerArgumentPairTypeEnum
 
-from app.controllers.job import delete_job_pr, update_job_by_size, add_job_pr, \
-    create_job
+from app.controllers.job import update_job_by_size, create_job, update_job_pr, create_auto_pr
 
 
 class JobsStat(ObjectType):
@@ -105,37 +104,47 @@ class Jobs(ObjectType):
         return query_list.count()
 
 
+class RequestPR(InputObjectType):
+    id = Int(required=True)
+    html_url = String(required=True)
+
+
 class CreateJob(Mutation):
     class Arguments:
         issue_link = String(required=True)
         size = Float(required=True)
+        auto_create_pr = Boolean(required=True)
+        prs = List(RequestPR)
 
     job = Field(Job)
 
-    def mutate(self, info, issue_link, size):
+    def mutate(self, info, issue_link, size, auto_create_pr, prs: List(RequestPR) = None):
         check_size(size)
-        record = create_job(info, issue_link, size)
-        return CreateJob(job=Job(node=record, prs=[]))
+        prs_dict = {}
+        if prs is not None:
+            for pr in prs:
+                prs_dict[pr.id] = pr.html_url
+        record, ret_prs = create_job(info, issue_link, size, auto_create_pr, prs_dict)
+        return CreateJob(job=Job(node=record, prs=ret_prs))
 
 
 class UpdateJob(Mutation):
     class Arguments:
         id = String(required=True)
-        size = Float()
-        # github pr link or file link
-        add_pr = String()
-        # job pr id
-        delete_pr = String()
+        size = Float(required=True)
+        auto_create_pr = Boolean(required=True)
+        prs = List(RequestPR)
 
     job = Field(Job)
 
-    def mutate(root, info, id, size=None, add_pr=None, delete_pr=None):
+    def mutate(root, info, id, size, auto_create_pr, prs: List(RequestPR) = None):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
             raise PermissionError('NOT LOGIN')
         job = JobModel.objects(id=id).first()
         if not job:
             raise FileNotFoundError('NOT JOB')
+        assert job.status in [JobStatusEnum.AWAITING_MERGER.value, JobStatusEnum.MERGED.value], 'error.update_job.illegal'
         dao = DAOModel.objects(id=job.dao_id).first()
         if not dao:
             raise ValueError('NOT DAO')
@@ -148,17 +157,18 @@ class UpdateJob(Mutation):
         if app_token is None:
             raise ValueError('NOT APP TOKEN')
         app_client = GithubAppClient(app_token, job.github_repo_owner)
-        if size:
+        if decimal.Decimal(size) != job.size:
             check_size(size)
             update_job_by_size(info, app_client, current_user, job, size)
-        if delete_pr:
-            delete_job_pr(info, app_client, delete_pr)
-        if add_pr:
-            add_job_pr(info, app_client, current_user, job, add_pr)
-
-        prs = JobPRModel.objects(job_id=id).all()
-
-        return UpdateJob(job=Job(node=job, prs=list(prs)))
+        prs_dict = {}
+        if prs is not None:
+            for pr in prs:
+                prs_dict[pr.id] = pr.html_url
+        if job.had_auto_create_pr is False and auto_create_pr is True:
+            ret_prs = update_job_pr(info, app_client, current_user, job, True, prs_dict)
+        else:
+            ret_prs = update_job_pr(info, app_client, current_user, job, False, prs_dict)
+        return UpdateJob(job=Job(node=job, prs=list(ret_prs)))
 
 
 class DeleteJob(Mutation):
