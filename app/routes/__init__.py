@@ -91,7 +91,7 @@ class Query(ObjectType):
 
     open_github = Field(
         OpenGithubQuery,
-        dao_id=String(required=True),
+        dao_name=String(required=True),
         way=OpenGithubWayEnum(required=True),
         parameter=List(String)
     )
@@ -145,12 +145,14 @@ class Query(ObjectType):
         return UserIcpperStatsQuery(**kwargs)
 
     @staticmethod
-    def resolve_open_github(root, info, dao_id, way, parameter=None):
-        dao = DAOModel.objects(id=dao_id).first()
-        if not dao:
-            raise ValueError('NOT DAO')
+    def resolve_open_github(root, info, dao_name, way, parameter=None):
         current_user = get_current_user_by_graphql(info)
         assert current_user, "error.common.not_login"
+
+        dao = DAOModel.objects(github_owner_name=dao_name).first()
+        if not dao:
+            raise ValueError('NOT DAO')
+
         app_token = GithubAppToken.get_token(
             app_id=settings.ICPDAO_GITHUB_APP_ID,
             app_private_key=settings.ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY,

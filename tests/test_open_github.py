@@ -10,7 +10,7 @@ from tests.base import Base
 class TestOpenGithub(Base):
     query_issue_info = """
 query {
-  openGithub(daoId: "%s", way: ISSUE_INFO, parameter: ["mockrepo", "1"]) {
+  openGithub(daoName: "%s", way: ISSUE_INFO, parameter: ["mockrepo", "1"]) {
     way
     data
   }
@@ -18,7 +18,7 @@ query {
 """
     query_open_pr = """
 query {
-  openGithub(daoId: "%s", way: OPEN_PR, parameter: ["test_github_login"]) {
+  openGithub(daoName: "%s", way: OPEN_PR, parameter: ["test_github_login"]) {
     way
     data
   }
@@ -26,7 +26,7 @@ query {
 """
     query_issue_timeline = """
 query {
-  openGithub(daoId: "%s", way: ISSUE_TIMELINE, parameter: ["mockrepo", "1"]) {
+  openGithub(daoName: "%s", way: ISSUE_TIMELINE, parameter: ["mockrepo", "1"]) {
     way
     data
   }
@@ -52,6 +52,6 @@ query {
             token='x',
             expires_at=99999999999
         ).save()
-        ret = self.graph_query(str(user.id), self.query_issue_info % str(mockdao.id))
+        ret = self.graph_query(str(user.id), self.query_issue_info % "mockdao")
         data = ret.json()['data']['openGithub']['data']
         assert json.loads(data)['user']['login'] == 'mockicpper'
