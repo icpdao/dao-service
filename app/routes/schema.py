@@ -163,3 +163,9 @@ class CycleVoteResultPublishTaskStatusEnum(Enum):
     RUNNING = CycleVoteResultPublishTaskStatus.RUNNING.value
     SUCCESS = CycleVoteResultPublishTaskStatus.SUCCESS.value
     FAIL = CycleVoteResultPublishTaskStatus.FAIL.value
+
+
+class OpenGithubWayEnum(Enum):
+    ISSUE_TIMELINE = 'issue_timeline'
+    OPEN_PR = 'open_pr'
+    ISSUE_INFO = 'issue_info'

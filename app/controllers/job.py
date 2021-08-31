@@ -10,7 +10,7 @@ from app.common.utils.github_app.client import GithubAppClient
 from app.common.utils.github_app.utils import parse_pr, LinkType, parse_issue
 from app.common.utils.github_rest_api import get_github_org_id
 from app.common.utils.route_helper import get_current_user_by_graphql
-from app.controllers.task import update_issue_comment, sync_job_pr
+from app.controllers.task import update_issue_comment, sync_job_pr, sync_job_prs
 from app.common.models.icpdao.dao import DAO as DAOModel
 from app.common.models.icpdao.job import Job as JobModel, JobPR as JobPRModel, \
     JobStatusEnum
@@ -57,35 +57,68 @@ def update_job_by_size(info, app_client: GithubAppClient, current_user, job, siz
     raise PermissionError('JOB NOT IN MERGED OR MERGING STATUS')
 
 
-def delete_job_pr(info, app_client, del_pr):
-    job_pr = JobPRModel.objects(id=del_pr).first()
-    if job_pr:
-        job_ids = JobPRModel.objects(
-            github_repo_id=job_pr.github_repo_id,
-            github_pr_number=job_pr.github_pr_number
-        ).distinct('job_id')
-        job_pr.delete()
-        info.context["background"].add_task(
-            sync_job_pr, app_client=app_client, job_pr=job_pr, job_ids=job_ids)
+def create_auto_pr(current_user, job_user, app_client, job):
+    if str(current_user.id) != str(job_user.id):
+        raise ValueError('ONLY JOB USER CAN PUSH LINK')
+    success, ret = app_client.create_pr(
+        f'https://github.com/{job.github_repo_owner}/{job.github_repo_name}/issues/{job.github_issue_number}',
+        job.github_repo_name,
+        job.github_issue_number,
+        job_user.github_login
+    )
+    if success is False:
+        raise ValueError(ret)
+    pr_record = JobPRModel(
+        job_id=str(job.id),
+        title=ret['title'],
+        user_id=job.user_id,
+        github_repo_owner=job.github_repo_owner,
+        github_repo_name=job.github_repo_name,
+        github_repo_owner_id=job.github_repo_owner_id,
+        github_repo_id=job.github_repo_id,
+        github_pr_number=ret['number'],
+        github_pr_id=ret['id'],
+        status=ret['state'],
+        is_auto_create_pr=True
+    )
+    job.had_auto_create_pr = True
+    job.save()
+    pr_record.save()
+    return pr_record
 
 
-def add_job_pr(info, app_client: GithubAppClient, current_user, job, pr_link):
+def update_job_pr(info, app_client: GithubAppClient, current_user, job, auto_create_pr: bool, prs: dict):
     job_user = UserModel.objects(id=job.user_id).first()
-    link_info = parse_pr(pr_link)
-    if link_info['success'] is False:
-        raise ValueError(link_info['msg'])
-
+    ugt = UserGithubToken.objects(github_user_id=current_user.github_user_id).first()
     if os.environ.get('IS_UNITEST') != 'yes':
         check_user_access_token(current_user, ICPDAO_GITHUB_APP_CLIENT_ID, ICPDAO_GITHUB_APP_CLIENT_SECRET)
+    exists_job_prs = JobPRModel.objects(job_id=str(job.id)).all()
+    exists_job_prs_dict = {}
+    exists_job_github_pr_ids = []
+    need_sync_job_prs = []
+    ret_prs = []
+    for pr in exists_job_prs:
+        if prs.get(pr.github_pr_id) is None:
+            need_sync_job_prs.append(pr)
+            pr.delete()
+            continue
+        exists_job_github_pr_ids.append(pr.github_pr_id)
+        exists_job_prs_dict[pr.github_pr_id] = pr
 
-    ugt = UserGithubToken.objects(github_user_id=current_user.github_user_id).first()
-    github_org_id = get_github_org_id(ugt.access_token, link_info["parse"]["github_repo_owner"])
+    for pid in prs:
+        if pid in exists_job_github_pr_ids:
+            ret_prs.append(exists_job_prs_dict[pid])
+            continue
 
-    if github_org_id != job.github_repo_owner_id:
-        raise ValueError("job and job pr not one org")
+        pr_link = prs[pid]
+        link_info = parse_pr(pr_link)
+        if link_info['success'] is False:
+            raise ValueError(link_info['msg'])
 
-    pr_record = JobPRModel(job_id=str(job.id))
-    if link_info['type'] == LinkType.pr:
+        github_org_id = get_github_org_id(ugt.access_token, link_info["parse"]["github_repo_owner"])
+        if github_org_id != job.github_repo_owner_id:
+            raise ValueError("job and job pr not one org")
+
         parse_info = link_info['parse']
 
         repo = app_client.get_repo(parse_info['github_repo_name'])
@@ -106,6 +139,9 @@ def add_job_pr(info, app_client: GithubAppClient, current_user, job, pr_link):
                 'can_link_github_user_id_list'] or job_user.github_user_id not in ret[
                   'can_link_github_user_id_list']:
                 raise ValueError('CURRENT USER OR JOB USER NOT IN PR')
+        if ret['id'] != pid:
+            raise ValueError('PID != RET ID')
+
         pr_record = JobPRModel(
             job_id=str(job.id),
             user_id=job.user_id,
@@ -115,44 +151,25 @@ def add_job_pr(info, app_client: GithubAppClient, current_user, job, pr_link):
             github_repo_owner_id=repo['owner']['id'],
             github_repo_id=repo['id'],
             github_pr_number=parse_info['github_pr_number'],
+            github_pr_id=pid,
             status=ret['state'],
             merged_user_github_user_id=ret['merged_user_github_user_id'],
             merged_at=ret['merged_at'],
         )
         pr_record.save()
-    if link_info['type'] == LinkType.other:
-        if str(current_user.id) != str(job_user.id):
-            raise ValueError('ONLY JOB USER CAN PUSH LINK')
-        success, ret = app_client.create_pr(
-            pr_link,
-            job.github_repo_name,
-            job.github_issue_number,
-            job_user.github_login
-        )
-        if success is False:
-            raise ValueError(ret)
+        need_sync_job_prs.append(pr_record)
+        ret_prs.append(pr_record)
+    if auto_create_pr:
+        pr_record = create_auto_pr(current_user, job_user, app_client, job)
+        need_sync_job_prs.append(pr_record)
+        ret_prs.append(pr_record)
 
-        pr_record = JobPRModel(
-            job_id=str(job.id),
-            title=ret['title'],
-            user_id=job.user_id,
-            github_repo_owner=job.github_repo_owner,
-            github_repo_name=job.github_repo_name,
-            github_repo_owner_id=job.github_repo_owner_id,
-            github_repo_id=job.github_repo_id,
-            github_pr_number=ret['number'],
-            status=ret['state'],
-        )
-        pr_record.save()
-    job_ids = JobPRModel.objects(
-        github_repo_id=pr_record.github_repo_id,
-        github_pr_number=pr_record.github_pr_number
-    ).distinct('job_id')
     info.context["background"].add_task(
-        sync_job_pr, app_client=app_client, job_pr=pr_record, job_ids=job_ids)
+        sync_job_prs, app_client=app_client, job_prs=need_sync_job_prs)
+    return ret_prs
 
 
-def create_job(info, issue_link, size):
+def create_job(info, issue_link, size, auto_create_pr, prs):
     current_user = get_current_user_by_graphql(info)
     if not current_user:
         raise PermissionError('NOT LOGIN')
@@ -226,8 +243,10 @@ by @icpdao
         github_repo_id=repo['id'],
         github_issue_number=issue_info['parse']['github_issue_number'],
         status=JobStatusEnum.AWAITING_MERGER.value,
-        bot_comment_database_id=res['id']
+        bot_comment_database_id=res['id'],
+        had_auto_create_pr=auto_create_pr
     )
     record.save()
+    ret_prs = update_job_pr(info, app_client, current_user, record, auto_create_pr, prs)
     user_auth_follow_dao(str(current_user.id), str(dao.id))
-    return record
+    return record, ret_prs
