@@ -159,6 +159,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=2,
+        github_pr_id=2,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(owner_user.github_login),
         merged_at=dao_end_cycle.end_at - 12 * 60 * 60
@@ -190,6 +191,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=4,
+        github_pr_id=4,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(owner_user.github_login),
         merged_at=dao_end_cycle.end_at - 12 * 60 * 60
@@ -221,6 +223,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=6,
+        github_pr_id=6,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(icpper_user.github_login),
         merged_at=dao_end_cycle.end_at - 12 * 60 * 60
@@ -252,6 +255,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=8,
+        github_pr_id=8,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(icpper_user.github_login),
         merged_at=dao_end_cycle.end_at - 12 * 60 * 60
@@ -425,6 +429,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=2,
+        github_pr_id=2,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(owner_user.github_login),
         merged_at=cycle.end_at - 12 * 60 * 60
@@ -456,6 +461,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=4,
+        github_pr_id=4,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(owner_user.github_login),
         merged_at=cycle.end_at - 12 * 60 * 60
@@ -487,6 +493,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=6,
+        github_pr_id=6,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(icpper_user.github_login),
         merged_at=cycle.end_at - 12 * 60 * 60
@@ -518,6 +525,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=8,
+        github_pr_id=8,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(icpper_user.github_login),
         merged_at=cycle.end_at - 12 * 60 * 60
@@ -599,6 +607,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=2,
+        github_pr_id=2,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(owner_user.github_login),
         merged_at=cycle.end_at - 12 * 60 * 60
@@ -630,6 +639,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=4,
+        github_pr_id=4,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(owner_user.github_login),
         merged_at=cycle.end_at - 12 * 60 * 60
@@ -661,6 +671,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=6,
+        github_pr_id=6,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(icpper_user.github_login),
         merged_at=cycle.end_at - 12 * 60 * 60
@@ -692,6 +703,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=8,
+        github_pr_id=8,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(icpper_user.github_login),
         merged_at=cycle.end_at - 12 * 60 * 60
@@ -743,6 +755,7 @@ def _create_job(dao, cycle, user, repo_name, repo_id, start_number, pair_type):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=repo_id,
         github_pr_number=start_number * 2 + 1,
+        github_pr_id=start_number * 2 + 1,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(user.github_login),
         merged_at=cycle.end_at - 12 * 60 * 60
@@ -826,6 +839,7 @@ def create_in_vote_time_cycle_data(owner_user, icpper_user, dao_name):
     #     github_repo_owner_id=_get_github_user_id(dao.name),
     #     github_repo_id=1,
     #     github_pr_number=2,
+    #     github_pr_id=2,
     #     status=JobPRStatusEnum.MERGED.value,
     #     merged_user_github_user_id=_get_github_user_id(owner_user.github_login),
     #     merged_at=cycle.end_at - 12 * 60 * 60
@@ -857,6 +871,7 @@ def create_in_vote_time_cycle_data(owner_user, icpper_user, dao_name):
     #     github_repo_owner_id=_get_github_user_id(dao.name),
     #     github_repo_id=1,
     #     github_pr_number=4,
+    #     github_pr_id=4,
     #     status=JobPRStatusEnum.MERGED.value,
     #     merged_user_github_user_id=_get_github_user_id(owner_user.github_login),
     #     merged_at=cycle.end_at - 12 * 60 * 60
@@ -888,6 +903,7 @@ def create_in_vote_time_cycle_data(owner_user, icpper_user, dao_name):
     #     github_repo_owner_id=_get_github_user_id(dao.name),
     #     github_repo_id=1,
     #     github_pr_number=6,
+    #     github_pr_id=6,
     #     status=JobPRStatusEnum.MERGED.value,
     #     merged_user_github_user_id=_get_github_user_id(icpper_user.github_login),
     #     merged_at=cycle.end_at - 12 * 60 * 60
@@ -919,6 +935,7 @@ def create_in_vote_time_cycle_data(owner_user, icpper_user, dao_name):
     #     github_repo_owner_id=_get_github_user_id(dao.name),
     #     github_repo_id=1,
     #     github_pr_number=8,
+    #     github_pr_id=8,
     #     status=JobPRStatusEnum.MERGED.value,
     #     merged_user_github_user_id=_get_github_user_id(icpper_user.github_login),
     #     merged_at=cycle.end_at - 12 * 60 * 60
@@ -1048,6 +1065,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=2,
+        github_pr_id=2,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(owner_user.github_login),
         merged_at=cycle.end_at - 12 * 60 * 60
@@ -1079,6 +1097,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=4,
+        github_pr_id=4,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(owner_user.github_login),
         merged_at=cycle.end_at - 12 * 60 * 60
@@ -1110,6 +1129,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=6,
+        github_pr_id=6,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(icpper_user.github_login),
         merged_at=cycle.end_at - 12 * 60 * 60
@@ -1141,6 +1161,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=8,
+        github_pr_id=8,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(icpper_user.github_login),
         merged_at=cycle.end_at - 12 * 60 * 60
@@ -1330,6 +1351,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=2,
+        github_pr_id=2,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(owner_user.github_login),
         merged_at=dao_end_cycle.end_at - 12 * 60 * 60
@@ -1361,6 +1383,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=4,
+        github_pr_id=4,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(owner_user.github_login),
         merged_at=dao_end_cycle.end_at - 12 * 60 * 60
@@ -1392,6 +1415,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=6,
+        github_pr_id=6,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(icpper_user.github_login),
         merged_at=dao_end_cycle.end_at - 12 * 60 * 60
@@ -1423,6 +1447,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         github_repo_owner_id=_get_github_user_id(dao.name),
         github_repo_id=1,
         github_pr_number=8,
+        github_pr_id=8,
         status=JobPRStatusEnum.MERGED.value,
         merged_user_github_user_id=_get_github_user_id(icpper_user.github_login),
         merged_at=dao_end_cycle.end_at - 12 * 60 * 60

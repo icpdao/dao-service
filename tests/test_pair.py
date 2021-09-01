@@ -110,6 +110,7 @@ class TestPair(Base):
             github_repo_owner_id=_get_github_user_id("icpdao"),
             github_repo_id=1,
             github_pr_number=101,
+            github_pr_id=101,
             status=JobPRStatusEnum.MERGED.value,
             merged_user_github_user_id=_get_github_user_id(self.icpper2.github_login),
             merged_at=time.time()
@@ -143,6 +144,7 @@ class TestPair(Base):
             github_repo_owner_id=_get_github_user_id("icpdao"),
             github_repo_id=1,
             github_pr_number=102,
+            github_pr_id=102,
             status=JobPRStatusEnum.MERGED.value,
             merged_user_github_user_id=_get_github_user_id(self.icpper2.github_login),
             merged_at=time.time()
@@ -176,6 +178,7 @@ class TestPair(Base):
             github_repo_owner_id=_get_github_user_id("icpdao"),
             github_repo_id=1,
             github_pr_number=103,
+            github_pr_id=103,
             status=JobPRStatusEnum.MERGED.value,
             merged_user_github_user_id=_get_github_user_id(self.icpper3.github_login),
             merged_at=time.time()
@@ -209,6 +212,7 @@ class TestPair(Base):
             github_repo_owner_id=_get_github_user_id("icpdao"),
             github_repo_id=1,
             github_pr_number=104,
+            github_pr_id=104,
             status=JobPRStatusEnum.MERGED.value,
             merged_user_github_user_id=_get_github_user_id(self.icpper3.github_login),
             merged_at=time.time()
@@ -242,6 +246,7 @@ class TestPair(Base):
             github_repo_owner_id=_get_github_user_id("icpdao"),
             github_repo_id=1,
             github_pr_number=105,
+            github_pr_id=105,
             status=JobPRStatusEnum.MERGED.value,
             merged_user_github_user_id=_get_github_user_id(self.icpper1.github_login),
             merged_at=time.time()
@@ -275,6 +280,7 @@ class TestPair(Base):
             github_repo_owner_id=_get_github_user_id("icpdao"),
             github_repo_id=1,
             github_pr_number=106,
+            github_pr_id=106,
             status=JobPRStatusEnum.MERGED.value,
             merged_user_github_user_id=_get_github_user_id(self.icpper1.github_login),
             merged_at=time.time()
@@ -308,6 +314,7 @@ class TestPair(Base):
             github_repo_owner_id=_get_github_user_id("icpdao"),
             github_repo_id=1,
             github_pr_number=107,
+            github_pr_id=107,
             status=JobPRStatusEnum.MERGED.value,
             merged_user_github_user_id=_get_github_user_id(self.icpper1.github_login),
             merged_at=time.time()

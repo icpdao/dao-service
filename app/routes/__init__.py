@@ -1,8 +1,13 @@
 import decimal
 
-from graphene import ObjectType, String, Field, Int
+from graphene import ObjectType, String, Field, Int, List
 
+import settings
+from app.common.models.icpdao.github_app_token import GithubAppToken
 from app.common.models.icpdao.job import Job
+from app.common.models.icpdao.dao import DAO as DAOModel
+from app.common.utils.github_app import GithubAppClient
+from app.common.utils.route_helper import get_current_user_by_graphql
 from app.routes.config import UpdateDAOJobConfig, DAOJobConfig, DAOTokenConfig
 from app.routes.cycles import CycleQuery, CreateCycleVotePairTaskByOwner, \
     ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner, CreateCycleVoteResultPublishTaskByOwner, \
@@ -12,9 +17,10 @@ from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAp
 from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob, UpdateJobVoteTypeByOwner, UpdateIcpperStatOwnerEi, DeleteJob
 from app.routes.mock import CreateMock
+from app.routes.open_github import OpenGithubQuery
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
     DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum, DAOJobConfigQueryArgs, CyclesTokenUnreleasedQueryArgs, \
-    DAOQueryArgs
+    DAOQueryArgs, OpenGithubWayEnum
 from app.routes.vote import UpdatePairVote, UpdateALLVote, UpdateVoteConfirm
 
 
@@ -83,6 +89,13 @@ class Query(ObjectType):
         offset=Int(default_value=0)
     )
 
+    open_github = Field(
+        OpenGithubQuery,
+        dao_name=String(required=True),
+        way=OpenGithubWayEnum(required=True),
+        parameter=List(String)
+    )
+
     @staticmethod
     def resolve_daos(root, info, **kwargs):
         query_dao_list, all_dao_ids = get_query_dao_list(info, **kwargs)
@@ -130,6 +143,41 @@ class Query(ObjectType):
     @staticmethod
     def resolve_icpper_stats(root, info, **kwargs):
         return UserIcpperStatsQuery(**kwargs)
+
+    @staticmethod
+    def resolve_open_github(root, info, dao_name, way, parameter=None):
+        current_user = get_current_user_by_graphql(info)
+        assert current_user, "error.common.not_login"
+
+        dao = DAOModel.objects(github_owner_name=dao_name).first()
+        if not dao:
+            raise ValueError('NOT DAO')
+
+        app_token = GithubAppToken.get_token(
+            app_id=settings.ICPDAO_GITHUB_APP_ID,
+            app_private_key=settings.ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY,
+            github_owner_name=dao.github_owner_name,
+            github_owner_id=dao.github_owner_id,
+        )
+        if app_token is None:
+            raise ValueError('NOT APP TOKEN')
+        app_client = GithubAppClient(app_token, dao.github_owner_name)
+        if way == OpenGithubWayEnum.ISSUE_TIMELINE.value:
+            assert (parameter is not None) and (len(parameter) == 2), 'error.open_github.parameter'
+            success, ret = app_client.get_issue_timeline(parameter[0], parameter[1])
+            assert success is True, 'error.open_github.fail'
+            return OpenGithubQuery(way=way, data=ret)
+        if way == OpenGithubWayEnum.ISSUE_INFO.value:
+            assert (parameter is not None) and (len(parameter) == 2), 'error.open_github.parameter'
+            success, ret = app_client.get_issue(parameter[0], parameter[1])
+            assert success is True, 'error.open_github.fail'
+            return OpenGithubQuery(way=way, data=ret)
+        if way == OpenGithubWayEnum.OPEN_PR.value:
+            assert (parameter is not None) and (len(parameter) == 1), 'error.open_github.parameter'
+            success, ret = app_client.get_user_open_pr(parameter[0])
+            assert success is True, 'error.open_github.fail'
+            return OpenGithubQuery(way=way, data=ret)
+        raise ValueError('')
 
 
 class Mutations(ObjectType):

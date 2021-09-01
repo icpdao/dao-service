@@ -171,6 +171,16 @@ def sync_job_pr_comment(app_client, job_pr, job_ids):
     return pr_comment
 
 
+def sync_job_prs(app_client, job_prs):
+    for job_pr in job_prs:
+        print(f'job prs sync, job_pr_record_id: {str(job_pr.id)}')
+        job_ids = JobPRModel.objects(
+            github_repo_id=job_pr.github_repo_id,
+            github_pr_id=job_pr.github_pr_id
+        ).distinct('job_id')
+        sync_job_pr(app_client, job_pr, job_ids)
+
+
 def sync_job_pr(app_client, job_pr, job_ids):
     print(f'job pr sync, job_ids: {job_ids}')
 
