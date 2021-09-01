@@ -68,6 +68,10 @@ def create_auto_pr(current_user, job_user, app_client, job):
     )
     if success is False:
         raise ValueError(ret)
+    # Github has two ids for PR: Issue and pull. Here is the unified universal issue ID
+    success, pr_issue_info = app_client.get_issue(job.github_repo_name, ret['number'])
+    if success is False:
+        raise ValueError(ret)
     pr_record = JobPRModel(
         job_id=str(job.id),
         title=ret['title'],
@@ -77,7 +81,7 @@ def create_auto_pr(current_user, job_user, app_client, job):
         github_repo_owner_id=job.github_repo_owner_id,
         github_repo_id=job.github_repo_id,
         github_pr_number=ret['number'],
-        github_pr_id=ret['id'],
+        github_pr_id=pr_issue_info['id'],
         status=ret['state'],
         is_auto_create_pr=True
     )
