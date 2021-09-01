@@ -143,8 +143,13 @@ def update_job_pr(info, app_client: GithubAppClient, current_user, job, auto_cre
                 'can_link_github_user_id_list'] or job_user.github_user_id not in ret[
                   'can_link_github_user_id_list']:
                 raise ValueError('CURRENT USER OR JOB USER NOT IN PR')
-        if ret['id'] != pid:
-            raise ValueError('PID != RET ID')
+
+        success, pr_issue_info = app_client.get_issue(
+            parse_info['github_repo_name'],
+            parse_info['github_pr_number'],
+        )
+        assert success, 'error.update_job.not_get_pr'
+        assert pr_issue_info['id'] == pid, 'error.update_job.pid'
 
         pr_record = JobPRModel(
             job_id=str(job.id),
