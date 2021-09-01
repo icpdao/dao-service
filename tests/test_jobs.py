@@ -343,6 +343,20 @@ mutation {
             json={"user": {"login": self.pre_icpper.github_login, "id": _get_github_user_id(self.pre_icpper.github_login)}, "state": "open", "title": "xxx", "body": "xxx"}
         )
         responses.add(
+            responses.GET,
+            "https://api.github.com/repos/mockdao/mockrepo/issues/10",
+            json={"user": {"login": self.pre_icpper.github_login,
+                           "id": _get_github_user_id(self.pre_icpper.github_login)}, "state": "open", "title": "xxx",
+                  "body": "xxx"}
+        )
+        responses.add(
+            responses.GET,
+            "https://api.github.com/repos/mockdao/mockrepo/issues/111",
+            json={"user": {"login": self.pre_icpper.github_login,
+                           "id": _get_github_user_id(self.pre_icpper.github_login)}, "state": "open", "title": "xxx",
+                  "body": "xxx", 'id': 5551}
+        )
+        responses.add(
             responses.POST,
             "https://api.github.com/repos/mockdao/mockrepo/issues/11/comments",
             json={"id": 333}
@@ -414,7 +428,6 @@ mutation {
                 '5551', "https://github.com/mockdao/mockrepo/pull/111"
             )
         )
-        print(res.json())
         assert res.json()['data']['updateJob']['job']['prs'][0]['githubPrNumber'] == 111
         assert res.json()['data']['updateJob']['job']['prs'][0]['id']
 
@@ -538,6 +551,13 @@ mutation {
             }
         )
         responses.add(
+            responses.GET,
+            "https://api.github.com/repos/mockdao/mockrepo/issues/10",
+            json={"user": {"login": self.pre_icpper.github_login,
+                           "id": _get_github_user_id(self.pre_icpper.github_login)}, "state": "open", "title": "xxx",
+                  "body": "xxx", 'id': 555}
+        )
+        responses.add(
             responses.PATCH,
             "https://api.github.com/repos/mockdao/mockrepo/issues/comments/333",
             json={}
@@ -651,7 +671,6 @@ mutation {
             str(self.icpper.id),
             self.query_jobs % ("mockdao", "0", str(int(time.time())))
         )
-        print(res.json())
         res = self.client.post(
             webhooks_route,
             json=request_data
