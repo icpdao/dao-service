@@ -1854,6 +1854,10 @@ def create_tip_cycle_dao(owner_user, icpper_user, mock_users):
 
 
 def init_mock_data(owner_github_user_login, icpper_github_user_login):
+    delete_dao_name_list = [
+        "icpdao-test-fushang318github-change"
+    ]
+    
     dao_name_list = [
         "end-and-in-pair-timeend-and-in-vote-time",
         "icpdao-test-icp",
@@ -1873,6 +1877,11 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
         "mock_user_6",
         "mock_user_7"
     ]
+
+    for dao_name in delete_dao_name_list:
+        dao = DAO.objects(name=dao_name).first()
+        if dao:
+            DeleteDaoMock(dao).delete()
 
     for dao_name in dao_name_list:
         dao = DAO.objects(name=dao_name).first()
