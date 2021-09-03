@@ -161,7 +161,7 @@ mutation {
         pre_icpper = User.objects(id=str(self.pre_icpper.id)).first()
         icppership = Icppership.objects(icpper_github_login=str(self.pre_icpper.github_login)).first()
         assert pre_icpper.status == UserStatus.ICPPER.value
-        assert icppership.progress == IcppershipProgress.ICPPER.value
+        assert icppership.progress == IcppershipProgress.ACCEPT.value
         assert icppership.status == IcppershipStatus.ICPPER.value
 
         return data['data']['createDao']['dao']['id']
