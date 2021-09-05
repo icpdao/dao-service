@@ -11,6 +11,7 @@ from app.common.models.icpdao.icppership import Icppership, IcppershipProgress, 
 from app.common.models.icpdao.job import Job, JobPR, JobPRComment
 from app.common.models.icpdao.user import User, UserStatus
 from app.common.models.icpdao.user_github_token import UserGithubToken
+from app.common.utils.errors import JOB_CREATE_ISSUE_REPEAT_ERROR
 from tests.base import Base
 
 
@@ -284,19 +285,19 @@ mutation {
             str(self.icpper.id),
             self.create_job % (mark_issue, str(mark_size))
         )
-        assert res.json()['errors'][0]['message'] == 'error.mark_job.same_link'
+        assert res.json()['errors'][0]['message'] == JOB_CREATE_ISSUE_REPEAT_ERROR
 
         res = self.graph_query(
             str(self.normal_user.id),
             self.create_job % (mark_issue, str(mark_size))
         )
-        assert res.json()['errors'][0]['message'] == 'ONLY PRE-ICPPER AND ICPPER CAN MARK JOB'
+        assert res.json()['errors'][0]['message'] == 'error.mark_job.user_role'
 
         res = self.graph_query(
             str(self.icpper.id),
             self.create_job % (mark_issue, str(mark_size))
         )
-        assert res.json()['errors'][0]['message'] == 'error.mark_job.same_link'
+        assert res.json()['errors'][0]['message'] == JOB_CREATE_ISSUE_REPEAT_ERROR
 
         responses.add(
             responses.GET,
@@ -313,7 +314,7 @@ mutation {
             str(self.icpper.id),
             self.create_job % (mark_issue, str(mark_size))
         )
-        assert res.json()['errors'][0]['message'] == 'ONLY ISSUE USER CAN MARK THIS ISSUE'
+        assert res.json()['errors'][0]['message'] == 'error.mark_job.issue_user'
 
     @responses.activate
     def test_pre_icpper_create_job(self):

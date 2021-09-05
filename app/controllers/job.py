@@ -6,6 +6,12 @@ from app.common.models.icpdao.job import JobPRStatusEnum
 from app.common.models.icpdao.user import User as UserModel, UserStatus
 from app.common.models.icpdao.user_github_token import UserGithubToken
 from app.common.models.logic.user_helper import user_auth_follow_dao, check_user_access_token
+from app.common.utils.errors import JOB_UPDATE_SIZE_REDUCE_ERROR, JOB_UPDATE_PR_INVALID_ERROR, \
+    JOB_UPDATE_PR_NOT_FOUND_ERROR, JOB_CREATE_ISSUE_INVALID_ERROR, JOB_CREATE_DAO_NOT_FOUND_ERROR, \
+    JOB_CREATE_ISSUE_REPEAT_ERROR, JOB_UPDATE_SIZE_ONLY_USER_ERROR, JOB_UPDATE_SIZE_ONLY_REVIEWER_ERROR, \
+    COMMON_NOT_PERMISSION_ERROR, JOB_UPDATE_SIZE_STATUS_ERROR, JOB_UPDATE_PR_USER_INVALID_ERROR, \
+    JOB_UPDATE_PR_OWNER_INVALID_ERROR, JOB_UPDATE_PR_CLOSED_ERROR, JOB_UPDATE_PR_MERGED_ROLE_ERROR, \
+    COMMON_NOT_AUTH_ERROR, JOB_CREATE_USER_ROLE_ERROR, JOB_CREATE_ISSUE_USER_ROLE_ERROR, JOB_CREATE_ISSUE_STATUS_ERROR
 from app.common.utils.github_app.client import GithubAppClient
 from app.common.utils.github_app.utils import parse_pr, LinkType, parse_issue
 from app.common.utils.github_rest_api import get_github_org_id
@@ -29,7 +35,7 @@ def update_job_by_size(info, app_client: GithubAppClient, current_user, job, siz
             tasks.add_task(
                 update_issue_comment, app_client=app_client, job=job)
             return job
-        raise PermissionError('JOB NOT MERGED, ONLY USER CAN UPDATE SIZE')
+        raise PermissionError(JOB_UPDATE_SIZE_ONLY_USER_ERROR)
     if job.status == JobStatusEnum.MERGED.value:
         prs = JobPRModel.objects(
             job_id=str(job.id), status=JobPRStatusEnum.MERGED.value
@@ -43,7 +49,7 @@ def update_job_by_size(info, app_client: GithubAppClient, current_user, job, siz
                 tasks.add_task(
                     update_issue_comment, app_client=app_client, job=job)
                 return job
-            raise PermissionError('error.update_job_size.only_reduce')
+            raise PermissionError(JOB_UPDATE_SIZE_REDUCE_ERROR)
         if is_merged_user:
             if size > job.size:
                 job.size = size
@@ -52,14 +58,14 @@ def update_job_by_size(info, app_client: GithubAppClient, current_user, job, siz
                     update_issue_comment, app_client=app_client, job=job)
                 return job
             raise PermissionError(
-                'JOB MERGED, REVIEWER ONLY CAN ADJUST SIZE')
-        raise PermissionError('NOT RIGHT PERMISSION')
-    raise PermissionError('JOB NOT IN MERGED OR MERGING STATUS')
+                JOB_UPDATE_SIZE_ONLY_REVIEWER_ERROR)
+        raise PermissionError(COMMON_NOT_PERMISSION_ERROR)
+    raise PermissionError(JOB_UPDATE_SIZE_STATUS_ERROR)
 
 
 def create_auto_pr(current_user, job_user, app_client, job):
     if str(current_user.id) != str(job_user.id):
-        raise ValueError('ONLY JOB USER CAN PUSH LINK')
+        raise ValueError(JOB_UPDATE_PR_USER_INVALID_ERROR)
     success, ret = app_client.create_pr(
         f'https://github.com/{job.github_repo_owner}/{job.github_repo_name}/issues/{job.github_issue_number}',
         job.github_repo_name,
@@ -121,7 +127,7 @@ def update_job_pr(info, app_client: GithubAppClient, current_user, job, auto_cre
 
         github_org_id = get_github_org_id(ugt.access_token, link_info["parse"]["github_repo_owner"])
         if github_org_id != job.github_repo_owner_id:
-            raise ValueError("job and job pr not one org")
+            raise ValueError(JOB_UPDATE_PR_OWNER_INVALID_ERROR)
 
         parse_info = link_info['parse']
 
@@ -132,24 +138,24 @@ def update_job_pr(info, app_client: GithubAppClient, current_user, job, auto_cre
             parse_info['github_pr_number'],
         )
         if success is False:
-            raise ValueError('NOT GET PR')
+            raise ValueError(JOB_UPDATE_PR_NOT_FOUND_ERROR)
         if ret['closed_at'] and not ret['merged_at']:
-            raise ValueError('PR ALREADY CLOSED')
+            raise ValueError(JOB_UPDATE_PR_CLOSED_ERROR)
         if ret['state'] == JobPRStatusEnum.MERGED.value and \
                 current_user.github_user_id != ret['merged_user_github_user_id']:
-            raise ValueError('ONLY MERGED LOGIN CAN OP MERGED PR')
+            raise ValueError(JOB_UPDATE_PR_MERGED_ROLE_ERROR)
         if ret['state'] == JobPRStatusEnum.AWAITING_MERGER.value:
             if current_user.github_user_id not in ret[
                 'can_link_github_user_id_list'] or job_user.github_user_id not in ret[
                   'can_link_github_user_id_list']:
-                raise ValueError('CURRENT USER OR JOB USER NOT IN PR')
+                raise ValueError(JOB_UPDATE_PR_USER_INVALID_ERROR)
 
         success, pr_issue_info = app_client.get_issue(
             parse_info['github_repo_name'],
             parse_info['github_pr_number'],
         )
-        assert success, 'error.update_job.not_get_pr'
-        assert pr_issue_info['id'] == pid, 'error.update_job.pid'
+        assert success, JOB_UPDATE_PR_NOT_FOUND_ERROR
+        assert pr_issue_info['id'] == pid, JOB_UPDATE_PR_INVALID_ERROR
 
         pr_record = JobPRModel(
             job_id=str(job.id),
@@ -181,16 +187,16 @@ def update_job_pr(info, app_client: GithubAppClient, current_user, job, auto_cre
 def create_job(info, issue_link, size, auto_create_pr, prs):
     current_user = get_current_user_by_graphql(info)
     if not current_user:
-        raise PermissionError('NOT LOGIN')
+        raise PermissionError(COMMON_NOT_AUTH_ERROR)
     if current_user.status == UserStatus.NORMAL.value:
-        raise PermissionError('ONLY PRE-ICPPER AND ICPPER CAN MARK JOB')
+        raise PermissionError(JOB_CREATE_USER_ROLE_ERROR)
 
     if os.environ.get('IS_UNITEST') != 'yes':
         check_user_access_token(current_user, ICPDAO_GITHUB_APP_CLIENT_ID, ICPDAO_GITHUB_APP_CLIENT_SECRET)
 
     issue_info = parse_issue(issue_link)
     if issue_info is False:
-        raise ValueError('error.mark_job.error_link')
+        raise ValueError(JOB_CREATE_ISSUE_INVALID_ERROR)
 
     github_repo_owner = issue_info['parse']['github_repo_owner']
     ugt = UserGithubToken.objects(github_user_id=current_user.github_user_id).first()
@@ -198,7 +204,7 @@ def create_job(info, issue_link, size, auto_create_pr, prs):
     dao = DAOModel.objects(
         github_owner_id=github_org_id).first()
     if not dao:
-        raise ValueError('error.mark_job.unknown_dao')
+        raise ValueError(JOB_CREATE_DAO_NOT_FOUND_ERROR)
 
     app_token = GithubAppToken.get_token(
         app_id=settings.ICPDAO_GITHUB_APP_ID,
@@ -216,17 +222,17 @@ def create_job(info, issue_link, size, auto_create_pr, prs):
         github_issue_number=issue_info['parse']['github_issue_number'],
     ).first()
     if exist:
-        raise ValueError('error.mark_job.same_link')
+        raise ValueError(JOB_CREATE_ISSUE_REPEAT_ERROR)
 
     success, issue = app_client.get_issue(
         issue_info['parse']['github_repo_name'],
         issue_info['parse']['github_issue_number'])
     if not success:
-        raise ValueError('NOT GET ISSUE')
+        raise ValueError(JOB_CREATE_ISSUE_INVALID_ERROR)
     if issue['user']['id'] != current_user.github_user_id:
-        raise ValueError('ONLY ISSUE USER CAN MARK THIS ISSUE')
+        raise ValueError(JOB_CREATE_ISSUE_USER_ROLE_ERROR)
     if issue['state'] != 'open':
-        raise ValueError('ONLY OPEN ISSUE CAN MARK')
+        raise ValueError(JOB_CREATE_ISSUE_STATUS_ERROR)
 
     comment = """Job Status: **%s**
 Job User: @%s

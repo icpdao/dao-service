@@ -2,6 +2,7 @@ import os
 import time
 
 from app.common.models.icpdao.cycle import Cycle
+from app.common.utils.errors import CONFIG_UPDATE_INVALID_ERROR
 from tests.base import Base
 from unittest import TestCase
 from freezegun import freeze_time
@@ -194,7 +195,7 @@ mutation {
         )
         assert ret.status_code == 400
         data = ret.json()
-        assert data['errors'][0]['message'] == 'error.update_dao_job_config.illegal'
+        assert data['errors'][0]['message'] == CONFIG_UPDATE_INVALID_ERROR
 
         ret = self.graph_query(
             self.icpper.id,

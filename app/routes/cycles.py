@@ -15,6 +15,10 @@ from app.common.models.icpdao.user import User
 from app.common.schema import BaseObjectType, BaseObjectArgs
 from app.common.schema.icpdao import CycleSchema, CycleIcpperStatSchema, UserSchema, JobSchema, CycleVoteSchema
 from app.common.utils.access import check_is_dao_owner
+from app.common.utils.errors import CYCLE_VOTE_CONFIRM_INVALID_ERROR, CYCLE_VOTE_NOT_FOUND_ERROR, COMMON_NOT_AUTH_ERROR, \
+    CYCLE_ICPPER_STAT_NOT_FOUND_ERROR, CYCLE_TOKEN_RELEASED_CHECK_ERROR, CYCLE_NOT_FOUND_ERROR, \
+    COMMON_NOT_FOUND_DAO_ERROR, COMMON_NOT_PERMISSION_ERROR, CYCLE_PAIR_TIME_ERROR, CYCLE_VOTE_RESULT_STAT_TIME_ERROR, \
+    CYCLE_VOTE_RESULT_PUBLISH_TIME_ERROR, CYCLE_VOTE_RESULT_PUBLISH_INVALID_ERROR
 from app.common.utils.route_helper import get_custom_attr_by_graphql, set_custom_attr_by_graphql, \
     get_current_user_by_graphql
 from app.controllers.pair import run_pair_task
@@ -381,10 +385,10 @@ class CycleVotesQuery(ObjectType):
         cycle = Cycle.objects(id=self.cycle_id).first()
         if self.is_myself:
             current_user = get_current_user_by_graphql(info)
-            assert current_user, "error.cycle_vote.confirm.illegal"
+            assert current_user, CYCLE_VOTE_CONFIRM_INVALID_ERROR
             cvc = CycleVoteConfirm.objects(
                 dao_id=cycle.dao_id, cycle_id=self.cycle_id, voter_id=str(current_user.id)).first()
-            assert cvc, "error.cycle_vote.confirm.notfound"
+            assert cvc, CYCLE_VOTE_NOT_FOUND_ERROR
             return cvc.status == CycleVoteConfirmStatus.CONFIRM.value
         all_status = set(CycleVoteConfirm.objects(dao_id=cycle.dao_id, cycle_id=self.cycle_id).distinct('status'))
         return len(all_status) == 1 and all_status == {CycleVoteConfirmStatus.CONFIRM.value}
@@ -504,9 +508,9 @@ class CycleQuery(ObjectType):
 
     def resolve_icpper_stat(self, info):
         current_user = get_current_user_by_graphql(info)
-        assert current_user, "error.common.not_login"
+        assert current_user, COMMON_NOT_AUTH_ERROR
         record = CycleIcpperStat.objects(cycle_id=self.cycle_id, user_id=str(current_user.id)).first()
-        assert record, "error.icpper_stat.notfound"
+        assert record, CYCLE_ICPPER_STAT_NOT_FOUND_ERROR
         return IcpperStatQuery(datum=record)
 
     @staticmethod
@@ -644,7 +648,7 @@ class ChangeVoteResultPublic(Mutation):
 
         current_user = get_current_user_by_graphql(info)
         if str(current_user.id) != cv.voter_id:
-            raise ValueError('NOT ROLE')
+            raise ValueError(COMMON_NOT_AUTH_ERROR)
 
         cv.is_result_public = public
         cv.save()
@@ -660,20 +664,20 @@ class CreateCycleVotePairTaskByOwner(Mutation):
     def mutate(self, info, cycle_id):
         cycle = Cycle.objects(id=cycle_id).first()
         if not cycle:
-            raise ValueError('NOT CYCLE')
+            raise ValueError(CYCLE_NOT_FOUND_ERROR)
 
         dao = DAO.objects(id=cycle.dao_id).first()
         if not dao:
-            raise ValueError('NOT DAO')
+            raise ValueError(COMMON_NOT_FOUND_DAO_ERROR)
 
         # not owner
         current_user = get_current_user_by_graphql(info)
         if str(current_user.id) != dao.owner_id:
-            raise ValueError('NOT ROLE')
+            raise ValueError(COMMON_NOT_PERMISSION_ERROR)
 
         # time range
         if cycle.pair_begin_at >= time.time() or cycle.pair_end_at <= time.time():
-            raise ValueError('CURRENT TIME NO IN PAIR CYCLE')
+            raise ValueError(CYCLE_PAIR_TIME_ERROR)
 
         old_task = CycleVotePairTask.objects(cycle_id=str(cycle.id)).order_by('-id').first()
         # have old task sttatus is init pairing
@@ -701,20 +705,20 @@ class CreateCycleVoteResultStatTaskByOwner(Mutation):
     def mutate(self, info, cycle_id):
         cycle = Cycle.objects(id=cycle_id).first()
         if not cycle:
-            raise ValueError('NOT CYCLE')
+            raise ValueError(CYCLE_NOT_FOUND_ERROR)
 
         dao = DAO.objects(id=cycle.dao_id).first()
         if not dao:
-            raise ValueError('NOT DAO')
+            raise ValueError(COMMON_NOT_FOUND_DAO_ERROR)
 
         # not owner
         current_user = get_current_user_by_graphql(info)
         if str(current_user.id) != dao.owner_id:
-            raise ValueError('NOT ROLE')
+            raise ValueError(COMMON_NOT_PERMISSION_ERROR)
 
         # time range
         if cycle.vote_end_at >= time.time():
-            raise ValueError('CURRENT TIME NO IN STAT CYCLE')
+            raise ValueError(CYCLE_VOTE_RESULT_STAT_TIME_ERROR)
 
         old_task = CycleVoteResultStatTask.objects(cycle_id=str(cycle.id)).order_by('-id').first()
         # have old task sttatus is init stating
@@ -742,22 +746,22 @@ class CreateCycleVoteResultPublishTaskByOwner(Mutation):
     def mutate(self, info, cycle_id):
         cycle = Cycle.objects(id=cycle_id).first()
         if not cycle:
-            raise ValueError('NOT CYCLE')
+            raise ValueError(CYCLE_NOT_FOUND_ERROR)
 
         dao = DAO.objects(id=cycle.dao_id).first()
         if not dao:
-            raise ValueError('NOT DAO')
+            raise ValueError(COMMON_NOT_FOUND_DAO_ERROR)
 
         # not owner
         current_user = get_current_user_by_graphql(info)
         if str(current_user.id) != dao.owner_id:
-            raise ValueError('NOT ROLE')
+            raise ValueError(COMMON_NOT_PERMISSION_ERROR)
 
         # time range
         if cycle.vote_end_at >= time.time():
-            raise ValueError('CURRENT TIME NO IN STAT CYCLE')
+            raise ValueError(CYCLE_VOTE_RESULT_PUBLISH_TIME_ERROR)
         if not cycle.vote_result_stat_at:
-            raise ValueError('CYCLE NO STAT')
+            raise ValueError(CYCLE_VOTE_RESULT_PUBLISH_INVALID_ERROR)
 
         old_task = CycleVoteResultPublishTask.objects(cycle_id=str(cycle.id)).order_by('-id').first()
         # have old task sttatus is init running
@@ -791,7 +795,7 @@ class MarkCyclesTokenReleased(Mutation):
             cycle = Cycle.objects(
                 id=cid, dao_id=dao_id, token_released_at__exists=False, vote_result_published_at__exists=True).first()
             if not cycle:
-                raise ValueError('error.mark_cycles_token_released.checked_fail')
+                raise ValueError(CYCLE_TOKEN_RELEASED_CHECK_ERROR)
 
         stats = CycleIcpperStat.objects(cycle_id__in=cycle_ids, dao_id=dao_id).all()
         jobs = Job.objects(dao_id=dao_id, cycle_id__in=cycle_ids).all()

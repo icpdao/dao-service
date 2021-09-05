@@ -11,6 +11,8 @@ from mongoengine import Q
 from app.common.models.icpdao.user import UserStatus, User
 from app.common.models.logic.user_helper import pre_icpper_to_icpper, check_user_access_token
 from app.common.schema import BaseObjectType, BaseObjectArgs
+from app.common.utils.errors import CYCLE_DAO_LIST_USER_NOT_FOUND_ERROR, DAO_LIST_QUERY_NOT_USER_ERROR, \
+    COMMON_NOT_FOUND_DAO_ERROR, COMMON_NOT_PERMISSION_ERROR, COMMON_NOT_AUTH_ERROR
 from app.routes.data_loaders import UserLoader
 from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
 
@@ -68,7 +70,7 @@ def get_query_dao_list(info, **kwargs):
     query_user_name = kwargs.get('user_name')
     if query_user_name:
         user = User.objects(github_login=query_user_name).first()
-        assert user, "error.dao_list.notfound.user"
+        assert user, CYCLE_DAO_LIST_USER_NOT_FOUND_ERROR
         query_user = user
 
     _filter = kwargs.get('filter')
@@ -82,7 +84,7 @@ def get_query_dao_list(info, **kwargs):
     if _filter:
         if _filter != DAOsFilterEnum.all:
             if not query_user:
-                raise ValueError('NOT QUERY USER')
+                raise ValueError(DAO_LIST_QUERY_NOT_USER_ERROR)
         if _filter == DAOsFilterEnum.owner:
             query = Q(owner_id=str(query_user.id))
         if _filter == DAOsFilterEnum.following:
@@ -241,7 +243,7 @@ class DAO(ObjectType):
     def resolve_datum(parent, info):
         dao = getattr(parent, 'query')
         if not dao:
-            raise ValueError('NOT FOUND DAO')
+            raise ValueError(COMMON_NOT_FOUND_DAO_ERROR)
         return dao
 
     @staticmethod
@@ -354,7 +356,7 @@ class CreateDAO(Mutation):
     def mutate(root, info: ResolveInfo, **kwargs):
         current_user = get_current_user_by_graphql(info)
         if not current_user or current_user.status == UserStatus.NORMAL.value:
-            raise PermissionError('NO ROLE')
+            raise PermissionError(COMMON_NOT_PERMISSION_ERROR)
 
         # TODO: mock test data
         if os.environ.get('IS_UNITEST') != 'yes':
@@ -362,7 +364,7 @@ class CreateDAO(Mutation):
             github_org_id, is_icp_app_installed, is_github_org_owner = get_github_owner_app_info(current_user, kwargs['name'])
 
             if not is_icp_app_installed or not is_github_org_owner:
-                raise ValueError("NOT ROLE")
+                raise ValueError(COMMON_NOT_PERMISSION_ERROR)
         else:
             github_org_id = _get_github_user_id(kwargs['name'])
 
@@ -415,7 +417,7 @@ class DAOGithubAppStatus(ObjectType):
     def get(self, info, name):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
-            raise PermissionError('NOT LOGIN')
+            raise PermissionError(COMMON_NOT_AUTH_ERROR)
 
         if os.environ.get('IS_UNITEST') == 'yes':
             self.github_app_name = "icpdao-test"

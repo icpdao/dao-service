@@ -4,6 +4,7 @@ from graphql import ResolveInfo
 from app.common.models.icpdao.dao import DAOFollow
 from app.common.schema.icpdao import DAOFollowSchema as DFs
 from app.common.utils.access import check_is_dao_owner, check_is_not_dao_owner
+from app.common.utils.errors import COMMON_NOT_AUTH_ERROR
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.routes.schema import DAOFollowTypeEnum
 
@@ -18,7 +19,7 @@ class DAOFollowUDSchema(ObjectType):
         dao_id = parent.dao_id
         current_user = get_current_user_by_graphql(info)
         if not current_user:
-            raise ValueError("NO LOGIN")
+            raise ValueError(COMMON_NOT_AUTH_ERROR)
         if not user_id:
             # query all, only owner can do
             check_is_dao_owner(current_user, dao_id=dao_id)

@@ -68,7 +68,7 @@ mutation {
             dao_id, 'ADD'
         ))
         assert ret.status_code == 400
-        assert ret.json()['errors'][0]['message'] == 'NOT RIGHT NOT OWNER ACCESS'
+        assert ret.json()['errors'][0]['message'] == 'error.common.not_permission'
 
         ret = self.graph_query(self.user_1.id, self.update_follow % (
             dao_id, 'ADD'
