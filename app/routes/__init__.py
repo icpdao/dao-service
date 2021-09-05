@@ -6,6 +6,8 @@ import settings
 from app.common.models.icpdao.github_app_token import GithubAppToken
 from app.common.models.icpdao.job import Job
 from app.common.models.icpdao.dao import DAO as DAOModel
+from app.common.utils.errors import COMMON_NOT_AUTH_ERROR, COMMON_NOT_FOUND_DAO_ERROR, OPEN_GITHUB_PARAMETER_ERROR, \
+    OPEN_GITHUB_RUN_ERROR
 from app.common.utils.github_app import GithubAppClient
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.routes.config import UpdateDAOJobConfig, DAOJobConfig, DAOTokenConfig
@@ -147,11 +149,11 @@ class Query(ObjectType):
     @staticmethod
     def resolve_open_github(root, info, dao_name, way, parameter=None):
         current_user = get_current_user_by_graphql(info)
-        assert current_user, "error.common.not_login"
+        assert current_user, COMMON_NOT_AUTH_ERROR
 
         dao = DAOModel.objects(github_owner_name=dao_name).first()
         if not dao:
-            raise ValueError('NOT DAO')
+            raise ValueError(COMMON_NOT_FOUND_DAO_ERROR)
 
         app_token = GithubAppToken.get_token(
             app_id=settings.ICPDAO_GITHUB_APP_ID,
@@ -163,19 +165,19 @@ class Query(ObjectType):
             raise ValueError('NOT APP TOKEN')
         app_client = GithubAppClient(app_token, dao.github_owner_name)
         if way == OpenGithubWayEnum.ISSUE_TIMELINE.value:
-            assert (parameter is not None) and (len(parameter) == 2), 'error.open_github.parameter'
+            assert (parameter is not None) and (len(parameter) == 2), OPEN_GITHUB_PARAMETER_ERROR
             success, ret = app_client.get_issue_timeline(parameter[0], parameter[1])
-            assert success is True, 'error.open_github.fail'
+            assert success is True, OPEN_GITHUB_RUN_ERROR
             return OpenGithubQuery(way=way, data=ret)
         if way == OpenGithubWayEnum.ISSUE_INFO.value:
-            assert (parameter is not None) and (len(parameter) == 2), 'error.open_github.parameter'
+            assert (parameter is not None) and (len(parameter) == 2), OPEN_GITHUB_PARAMETER_ERROR
             success, ret = app_client.get_issue(parameter[0], parameter[1])
-            assert success is True, 'error.open_github.fail'
+            assert success is True, OPEN_GITHUB_RUN_ERROR
             return OpenGithubQuery(way=way, data=ret)
         if way == OpenGithubWayEnum.OPEN_PR.value:
-            assert (parameter is not None) and (len(parameter) == 1), 'error.open_github.parameter'
+            assert (parameter is not None) and (len(parameter) == 1), OPEN_GITHUB_PARAMETER_ERROR
             success, ret = app_client.get_user_open_pr(parameter[0])
-            assert success is True, 'error.open_github.fail'
+            assert success is True, OPEN_GITHUB_RUN_ERROR
             return OpenGithubQuery(way=way, data=ret)
         raise ValueError('')
 

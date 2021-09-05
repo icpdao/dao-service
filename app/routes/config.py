@@ -11,6 +11,8 @@ from app.common.schema import BaseObjectType
 from app.common.schema.icpdao import DAOJobConfigSchema
 from app.common.utils import get_next_time
 from app.common.utils.access import check_is_dao_owner
+from app.common.utils.errors import CONFIG_UPDATE_INVALID_ERROR, COMMON_NOT_FOUND_DAO_ERROR, CYCLE_NOT_FOUND_ERROR, \
+    CYCLE_PREVIEW_PARAMS_INVALID_ERROR
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.controllers.task import create_cycle_by_params
 
@@ -37,7 +39,7 @@ class UpdateDAOJobConfig(Mutation):
     def mutate(root, info: ResolveInfo, dao_id, **kwargs):
         record = DAOJobConfigModel.objects(dao_id=dao_id).first()
         if not record:
-            raise ValueError('NOT FOUND DAO')
+            raise ValueError(COMMON_NOT_FOUND_DAO_ERROR)
         check_is_dao_owner(get_current_user_by_graphql(info), dao_id=dao_id)
         for field, value in kwargs.items():
             setattr(record, field, value)
@@ -50,7 +52,7 @@ class UpdateDAOJobConfig(Mutation):
               f'{record.voting_end_day}.{record.voting_end_hour}'):
             record.save()
             return UpdateDAOJobConfig(ok=True)
-        raise ValueError('error.update_dao_job_config.illegal')
+        raise ValueError(CONFIG_UPDATE_INVALID_ERROR)
 
 
 class DAOJobThisCycle(ObjectType):
@@ -155,7 +157,7 @@ class DAOJobConfig(BaseObjectType):
         if newest_cycle and now_time >= newest_cycle.end_at:
             begin_at = newest_cycle.end_at
             return get_predict_cycle(self._args.dao_id, begin_at)
-        raise ValueError('NOT MATCH CYCLE')
+        raise ValueError(CYCLE_NOT_FOUND_ERROR)
 
     def resolve_existed_last_cycle(self, info):
         last_cycle = Cycle.objects(
@@ -196,7 +198,7 @@ class DAOJobConfig(BaseObjectType):
             pair_end_day is None or pair_end_hour is None or \
             voting_begin_day is None or voting_begin_hour is None or \
             voting_end_day is None or voting_end_hour is None:
-            raise ValueError('PARAMS INVLID')
+            raise ValueError(CYCLE_PREVIEW_PARAMS_INVALID_ERROR)
 
         return _get_next_cycle(
             self._args.dao_id, time_zone,

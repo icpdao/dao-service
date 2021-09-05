@@ -140,7 +140,7 @@ mutation {
         ret = self.graph_query(self.user_1.id, self.create_dao % dao_name)
         assert ret.status_code == 400
         data = ret.json()
-        assert data['errors'][0]['message'] == 'NO ROLE'
+        assert data['errors'][0]['message'] == 'error.common.not_permission'
 
         ret = self.graph_query(self.icpper.id, self.create_dao % dao_name)
         assert ret.status_code == 200

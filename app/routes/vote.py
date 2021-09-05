@@ -5,6 +5,7 @@ from graphene import Mutation, String, Boolean
 from app.common.models.icpdao.cycle import CycleVote, CycleVoteType, Cycle, \
     VoteResultTypeAllResultType, CycleVoteConfirm, CycleVoteConfirmStatus
 from app.common.models.icpdao.job import Job
+from app.common.utils.errors import COMMON_NOT_AUTH_ERROR, CYCLE_NOT_FOUND_ERROR, CYCLE_VOTE_TIME_ERROR
 from app.common.utils.route_helper import get_current_user_by_graphql
 
 
@@ -18,7 +19,7 @@ class UpdatePairVote(Mutation):
     def mutate(self, info, id, vote_job_id):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
-            raise PermissionError('NOT LOGIN')
+            raise PermissionError(COMMON_NOT_AUTH_ERROR)
         cycle_vote = CycleVote.objects(id=id).first()
         if not cycle_vote:
             raise ValueError('NOT FOUND VOTE')
@@ -28,12 +29,12 @@ class UpdatePairVote(Mutation):
             raise ValueError('NOT PERMISSION VOTE')
         cycle = Cycle.objects(id=cycle_vote.cycle_id).first()
         if not cycle:
-            raise ValueError('NOT CYCLE')
+            raise ValueError(CYCLE_NOT_FOUND_ERROR)
         if not cycle.paired_at:
             raise ValueError('NOT PAIRED THIS CYCLE')
         now_at = int(time.time())
         if now_at < cycle.vote_begin_at or now_at > cycle.vote_end_at:
-            raise ValueError('NOT VOTE TIME')
+            raise ValueError(CYCLE_VOTE_TIME_ERROR)
         cvc = CycleVoteConfirm.objects(cycle_id=str(cycle.id), voter_id=str(current_user.id)).first()
         assert cvc, "errors.vote.no_confirm_record"
         assert cvc.status == CycleVoteConfirmStatus.WAITING.value, "errors.vote.already_confirm"
@@ -55,7 +56,7 @@ class UpdateALLVote(Mutation):
     def mutate(self, info, id, vote):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
-            raise PermissionError('NOT LOGIN')
+            raise PermissionError(COMMON_NOT_AUTH_ERROR)
         cycle_vote = CycleVote.objects(id=id).first()
         if not cycle_vote:
             raise ValueError('NOT FOUND VOTE')
