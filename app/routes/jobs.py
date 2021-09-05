@@ -13,6 +13,10 @@ from app.common.models.icpdao.dao import DAO as DAOModel
 from app.common.models.icpdao.user import User
 
 from app.common.schema.icpdao import JobSchema, JobPRSchema
+from app.common.utils.errors import JOB_UPDATE_STATUS_INVALID_ERROR, JOB_QUERY_NOT_USER_ERROR, COMMON_NOT_AUTH_ERROR, \
+    COMMON_NOT_FOUND_DAO_ERROR, JOB_QUERY_NOT_FOUND_ERROR, COMMON_NOT_PERMISSION_ERROR, JOB_DELETE_INVALID_ERROR, \
+    CYCLE_NOT_FOUND_ERROR, CYCLE_PAIR_UPDATE_TYPE_ERROR, CYCLE_ICPPER_STAT_NOT_FOUND_ERROR, \
+    CYCLE_UPDATE_EI_VALUE_INVALID_ERROR, CYCLE_UPDATE_EI_TIME_ERROR
 from app.common.utils.github_app.client import GithubAppClient
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.common.utils import check_size
@@ -48,11 +52,11 @@ class Jobs(ObjectType):
         if user_name is not None:
             user = User.objects(github_login=user_name).first()
             if not user:
-                raise ValueError("NOT FIND QUERY USER NAME")
+                raise ValueError(JOB_QUERY_NOT_USER_ERROR)
             query_user_id = str(user.id)
 
         if not query_user_id:
-            raise ValueError("NOT QUERY USER")
+            raise ValueError(JOB_QUERY_NOT_USER_ERROR)
 
         _filter = {'user_id': query_user_id}
         if dao_name:
@@ -140,14 +144,14 @@ class UpdateJob(Mutation):
     def mutate(root, info, id, size, auto_create_pr, prs: List(RequestPR) = None):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
-            raise PermissionError('NOT LOGIN')
+            raise PermissionError(COMMON_NOT_AUTH_ERROR)
         job = JobModel.objects(id=id).first()
         if not job:
-            raise FileNotFoundError('NOT JOB')
-        assert job.status in [JobStatusEnum.AWAITING_MERGER.value, JobStatusEnum.MERGED.value], 'error.update_job.illegal'
+            raise FileNotFoundError(JOB_QUERY_NOT_FOUND_ERROR)
+        assert job.status in [JobStatusEnum.AWAITING_MERGER.value, JobStatusEnum.MERGED.value], JOB_UPDATE_STATUS_INVALID_ERROR
         dao = DAOModel.objects(id=job.dao_id).first()
         if not dao:
-            raise ValueError('NOT DAO')
+            raise ValueError(COMMON_NOT_FOUND_DAO_ERROR)
         app_token = GithubAppToken.get_token(
             app_id=settings.ICPDAO_GITHUB_APP_ID,
             app_private_key=settings.ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY,
@@ -180,17 +184,17 @@ class DeleteJob(Mutation):
     def mutate(root, info, id):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
-            raise PermissionError('NOT LOGIN')
+            raise PermissionError(COMMON_NOT_AUTH_ERROR)
         job = JobModel.objects(id=id).first()
         if not job:
-            raise FileNotFoundError('NOT JOB')
+            raise FileNotFoundError(JOB_QUERY_NOT_FOUND_ERROR)
         dao = DAOModel.objects(id=job.dao_id).first()
         if not dao:
-            raise ValueError('NOT DAO')
+            raise ValueError(COMMON_NOT_AUTH_ERROR)
         if job.user_id != str(current_user.id):
-            raise ValueError('NOT ROLE')
+            raise ValueError(COMMON_NOT_PERMISSION_ERROR)
         if job.status != JobStatusEnum.AWAITING_MERGER.value:
-            raise ValueError('NOT SUPPORT')
+            raise ValueError(JOB_DELETE_INVALID_ERROR)
 
         need_delete_bot_comment_info_list = []
         github_repo_owner = job.github_repo_owner
@@ -235,26 +239,26 @@ class UpdateJobVoteTypeByOwner(Mutation):
     def mutate(self, info, id, vote_type):
         job = JobModel.objects(id=id).first()
         if not job:
-            raise ValueError('NOT JOB')
+            raise ValueError(JOB_QUERY_NOT_FOUND_ERROR)
 
         if not job.cycle_id:
-            raise ValueError('NOT CYCLE')
+            raise ValueError(CYCLE_NOT_FOUND_ERROR)
 
         cycle = Cycle.objects(id=job.cycle_id).first()
         if not cycle:
-            raise ValueError('NOT CYCLE')
+            raise ValueError(CYCLE_NOT_FOUND_ERROR)
 
         dao = DAOModel.objects(id=job.dao_id).first()
         if not dao:
-            raise ValueError('NOT DAO')
+            raise ValueError(COMMON_NOT_FOUND_DAO_ERROR)
 
         current_user = get_current_user_by_graphql(info)
         if str(current_user.id) != dao.owner_id:
-            raise ValueError('NOT ROLE')
+            raise ValueError(COMMON_NOT_PERMISSION_ERROR)
 
         current_time = int(time.time())
         if current_time > cycle.pair_end_at or current_time < cycle.pair_begin_at:
-            raise ValueError('CURRENT TIME NOT IN CHANGE CYCLE')
+            raise ValueError(CYCLE_PAIR_UPDATE_TYPE_ERROR)
 
         job.pair_type = vote_type
         job.save()
@@ -273,25 +277,25 @@ class UpdateIcpperStatOwnerEi(Mutation):
     def mutate(self, info, id, owner_ei):
         icpper_stat = CycleIcpperStat.objects(id=id).first()
         if not icpper_stat:
-            raise ValueError('NOT ICPPER_STAT')
+            raise ValueError(CYCLE_ICPPER_STAT_NOT_FOUND_ERROR)
 
         cycle = Cycle.objects(id=icpper_stat.cycle_id).first()
         if not cycle:
-            raise ValueError('NOT CYCLE')
+            raise ValueError(CYCLE_NOT_FOUND_ERROR)
 
         dao = DAOModel.objects(id=icpper_stat.dao_id).first()
         if not dao:
-            raise ValueError('NOT DAO')
+            raise ValueError(COMMON_NOT_FOUND_DAO_ERROR)
 
         current_user = get_current_user_by_graphql(info)
         if str(current_user.id) != dao.owner_id:
-            raise ValueError('NOT ROLE')
+            raise ValueError(COMMON_NOT_PERMISSION_ERROR)
 
         if not cycle.vote_result_stat_at or cycle.vote_result_published_at:
-            raise ValueError('CURRENT TIME NO IN CHANGE CYCLE')
+            raise ValueError(CYCLE_UPDATE_EI_TIME_ERROR)
 
         if owner_ei < decimal.Decimal('-0.2') or owner_ei > decimal.Decimal('0.2'):
-            raise ValueError('OWNER_EI MUST IN -0.2 TO 0.2 RANGE')
+            raise ValueError(CYCLE_UPDATE_EI_VALUE_INVALID_ERROR)
 
         icpper_stat.owner_ei = owner_ei
         icpper_stat.ei = icpper_stat.vote_ei + icpper_stat.owner_ei
