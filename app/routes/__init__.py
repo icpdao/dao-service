@@ -15,7 +15,7 @@ from app.routes.cycles import CycleQuery, CreateCycleVotePairTaskByOwner, \
     ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner, CreateCycleVoteResultPublishTaskByOwner, \
     UserIcpperStatsQuery, CycleByTokenUnreleasedQuery, MarkCyclesTokenReleased, VotingCycleQuery
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus, DAOsStat, DAOItem, DAOStat, \
-    get_query_dao_list
+    get_query_dao_list, HomeStats
 from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob, UpdateJobVoteTypeByOwner, UpdateIcpperStatOwnerEi, DeleteJob
 from app.routes.mock import CreateMock
@@ -27,6 +27,8 @@ from app.routes.vote import UpdatePairVote, UpdateALLVote, UpdateVoteConfirm
 
 
 class Query(ObjectType):
+    stats = Field(HomeStats)
+
     daos = Field(
         DAOs,
         filter=DAOsFilterEnum(),
@@ -97,6 +99,16 @@ class Query(ObjectType):
         way=OpenGithubWayEnum(required=True),
         parameter=List(String)
     )
+
+    @staticmethod
+    def resolve_stat(root, info):
+        all_dao_ids = DAOModel.objects().distinct('_id')
+        all_dao_ids_str = [str(i) for i in all_dao_ids]
+        icpper = Job.objects(dao_id__in=all_dao_ids_str).distinct('user_id')
+        size = Job.objects(dao_id__in=all_dao_ids_str).sum('size')
+        income = Job.objects(dao_id__in=all_dao_ids_str).sum('income')
+        return HomeStats(
+            dao=len(all_dao_ids_str), icpper=len(icpper), size=decimal.Decimal(size), income=decimal.Decimal(income))
 
     @staticmethod
     def resolve_daos(root, info, **kwargs):

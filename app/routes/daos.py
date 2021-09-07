@@ -135,6 +135,13 @@ def get_query_dao_list(info, **kwargs):
     return dao_list[_offset:_offset+_first], dao_ids
 
 
+class HomeStats(ObjectType):
+    dao = Int()
+    icpper = Int()
+    size = Decimal()
+    income = Decimal()
+
+
 class DAOStat(ObjectType):
     following = Int()
     job = Int()
