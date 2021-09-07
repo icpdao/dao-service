@@ -101,7 +101,7 @@ class Query(ObjectType):
     )
 
     @staticmethod
-    def resolve_stat(root, info):
+    def resolve_stats(root, info):
         all_dao_ids = DAOModel.objects().distinct('_id')
         all_dao_ids_str = [str(i) for i in all_dao_ids]
         icpper = Job.objects(dao_id__in=all_dao_ids_str).distinct('user_id')
