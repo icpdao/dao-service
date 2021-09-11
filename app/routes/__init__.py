@@ -23,6 +23,7 @@ from app.routes.open_github import OpenGithubQuery
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
     DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum, DAOJobConfigQueryArgs, CyclesTokenUnreleasedQueryArgs, \
     DAOQueryArgs, OpenGithubWayEnum
+from app.routes.token_mint_records import CreateTokenMintRecord
 from app.routes.vote import UpdatePairVote, UpdateALLVote, UpdateVoteConfirm
 
 
@@ -213,3 +214,4 @@ class Mutations(ObjectType):
     createCycleVoteResultStatTaskByOwner = CreateCycleVoteResultStatTaskByOwner.Field()
     createCycleVoteResultPublishTaskByOwner = CreateCycleVoteResultPublishTaskByOwner.Field()
     mark_cycles_token_released = MarkCyclesTokenReleased.Field()
+    create_token_mint_record = CreateTokenMintRecord.Field()

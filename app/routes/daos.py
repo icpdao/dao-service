@@ -14,6 +14,7 @@ from app.common.schema import BaseObjectType, BaseObjectArgs
 from app.common.utils.errors import CYCLE_DAO_LIST_USER_NOT_FOUND_ERROR, DAO_LIST_QUERY_NOT_USER_ERROR, \
     COMMON_NOT_FOUND_DAO_ERROR, COMMON_NOT_PERMISSION_ERROR, COMMON_NOT_AUTH_ERROR
 from app.routes.data_loaders import UserLoader
+from app.routes.token_mint_records import TokenMintRecordsQuery, TokenMintSplitInfoQuery
 from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
 
 from app.routes.cycles import CyclesQuery, JobQuery, JobsQuery, JobStatQuery
@@ -27,7 +28,7 @@ from app.common.utils.route_helper import get_current_user_by_graphql, set_custo
 from app.common.utils.github_rest_api import org_member_role_is_admin, check_icp_app_installed_status_of_org, get_icp_app_jwt, get_github_org_id
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
     DAOsSortedTypeEnum, CycleFilterEnum, CyclesQueryArgs, IcppersQuerySortedEnum, IcppersQuerySortedTypeEnum, \
-    JobsQuerySortedEnum, JobsQuerySortedTypeEnum, CommonPaginationArgs
+    JobsQuerySortedEnum, JobsQuerySortedTypeEnum, CommonPaginationArgs, TokenMintRecordStatusEnum
 from app.routes.follow import DAOFollowUDSchema
 from settings import (
     ICPDAO_GITHUB_APP_CLIENT_ID,
@@ -232,6 +233,19 @@ class DAO(ObjectType):
         begin_time=Int(),
         end_time=Int()
     )
+    token_mint_records = Field(
+        TokenMintRecordsQuery,
+        first=Int(default_value=20),
+        offset=Int(default_value=0),
+        status=TokenMintRecordStatusEnum(),
+        chain_id=String(),
+        token_contract_address=String()
+    )
+    token_mint_split_info = Field(
+        TokenMintSplitInfoQuery,
+        start_timestamp=Int(required=True),
+        end_timestamp=Int(required=True),
+    )
 
     def get_query(self, info, id=None, name=None):
         if not id and not name:
@@ -336,6 +350,13 @@ class DAO(ObjectType):
                 size=decimal.Decimal(query.sum('size')), income=decimal.Decimal(query.sum('income')))
         )
 
+    def resolve_token_mint_records(self, info, first, offset, status=None, chain_id=None, token_contract_address=None):
+        dao = getattr(self, 'query')
+        return TokenMintRecordsQuery().get_query(info, dao, first, offset, status, chain_id, token_contract_address)
+
+    def resolve_token_mint_split_info(self, info, start_timestamp, end_timestamp):
+        dao = getattr(self, 'query')
+        return TokenMintSplitInfoQuery().get_query(info, dao, start_timestamp, end_timestamp)
 
 class DAOs(BaseObjectType):
     dao = List(DAOItem)
