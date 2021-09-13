@@ -5,7 +5,8 @@ from mongoengine import Q
 
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat
 from app.common.models.icpdao.icppership import Icppership, IcppershipProgress, IcppershipStatus
-from app.common.models.icpdao.token import TokenMintRecord, MintRadtio, MintIcpperRecord, MintIcpperRecordMeta
+from app.common.models.icpdao.token import TokenMintRecord, MintRadtio, MintIcpperRecord, MintIcpperRecordMeta, \
+    MintRecordStatusEnum
 from app.common.models.icpdao.user import User
 from app.common.schema import BaseObjectType
 from app.common.schema.icpdao import TokenMintRecordSchema
@@ -181,6 +182,7 @@ class BuildSplitInfo:
             ratio_list.append(ratio)
         return ratio_list
 
+
 class TokenMintRecordQuery(BaseObjectType):
     datum = Field(TokenMintRecordSchema)
 
@@ -291,3 +293,36 @@ class CreateTokenMintRecord(Mutation):
         ).save()
 
         return CreateTokenMintRecord(token_mint_record=record)
+
+
+class LinkTxHashForTokenMintRecord(Mutation):
+    class Arguments:
+        id = String(required=True)
+        mint_tx_hash = String(required=True)
+
+    token_mint_record = Field(TokenMintRecordSchema)
+
+    def mutate(self, info, id, mint_tx_hash):
+        record = TokenMintRecord.objects(id=id).first()
+        record.mint_tx_hash = mint_tx_hash
+        record.status = MintRecordStatusEnum.PENDING.value
+        record.save()
+
+        record = TokenMintRecord.objects(id=id).first()
+        return LinkTxHashForTokenMintRecord(token_mint_record=record)
+
+
+class DropTokenMintRecord(Mutation):
+    class Arguments:
+        id = String(required=True)
+
+    ok = Boolean()
+
+    def mutate(self, info, id):
+        record = TokenMintRecord.objects(id=id).first()
+        if record.status == MintRecordStatusEnum.INIT.value:
+            record.status = MintRecordStatusEnum.DROPED.value
+            record.save()
+            return DropTokenMintRecord(ok=True)
+        else:
+            return DropTokenMintRecord(ok=False)
