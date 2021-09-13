@@ -53,6 +53,7 @@ jobs:
         ICPDAO_MONGODB_ICPDAO_HOST: mongodb://127.0.0.1:27017/icpdao
         ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY: ${{secrets.DEV__ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY}}
         ICPDAO_ETH_DAO_ID_SALT: ${{secrets.DEV__ICPDAO_ETH_DAO_ID_SALT}}
+        ICPDAO_ETH_DAOSTAKING_ADDRESS: "0x1111111111111111111111111111111111111111"
       run: |
         npm install
         pip install -r requirements_dev.txt
@@ -101,6 +102,7 @@ jobs:
         ICPDAO_MONGODB_ICPDAO_HOST: ${{secrets.DEV__ICPDAO_MONGODB_ICPDAO_HOST}}
         ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY: ${{secrets.DEV__ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY}}
         ICPDAO_ETH_DAO_ID_SALT: ${{secrets.DEV__ICPDAO_ETH_DAO_ID_SALT}}
+        ICPDAO_ETH_DAOSTAKING_ADDRESS: ${{secrets.DEV__ICPDAO_ETH_DAOSTAKING_ADDRESS}}
       run: |
         npm install -g serverless@2.35.0
         npm install
@@ -149,6 +151,7 @@ jobs:
         ICPDAO_MONGODB_ICPDAO_HOST: ${{secrets.PROD__ICPDAO_MONGODB_ICPDAO_HOST}}
         ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY: ${{secrets.PROD__ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY}}
         ICPDAO_ETH_DAO_ID_SALT: ${{secrets.PROD__ICPDAO_ETH_DAO_ID_SALT}}
+        ICPDAO_ETH_DAOSTAKING_ADDRESS: ${{secrets.PROD__ICPDAO_ETH_DAOSTAKING_ADDRESS}}
       run: |
         npm install -g serverless@2.35.0
         npm install

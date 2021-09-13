@@ -6,6 +6,7 @@ from mongoengine.connection import get_db
 from app import app, graph_route
 from app.common.models.icpdao.github_app_token import GithubAppToken
 from app.common.models.icpdao.user import User, UserStatus
+import web3
 
 
 def _get_github_user_id(github_login):
@@ -38,7 +39,8 @@ class Base:
             github_login=github_login,
             github_user_id=github_user_id,
             status=UserStatus.ICPPER.value,
-            avatar='test_avatar'
+            avatar='test_avatar',
+            erc20_address=web3.Account.create().address
         )
         record.save()
         return record
