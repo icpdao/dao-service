@@ -243,8 +243,8 @@ class DAO(ObjectType):
     )
     token_mint_split_info = Field(
         TokenMintSplitInfoQuery,
-        start_timestamp=Int(required=True),
-        end_timestamp=Int(required=True),
+        start_cycle_id=String(required=True),
+        end_cycle_id=String(required=True),
     )
 
     def get_query(self, info, id=None, name=None):
@@ -354,9 +354,10 @@ class DAO(ObjectType):
         dao = getattr(self, 'query')
         return TokenMintRecordsQuery().get_query(info, dao, first, offset, status, chain_id, token_contract_address)
 
-    def resolve_token_mint_split_info(self, info, start_timestamp, end_timestamp):
+    def resolve_token_mint_split_info(self, info, start_cycle_id, end_cycle_id):
         dao = getattr(self, 'query')
-        return TokenMintSplitInfoQuery().get_query(info, dao, start_timestamp, end_timestamp)
+        return TokenMintSplitInfoQuery().get_query(info, dao, start_cycle_id, end_cycle_id)
+
 
 class DAOs(BaseObjectType):
     dao = List(DAOItem)

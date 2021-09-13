@@ -1,4 +1,6 @@
 import decimal
+import os
+import time
 
 from graphene import List, Field, String, Int, Mutation, Boolean
 from mongoengine import Q
@@ -10,6 +12,7 @@ from app.common.models.icpdao.token import TokenMintRecord, MintRadtio, MintIcpp
 from app.common.models.icpdao.user import User
 from app.common.schema import BaseObjectType
 from app.common.schema.icpdao import TokenMintRecordSchema
+from app.controllers.sync_token_mint_record_event import run_sync_token_mint_record_event_task
 from settings import ICPDAO_ETH_DAOSTAKING_ADDRESS
 
 
@@ -20,6 +23,29 @@ class SystemUser:
     github_user_id = "icpdao"
     avatar = ""
     erc20_address = ICPDAO_ETH_DAOSTAKING_ADDRESS
+
+
+def query_cycles_by_params(dao_id, start_cycle_id, end_cycle_id):
+    two_cycles = [cycle for cycle in Cycle.objects(dao_id=dao_id, id__in=[start_cycle_id, end_cycle_id])]
+    start_cycle = None
+    end_cycle = None
+
+    for cycle in two_cycles:
+        if str(cycle.id) == start_cycle_id:
+            start_cycle = cycle
+        if str(cycle.id) == end_cycle_id:
+            end_cycle = cycle
+
+    if start_cycle is None:
+        raise ValueError("NOT FOUND START_CYCLE")
+    if end_cycle is None:
+        raise ValueError("NOT FOUND END_CYCLE")
+    if start_cycle.begin_at >= end_cycle.begin_at:
+        raise ValueError("START_CYCLE NOT IN END_CYCLE BEFORE")
+
+    cycles = [cycle for cycle in Cycle.objects(dao_id=dao_id, begin_at__gte=start_cycle.begin_at, end_at__lte=end_cycle.end_at)]
+
+    return start_cycle, end_cycle, cycles
 
 
 class BuildSplitInfo:
@@ -216,14 +242,14 @@ class SplitInfo(BaseObjectType):
 class TokenMintSplitInfoQuery(BaseObjectType):
     split_infos = List(SplitInfo)
 
-    def get_query(self, info, dao, start_timestamp, end_timestamp):
+    def get_query(self, info, dao, start_cycle_id, end_cycle_id):
         """
         查找指定 cycle
         找到 cycle 所有 user job size
         找到所有人的上级，生成 user id list
         按照比例给所有 user id 生成 radio
         """
-        cycles = [cycle for cycle in Cycle.objects(dao_id=str(dao.id), begin_at__gte=start_timestamp, end_at__lte=end_timestamp)]
+        start_cycle, end_cycle, cycles = query_cycles_by_params(str(dao.id), start_cycle_id, end_cycle_id)
 
         bsi = BuildSplitInfo(str(dao.id), cycles)
         split_infos = []
@@ -245,6 +271,8 @@ class TokenMintSplitInfoQuery(BaseObjectType):
 class CreateTokenMintRecord(Mutation):
     class Arguments:
         dao_id = String(required=True)
+        start_cycle_id = String(required=True)
+        end_cycle_id = String(required=True)
         token_contract_address = String(required=True)
         start_timestamp = Int(required=True)
         end_timestamp = Int(required=True)
@@ -254,8 +282,8 @@ class CreateTokenMintRecord(Mutation):
 
     token_mint_record = Field(TokenMintRecordSchema)
 
-    def mutate(self, info, dao_id, token_contract_address, start_timestamp, end_timestamp, tick_lower, tick_upper, chain_id):
-        cycles = [cycle for cycle in Cycle.objects(dao_id=dao_id, begin_at__gte=start_timestamp, end_at__lte=end_timestamp)]
+    def mutate(self, info, dao_id, start_cycle_id, end_cycle_id, token_contract_address, start_timestamp, end_timestamp, tick_lower, tick_upper, chain_id):
+        start_cycle, end_cycle, cycles = query_cycles_by_params(dao_id, start_cycle_id, end_cycle_id)
 
         bsi = BuildSplitInfo(dao_id, cycles)
 
@@ -326,3 +354,16 @@ class DropTokenMintRecord(Mutation):
             return DropTokenMintRecord(ok=True)
         else:
             return DropTokenMintRecord(ok=False)
+
+
+class SyncTokenMintRecordEvent(Mutation):
+    class Arguments:
+        id = String(required=True)
+
+    ok = Boolean()
+
+    def mutate(self, info, id):
+        if os.environ.get('IS_UNITEST') != 'yes':
+            background_tasks = info.context['background']
+            background_tasks.add_task(run_sync_token_mint_record_event_task, id)
+        return DropTokenMintRecord(ok=True)
