@@ -5,6 +5,7 @@ from graphene import Enum
 from app.common.models.icpdao.cycle import CycleVotePairTaskStatus, CycleVoteResultStatTaskStatus, \
     VoteResultTypeAllResultType, CycleVoteResultPublishTaskStatus
 from app.common.models.icpdao.job import JobPairTypeEnum
+from app.common.models.icpdao.token import MintRecordStatusEnum
 from app.common.schema import BaseObjectArgs
 
 
@@ -169,3 +170,11 @@ class OpenGithubWayEnum(Enum):
     ISSUE_TIMELINE = 'issue_timeline'
     OPEN_PR = 'open_pr'
     ISSUE_INFO = 'issue_info'
+
+
+class TokenMintRecordStatusEnum(Enum):
+    INIT = MintRecordStatusEnum.INIT.value
+    PENDING = MintRecordStatusEnum.PENDING.value
+    SUCCESS = MintRecordStatusEnum.SUCCESS.value
+    FAIL = MintRecordStatusEnum.FAIL.value
+    DROPED = MintRecordStatusEnum.DROPED.value
