@@ -219,7 +219,7 @@ class TokenMintRecordsQuery(BaseObjectType):
     def get_query(self, info, dao, first, offset, status=None, chain_id=None, token_contract_address=None):
         query_q = Q(dao_id=str(dao.id))
         if status is not None:
-            query_q = query_q & Q(status=status)
+            query_q = query_q & Q(status__in=status)
         if chain_id is not None:
             query_q = query_q & Q(chain_id=chain_id)
         if token_contract_address is not None:
