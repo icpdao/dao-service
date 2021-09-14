@@ -237,7 +237,7 @@ class DAO(ObjectType):
         TokenMintRecordsQuery,
         first=Int(default_value=20),
         offset=Int(default_value=0),
-        status=TokenMintRecordStatusEnum(),
+        status=List(TokenMintRecordStatusEnum),
         chain_id=String(),
         token_contract_address=String()
     )

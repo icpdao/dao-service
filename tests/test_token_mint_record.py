@@ -36,7 +36,7 @@ query{
     query_init_mint_record_list = """
     query{
         dao(id: "%s"){
-            tokenMintRecords(status: INIT, first: %s, offset: 0){
+            tokenMintRecords(status: [INIT], first: %s, offset: 0){
                 nodes{
                     datum{
                         id

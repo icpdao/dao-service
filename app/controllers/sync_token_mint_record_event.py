@@ -33,6 +33,16 @@ def _sync_event(token_mint_record):
     chain_id = token_mint_record.chain_id
     token_contract_address = token_mint_record.token_contract_address
     # TODO
+    """
+    整理支持的 chain_id 列表，先简单几个
+    发一个挖矿 event 作为测试用
+    编写监控 event 代码
+    
+    mainnet  1
+    ropsten  3
+    kovan   42
+    rinkeby 4 
+    """
     pass
 
 
