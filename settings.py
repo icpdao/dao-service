@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+ICPDAO_APP_ENV = os.environ['ICPDAO_APP_ENV']
 ICPDAO_GITHUB_APP_NAME = os.environ['ICPDAO_GITHUB_APP_NAME']
 ICPDAO_GITHUB_APP_ID = os.environ['ICPDAO_GITHUB_APP_ID']
 ICPDAO_GITHUB_APP_CLIENT_ID = os.environ['ICPDAO_GITHUB_APP_CLIENT_ID']

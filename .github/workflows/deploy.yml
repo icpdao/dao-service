@@ -44,6 +44,7 @@ jobs:
 
     - name: test
       env:
+        ICPDAO_APP_ENV: "TEST"
         ICPDAO_GITHUB_APP_ID: ${{secrets.DEV__ICPDAO_GITHUB_APP_ID}}
         ICPDAO_GITHUB_APP_NAME: ${{secrets.DEV__ICPDAO_GITHUB_APP_NAME}}
         ICPDAO_GITHUB_APP_CLIENT_ID: ${{secrets.DEV__ICPDAO_GITHUB_APP_CLIENT_ID}}
@@ -92,6 +93,7 @@ jobs:
 
     - name: deploy
       env:
+        ICPDAO_APP_ENV: "DEV"
         SERVERLESS_ACCESS_KEY: ${{secrets.SERVERLESS_ACCESS_KEY}}
         ICPDAO_GITHUB_APP_ID: ${{secrets.DEV__ICPDAO_GITHUB_APP_ID}}
         ICPDAO_GITHUB_APP_NAME: ${{secrets.DEV__ICPDAO_GITHUB_APP_NAME}}
@@ -141,6 +143,7 @@ jobs:
 
     - name: deploy
       env:
+        ICPDAO_APP_ENV: "PROD"
         SERVERLESS_ACCESS_KEY: ${{secrets.SERVERLESS_ACCESS_KEY}}
         ICPDAO_GITHUB_APP_ID: ${{secrets.PROD__ICPDAO_GITHUB_APP_ID}}
         ICPDAO_GITHUB_APP_NAME: ${{secrets.PROD__ICPDAO_GITHUB_APP_NAME}}
