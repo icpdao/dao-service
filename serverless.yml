@@ -12,6 +12,7 @@ provider:
   runtime: python3.8
   lambdaHashingVersion: 20201221
   environment:
+    ICPDAO_APP_ENV: ${env:ICPDAO_APP_ENV}
     API_GATEWAY_BASE_PATH: ${env:API_GATEWAY_BASE_PATH}
     ICPDAO_GITHUB_APP_ID: ${env:ICPDAO_GITHUB_APP_ID}
     ICPDAO_GITHUB_APP_NAME: ${env:ICPDAO_GITHUB_APP_NAME}
