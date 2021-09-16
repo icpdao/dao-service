@@ -611,7 +611,8 @@ class CycleByTokenUnreleasedQuery(BaseObjectType):
 
     def resolve_nodes(self, info):
         last_timestamp = self._args.get('last_timestamp')
-        query = Q(token_released_at__exists=False) & Q(
+        dao_id = self._args.get('dao_id')
+        query = Q(dao_id=dao_id) & Q(token_released_at__exists=False) & Q(
             end_at__gt=last_timestamp) & Q(vote_result_published_at__exists=True)
         cycle_list = Cycle.objects(query).order_by('-begin_at')
         return [CycleQuery(datum=i, cycle_id=str(i.id)) for i in cycle_list]
