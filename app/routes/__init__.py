@@ -69,6 +69,7 @@ class Query(ObjectType):
 
     cycles_by_token_unreleased = Field(
         CycleByTokenUnreleasedQuery,
+        dao_id=String(required=True),
         last_timestamp=Int(required=True)
     )
 
@@ -150,9 +151,9 @@ class Query(ObjectType):
         return CycleQuery(cycle_id=id)
 
     @staticmethod
-    def resolve_cycles_by_token_unreleased(root, info, last_timestamp):
+    def resolve_cycles_by_token_unreleased(root, info, dao_id, last_timestamp):
         return CycleByTokenUnreleasedQuery(
-            _args=CyclesTokenUnreleasedQueryArgs(last_timestamp=last_timestamp)
+            _args=CyclesTokenUnreleasedQueryArgs(dao_id=dao_id, last_timestamp=last_timestamp)
         )
 
     @staticmethod

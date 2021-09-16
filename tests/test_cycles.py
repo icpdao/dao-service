@@ -667,7 +667,7 @@ mutation($ownerEi: Decimal){
 
     get_cycles_by_token_unreleased = """
 query {
-    cyclesByTokenUnreleased(lastTimestamp: 1) {
+    cyclesByTokenUnreleased(daoId: "%s", lastTimestamp: 1) {
         nodes {
             datum {
                 daoId
@@ -2394,7 +2394,7 @@ mutation{
         cycle_1_icpper1.save()
 
         res = self.graph_query(
-            self.icpper.id, self.get_cycles_by_token_unreleased
+            self.icpper.id, self.get_cycles_by_token_unreleased % str(test_dao.id)
         )
         assert len(res.json()['data']['cyclesByTokenUnreleased']['nodes']) == 1
         return test_cycle_1
