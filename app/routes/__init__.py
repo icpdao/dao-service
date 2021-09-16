@@ -23,7 +23,8 @@ from app.routes.open_github import OpenGithubQuery
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
     DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum, DAOJobConfigQueryArgs, CyclesTokenUnreleasedQueryArgs, \
     DAOQueryArgs, OpenGithubWayEnum
-from app.routes.token_mint_records import CreateTokenMintRecord, LinkTxHashForTokenMintRecord, DropTokenMintRecord, SyncTokenMintRecordEvent
+from app.routes.token_mint_records import CreateTokenMintRecord, LinkTxHashForTokenMintRecord, DropTokenMintRecord, \
+    SyncTokenMintRecordEvent, FindLostTxForInitTokenMintRecord
 from app.routes.vote import UpdatePairVote, UpdateALLVote, UpdateVoteConfirm
 
 
@@ -218,3 +219,4 @@ class Mutations(ObjectType):
     link_tx_hash_for_token_mint_record = LinkTxHashForTokenMintRecord.Field()
     drop_token_mint_record = DropTokenMintRecord.Field()
     sync_token_mint_record_event = SyncTokenMintRecordEvent.Field()
+    find_lost_tx_for_init_token_mint_record = FindLostTxForInitTokenMintRecord.Field()

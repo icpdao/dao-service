@@ -4,6 +4,7 @@ import time
 
 from graphene import List, Field, String, Int, Mutation, Boolean
 from mongoengine import Q
+from web3 import Web3
 
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat
 from app.common.models.icpdao.icppership import Icppership, IcppershipProgress, IcppershipStatus
@@ -12,8 +13,12 @@ from app.common.models.icpdao.token import TokenMintRecord, MintRadtio, MintIcpp
 from app.common.models.icpdao.user import User
 from app.common.schema import BaseObjectType
 from app.common.schema.icpdao import TokenMintRecordSchema
-from app.controllers.sync_token_mint_record_event import run_sync_token_mint_record_event_task
-from settings import ICPDAO_ETH_DAOSTAKING_ADDRESS
+from app.common.utils.errors import TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_NO_START_CYCLE, \
+    TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_NO_END_CYCLE, \
+    TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_START_CYCLE_NOT_IN_END_CYCLE_BEFORE
+from app.controllers.sync_token_mint_record_event import run_sync_token_mint_record_event_task, get_eth_node_url, \
+    TOKEN_ABI
+from settings import ICPDAO_ETH_DAOSTAKING_ADDRESS, ICPDAO_ETH_TOKEN_FACTORY_DEPLOY_BLACK_NUMBER
 
 
 class SystemUser:
@@ -37,11 +42,11 @@ def query_cycles_by_params(dao_id, start_cycle_id, end_cycle_id):
             end_cycle = cycle
 
     if start_cycle is None:
-        raise ValueError("NOT FOUND START_CYCLE")
+        raise ValueError(TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_NO_START_CYCLE)
     if end_cycle is None:
-        raise ValueError("NOT FOUND END_CYCLE")
+        raise ValueError(TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_NO_END_CYCLE)
     if start_cycle.begin_at >= end_cycle.begin_at:
-        raise ValueError("START_CYCLE NOT IN END_CYCLE BEFORE")
+        raise ValueError(TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_START_CYCLE_NOT_IN_END_CYCLE_BEFORE)
 
     cycles = [cycle for cycle in Cycle.objects(dao_id=dao_id, begin_at__gte=start_cycle.begin_at, end_at__lte=end_cycle.end_at)]
 
@@ -373,3 +378,49 @@ class SyncTokenMintRecordEvent(Mutation):
             background_tasks = info.context['background']
             background_tasks.add_task(run_sync_token_mint_record_event_task, id)
         return DropTokenMintRecord(ok=True)
+
+
+class FindLostTxForInitTokenMintRecord(Mutation):
+    class Arguments:
+        id = String(required=True)
+
+    token_mint_record = Field(TokenMintRecordSchema)
+
+    def mutate(self, info, id):
+        token_mint_record = TokenMintRecord.objects(id=id).first()
+        if not token_mint_record:
+            return FindLostTxForInitTokenMintRecord(token_mint_record=token_mint_record)
+
+        if token_mint_record.status != MintRecordStatusEnum.INIT.value:
+            return FindLostTxForInitTokenMintRecord(token_mint_record=token_mint_record)
+
+        last_success_record = TokenMintRecord.objects(
+            dao_id=token_mint_record.dao_id,
+            token_contract_address=token_mint_record.token_contract_address,
+            chain_id=token_mint_record.chain_id,
+            status=MintRecordStatusEnum.SUCCESS.value
+        ).order_by("-end_timestamp").first()
+
+        from_black_number = ICPDAO_ETH_TOKEN_FACTORY_DEPLOY_BLACK_NUMBER
+        if last_success_record:
+            from_black_number = last_success_record.block_number
+
+        web3 = Web3(Web3.WebsocketProvider(get_eth_node_url(token_mint_record.chain_id)))
+        token = web3.eth.contract(address=Web3.toChecksumAddress(token_mint_record.token_contract_address),
+                                  abi=TOKEN_ABI)
+        tef = token.events["Mint"].createFilter(fromBlock=from_black_number, toBlock="latest")
+
+        for log in tef.get_all_entries():
+            mint_tx_hash = Web3.toHex(log["transactionHash"])
+            _startTimestamp = log["args"]["_startTimestamp"]
+            _endTimestamp = log["args"]["_endTimestamp"]
+
+            eq1 = _startTimestamp == token_mint_record.start_timestamp
+            eq2 = _endTimestamp == token_mint_record.end_timestamp
+
+            if eq1 and eq2:
+                token_mint_record.mint_tx_hash = mint_tx_hash
+                token_mint_record.status = MintRecordStatusEnum.PENDING.value
+                token_mint_record.save()
+
+        return FindLostTxForInitTokenMintRecord(token_mint_record=token_mint_record)
