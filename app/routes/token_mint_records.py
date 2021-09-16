@@ -45,6 +45,7 @@ def query_cycles_by_params(dao_id, start_cycle_id, end_cycle_id):
 
     cycles = [cycle for cycle in Cycle.objects(dao_id=dao_id, begin_at__gte=start_cycle.begin_at, end_at__lte=end_cycle.end_at)]
 
+    cycles = sorted(cycles, key=lambda cycle: cycle.begin_at)
     return start_cycle, end_cycle, cycles
 
 
@@ -111,7 +112,7 @@ class BuildSplitInfo:
         job_user_id__2__job_size_ratio = {}
         for user_id in job_user_id__2__job_size:
             job_size_base_ratio = job_user_id__2__job_size[user_id] * decimal.Decimal('100000')
-            job_user_id__2__job_size_ratio[user_id] = job_size_base_ratio * MintRadtio.ICPPER_RATIO
+            job_user_id__2__job_size_ratio[user_id] = int(job_size_base_ratio * MintRadtio.ICPPER_RATIO)
         return job_user_id__2__job_size_ratio
 
     @staticmethod
@@ -126,7 +127,7 @@ class BuildSplitInfo:
                 size = job_size_base_ratio * \
                     MintRadtio.MENTOR_BASE_ALL_RATIO * \
                     MintRadtio.MENTOR_7_LELVES_RATIO_LIST[index]
-                level7_mentor_id_2_ratio[parent_user_id] = size
+                level7_mentor_id_2_ratio[parent_user_id] = int(size)
             job_user_id__2__level7_mentor_id_2_ratio[job_user_id] = level7_mentor_id_2_ratio
         return job_user_id__2__level7_mentor_id_2_ratio
 
@@ -285,6 +286,8 @@ class CreateTokenMintRecord(Mutation):
     def mutate(self, info, dao_id, start_cycle_id, end_cycle_id, token_contract_address, start_timestamp, end_timestamp, tick_lower, tick_upper, chain_id):
         start_cycle, end_cycle, cycles = query_cycles_by_params(dao_id, start_cycle_id, end_cycle_id)
 
+        cycle_id_list = [str(cycle.id) for cycle in cycles]
+
         bsi = BuildSplitInfo(dao_id, cycles)
 
         total_real_size = bsi.total_size()
@@ -297,18 +300,21 @@ class CreateTokenMintRecord(Mutation):
                 mentor_list.append(MintIcpperRecordMeta(
                     mentor_id=parent_user_id,
                     mentor_eth_address=bsi.user_id__2__user[parent_user_id].erc20_address,
-                    mentor_radio=decimal.Decimal(str(bsi.job_user_id__2__level7_mentor_id_2_ratio[job_user_id][parent_user_id])),
+                    mentor_radio=bsi.job_user_id__2__level7_mentor_id_2_ratio[job_user_id][parent_user_id],
                 ))
             mint_icpper_records.append(MintIcpperRecord(
                 user_id=job_user_id,
                 user_eth_address=bsi.user_id__2__user[job_user_id].erc20_address,
-                user_ratio=decimal.Decimal(str(bsi.job_user_id__2__job_size_ratio[job_user_id])),
+                user_ratio=bsi.job_user_id__2__job_size_ratio[job_user_id],
                 mentor_list=mentor_list
             ))
 
         record = TokenMintRecord(
             dao_id=dao_id,
             token_contract_address=token_contract_address,
+            start_cycle_id=str(start_cycle.id),
+            end_cycle_id=str(end_cycle.id),
+            cycle_ids=cycle_id_list,
             start_timestamp=start_timestamp,
             end_timestamp=end_timestamp,
             tick_lower=tick_lower,

@@ -731,62 +731,62 @@ mutation {
 
         assert record.mint_icpper_records[0].user_id == str(self.job_user_1.id)
         assert record.mint_icpper_records[0].user_eth_address == str(self.job_user_1.erc20_address)
-        assert record.mint_icpper_records[0].user_ratio == decimal.Decimal(str("3420000"))
+        assert record.mint_icpper_records[0].user_ratio == 3420000
         assert len(record.mint_icpper_records[0].mentor_list) == 7
 
         assert record.mint_icpper_records[0].mentor_list[0].mentor_id == str(self.job_user_1_mentor_1.id)
         assert record.mint_icpper_records[0].mentor_list[0].mentor_eth_address == self.job_user_1_mentor_1.erc20_address
-        assert record.mint_icpper_records[0].mentor_list[0].mentor_radio == decimal.Decimal(str("90000"))
+        assert record.mint_icpper_records[0].mentor_list[0].mentor_radio == 90000
 
         assert record.mint_icpper_records[0].mentor_list[1].mentor_id == str(self.job_user_1_mentor_2.id)
         assert record.mint_icpper_records[0].mentor_list[1].mentor_eth_address == self.job_user_1_mentor_2.erc20_address
-        assert record.mint_icpper_records[0].mentor_list[1].mentor_radio == decimal.Decimal(str("45000"))
+        assert record.mint_icpper_records[0].mentor_list[1].mentor_radio == 45000
 
         assert record.mint_icpper_records[0].mentor_list[2].mentor_id == str(self.job_user_1_mentor_3.id)
         assert record.mint_icpper_records[0].mentor_list[2].mentor_eth_address == self.job_user_1_mentor_3.erc20_address
-        assert record.mint_icpper_records[0].mentor_list[2].mentor_radio == decimal.Decimal(str("23400"))
+        assert record.mint_icpper_records[0].mentor_list[2].mentor_radio == 23400
 
         assert record.mint_icpper_records[0].mentor_list[3].mentor_id == str(self.job_user_1_mentor_4.id)
         assert record.mint_icpper_records[0].mentor_list[3].mentor_eth_address == self.job_user_1_mentor_4.erc20_address
-        assert record.mint_icpper_records[0].mentor_list[3].mentor_radio == decimal.Decimal(str("10800"))
+        assert record.mint_icpper_records[0].mentor_list[3].mentor_radio == 10800
 
         assert record.mint_icpper_records[0].mentor_list[4].mentor_id == str(self.job_user_3.id)
         assert record.mint_icpper_records[0].mentor_list[4].mentor_eth_address == self.job_user_3.erc20_address
-        assert record.mint_icpper_records[0].mentor_list[4].mentor_radio == decimal.Decimal(str("5400"))
+        assert record.mint_icpper_records[0].mentor_list[4].mentor_radio == 5400
 
         assert record.mint_icpper_records[0].mentor_list[5].mentor_id == str(self.job_user_1_mentor_6.id)
         assert record.mint_icpper_records[0].mentor_list[5].mentor_eth_address == self.job_user_1_mentor_6.erc20_address
-        assert record.mint_icpper_records[0].mentor_list[5].mentor_radio == decimal.Decimal(str("3600"))
+        assert record.mint_icpper_records[0].mentor_list[5].mentor_radio == 3600
 
         assert record.mint_icpper_records[0].mentor_list[6].mentor_id == str(self.job_user_1_mentor_7.id)
         assert record.mint_icpper_records[0].mentor_list[6].mentor_eth_address == self.job_user_1_mentor_7.erc20_address
-        assert record.mint_icpper_records[0].mentor_list[6].mentor_radio == decimal.Decimal(str("1800"))
+        assert record.mint_icpper_records[0].mentor_list[6].mentor_radio == 1800
 
         assert record.mint_icpper_records[1].user_id == str(self.job_user_2.id)
         assert record.mint_icpper_records[1].user_eth_address == str(self.job_user_2.erc20_address)
-        assert record.mint_icpper_records[1].user_ratio == decimal.Decimal(str("3372500"))
+        assert record.mint_icpper_records[1].user_ratio == 3372500
         assert len(record.mint_icpper_records[1].mentor_list) == 2
 
         assert record.mint_icpper_records[1].mentor_list[0].mentor_id == str(self.job_user_2_mentor_1.id)
         assert record.mint_icpper_records[1].mentor_list[0].mentor_eth_address == self.job_user_2_mentor_1.erc20_address
-        assert record.mint_icpper_records[1].mentor_list[0].mentor_radio == decimal.Decimal(str("88750"))
+        assert record.mint_icpper_records[1].mentor_list[0].mentor_radio == 88750
 
         assert record.mint_icpper_records[1].mentor_list[1].mentor_id == str(self.job_user_2_mentor_2.id)
         assert record.mint_icpper_records[1].mentor_list[1].mentor_eth_address == self.job_user_2_mentor_2.erc20_address
-        assert record.mint_icpper_records[1].mentor_list[1].mentor_radio == decimal.Decimal(str("44375"))
+        assert record.mint_icpper_records[1].mentor_list[1].mentor_radio == 44375
 
         assert record.mint_icpper_records[2].user_id == str(self.job_user_3.id)
         assert record.mint_icpper_records[2].user_eth_address == str(self.job_user_3.erc20_address)
-        assert record.mint_icpper_records[2].user_ratio == decimal.Decimal(str("4180000"))
+        assert record.mint_icpper_records[2].user_ratio == 4180000
         assert len(record.mint_icpper_records[2].mentor_list) == 2
 
         assert record.mint_icpper_records[2].mentor_list[0].mentor_id == str(self.job_user_1_mentor_6.id)
         assert record.mint_icpper_records[2].mentor_list[0].mentor_eth_address == self.job_user_1_mentor_6.erc20_address
-        assert record.mint_icpper_records[2].mentor_list[0].mentor_radio == decimal.Decimal(str("110000"))
+        assert record.mint_icpper_records[2].mentor_list[0].mentor_radio == 110000
 
         assert record.mint_icpper_records[2].mentor_list[1].mentor_id == str(self.job_user_1_mentor_7.id)
         assert record.mint_icpper_records[2].mentor_list[1].mentor_eth_address == self.job_user_1_mentor_7.erc20_address
-        assert record.mint_icpper_records[2].mentor_list[1].mentor_radio == decimal.Decimal(str("55000"))
+        assert record.mint_icpper_records[2].mentor_list[1].mentor_radio == 55000
 
     def test_link_tx_hash_for_token_mint_record(self):
         """
