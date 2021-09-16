@@ -12,7 +12,6 @@ from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.models.icpdao.token import TokenMintRecord, MintRecordStatusEnum, TokenTransferEventLog, \
     MentorTokenIncomeStat
 
-from settings import ICPDAO_ETH_TOKEN_FACTORY_DEPLOY_BLACK_NUMBER
 
 TOKEN_ABI = """
   [
