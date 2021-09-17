@@ -15,7 +15,9 @@ from app.common.schema import BaseObjectType
 from app.common.schema.icpdao import TokenMintRecordSchema
 from app.common.utils.errors import TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_NO_START_CYCLE, \
     TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_NO_END_CYCLE, \
-    TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_START_CYCLE_NOT_IN_END_CYCLE_BEFORE
+    TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_START_CYCLE_NOT_IN_END_CYCLE_BEFORE, \
+    TOKEN_MINT_RECORD_CREATE_HAVE_UN_DONE_RECORD
+from app.controllers.find_lost_tx_for_droped_token_mint_record import run_find_lost_tx_for_drop_token_mint_record_task
 from app.controllers.sync_token_mint_record_event import run_sync_token_mint_record_event_task, get_eth_node_url, \
     TOKEN_ABI
 from settings import ICPDAO_ETH_DAOSTAKING_ADDRESS, ICPDAO_ETH_TOKEN_FACTORY_DEPLOY_BLACK_NUMBER
@@ -289,6 +291,16 @@ class CreateTokenMintRecord(Mutation):
     token_mint_record = Field(TokenMintRecordSchema)
 
     def mutate(self, info, dao_id, start_cycle_id, end_cycle_id, token_contract_address, start_timestamp, end_timestamp, tick_lower, tick_upper, chain_id):
+        un_done_record_count = TokenMintRecord.objects(
+            dao_id=dao_id,
+            token_contract_address=token_contract_address,
+            chain_id=chain_id,
+            status__in=[MintRecordStatusEnum.INIT.value, MintRecordStatusEnum.PENDING.value]
+        ).count()
+
+        if un_done_record_count != 0:
+            raise ValueError(TOKEN_MINT_RECORD_CREATE_HAVE_UN_DONE_RECORD)
+
         start_cycle, end_cycle, cycles = query_cycles_by_params(dao_id, start_cycle_id, end_cycle_id)
 
         cycle_id_list = [str(cycle.id) for cycle in cycles]
@@ -424,3 +436,18 @@ class FindLostTxForInitTokenMintRecord(Mutation):
                 token_mint_record.save()
 
         return FindLostTxForInitTokenMintRecord(token_mint_record=token_mint_record)
+
+
+class FindLostTxForDropTokenMintRecord(Mutation):
+    class Arguments:
+        dao_id = String(required=True)
+        token_contract_address = String(required=True)
+        chain_id = String(required=True)
+
+    ok = Boolean()
+
+    def mutate(self, info, dao_id, token_contract_address, chain_id):
+        if os.environ.get('IS_UNITEST') != 'yes':
+            background_tasks = info.context['background']
+            background_tasks.add_task(run_find_lost_tx_for_drop_token_mint_record_task, dao_id, token_contract_address, chain_id)
+        return DropTokenMintRecord(ok=True)
