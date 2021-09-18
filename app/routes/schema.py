@@ -35,6 +35,7 @@ class CyclesQueryArgs(BaseObjectArgs):
 
 class CyclesTokenUnreleasedQueryArgs(BaseObjectArgs):
     last_timestamp: int
+    dao_id: str
 
 
 class DAOJobConfigQueryArgs(BaseObjectArgs):
