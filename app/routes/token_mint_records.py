@@ -47,8 +47,9 @@ def query_cycles_by_params(dao_id, start_cycle_id, end_cycle_id):
         raise ValueError(TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_NO_START_CYCLE)
     if end_cycle is None:
         raise ValueError(TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_NO_END_CYCLE)
-    if start_cycle.begin_at >= end_cycle.begin_at:
-        raise ValueError(TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_START_CYCLE_NOT_IN_END_CYCLE_BEFORE)
+    if str(start_cycle.id) != str(end_cycle.id):
+        if start_cycle.begin_at >= end_cycle.begin_at:
+            raise ValueError(TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_START_CYCLE_NOT_IN_END_CYCLE_BEFORE)
 
     cycles = [cycle for cycle in Cycle.objects(dao_id=dao_id, begin_at__gte=start_cycle.begin_at, end_at__lte=end_cycle.end_at)]
 
