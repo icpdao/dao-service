@@ -24,7 +24,7 @@ from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
     DAOsSortedTypeEnum, JobSortedEnum, SortedTypeEnum, DAOJobConfigQueryArgs, CyclesTokenUnreleasedQueryArgs, \
     DAOQueryArgs, OpenGithubWayEnum
 from app.routes.token_mint_records import CreateTokenMintRecord, LinkTxHashForTokenMintRecord, DropTokenMintRecord, \
-    SyncTokenMintRecordEvent, FindLostTxForInitTokenMintRecord, FindLostTxForDropTokenMintRecordTask, \
+    SyncTokenMintRecordEvent, FindLostTxForInitTokenMintRecord, FindLostTxForDropTokenMintRecord, \
     FindLostTxForDropTokenMintRecord
 from app.routes.vote import UpdatePairVote, UpdateALLVote, UpdateVoteConfirm
 
