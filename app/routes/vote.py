@@ -123,7 +123,7 @@ class UpdateVoteConfirm(Mutation):
             vote_job_id__exists=False, vote_type=CycleVoteType.PAIR.value
         ).all()
 
-        assert len(cycle_pair_unvote) > 0, 'errors.vote_confirm.had_un_vote'
+        assert len(cycle_pair_unvote) == 0, 'errors.vote_confirm.had_un_vote'
         cvc.signature_address = signature_address
         cvc.signature = signature
         cvc.signature_msg = signature_msg
