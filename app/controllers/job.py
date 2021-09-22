@@ -42,24 +42,17 @@ def update_job_by_size(info, app_client: GithubAppClient, current_user, job, siz
         ).distinct('merged_user_github_user_id')
         is_merged_user = current_user.github_user_id in prs
         is_job_owner = str(current_user.id) == job.user_id
+        if not is_job_owner and not is_merged_user:
+            raise PermissionError(COMMON_NOT_PERMISSION_ERROR)
         if is_job_owner and not is_merged_user:
-            if size < job.size:
-                job.size = size
-                job.save()
-                tasks.add_task(
-                    update_issue_comment, app_client=app_client, job=job)
-                return job
-            raise PermissionError(JOB_UPDATE_SIZE_REDUCE_ERROR)
-        if is_merged_user:
-            if size > job.size:
-                job.size = size
-                job.save()
-                tasks.add_task(
-                    update_issue_comment, app_client=app_client, job=job)
-                return job
-            raise PermissionError(
-                JOB_UPDATE_SIZE_ONLY_REVIEWER_ERROR)
-        raise PermissionError(COMMON_NOT_PERMISSION_ERROR)
+            assert size < job.size, JOB_UPDATE_SIZE_REDUCE_ERROR
+        if not is_job_owner and is_merged_user:
+            assert size > job.size, JOB_UPDATE_SIZE_ONLY_REVIEWER_ERROR
+        job.size = size
+        job.save()
+        tasks.add_task(
+            update_issue_comment, app_client=app_client, job=job)
+        return job
     raise PermissionError(JOB_UPDATE_SIZE_STATUS_ERROR)
 
 
