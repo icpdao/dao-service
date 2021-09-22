@@ -103,8 +103,10 @@ def _process_04_reviewer_size(cycle_icpper_stat):
         item.be_deducted_size_by_review += deducted_review_size
 
         size = item.job_size
-        if item.un_voted_all_vote or item.have_two_times_lt_08 or item.have_two_times_lt_04:
+        if item.have_two_times_lt_08 or item.have_two_times_lt_04:
             size = round(size/2, 2)
+        if item.un_voted_all_vote:
+            size = decimal.Decimal("0")
         item.size = size - item.be_deducted_size_by_review
         if item.size < SIZE_0:
             item.size = SIZE_0
@@ -121,8 +123,8 @@ def stat_cycle_icpper_stat_size(dao_id, cycle_id):
     for item in cycle_icpper_stat_list_query:
         item.size = item.job_size
         if item.un_voted_all_vote:
-            # 没有投完，直接减半
-            item.size = round(item.job_size/2, 2)
+            # 没有投完，直接归零
+            item.size = decimal.Decimal("0")
 
         item.be_deducted_size_by_review = None
         item.be_reviewer_has_warning_user_ids = None
