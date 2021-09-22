@@ -76,10 +76,12 @@ class Jobs(ObjectType):
             else:
                 _sorted = sorted
 
+        total = JobModel.objects(**_filter).order_by(_sorted).count()
         job_list = JobModel.objects(**_filter).order_by(_sorted).skip(
             offset).limit(first)
 
         setattr(self, 'query_list', job_list)
+        setattr(self, 'total', total)
         return self
 
     def resolve_job(self, info):
@@ -104,8 +106,7 @@ class Jobs(ObjectType):
         return JobsStat(size=size, token_name='', token_count=0)
 
     def resolve_total(self, info):
-        query_list = getattr(self, 'query_list')
-        return query_list.count()
+        return getattr(self, 'total', 0)
 
 
 class RequestPR(InputObjectType):
