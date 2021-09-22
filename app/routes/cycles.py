@@ -530,8 +530,8 @@ class CycleQuery(ObjectType):
     def resolve_jobs(self, info, **kwargs):
         first = kwargs.get('first')
         offset = kwargs.get('offset')
-        _sorted = kwargs.get('sorted', JobsQuerySortedTypeEnum.desc)
-        sorted_type = kwargs.get('sorted_type', JobsQuerySortedEnum.updateAt)
+        _sorted = kwargs.get('sorted', JobsQuerySortedEnum.updateAt)
+        sorted_type = kwargs.get('sorted_type', JobsQuerySortedTypeEnum.desc)
         pair_type = kwargs.get('pair_type', None)
 
         query = self._jobs_base_queryset(cycle_id=self.cycle_id, sorted=_sorted, sorted_type=sorted_type, pair_type=pair_type)
