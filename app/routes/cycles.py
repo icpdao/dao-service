@@ -400,21 +400,26 @@ class CycleVotesQuery(ObjectType):
 
     def resolve_total(self, info):
         query = self._base_queryset(info)
-
-        return query.limit(self.first).skip(self.offset).count()
+        return query.count()
 
     def resolve_user_un_vote_total(self, info):
         current_user = get_current_user_by_graphql(info)
         return CycleVote.objects(
-            Q(voter_id=str(current_user.id), vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=False) |
-            Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id__ne=str(current_user.id))
+            Q(cycle_id=self.cycle_id) &
+            (
+                Q(voter_id=str(current_user.id), vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=False) |
+                Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id__ne=str(current_user.id))
+            )
         ).count()
 
     def resolve_user_voted_total(self, info):
         current_user = get_current_user_by_graphql(info)
         return CycleVote.objects(
-            Q(voter_id=str(current_user.id), vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=True) |
-            Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id=str(current_user.id))
+            Q(cycle_id=self.cycle_id) &
+            (
+                Q(voter_id=str(current_user.id), vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=True) |
+                Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id=str(current_user.id))
+            )
         ).count()
 
     def resolve_confirm(self, info):
