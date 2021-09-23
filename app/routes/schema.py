@@ -24,6 +24,12 @@ class CycleFilterEnum(Enum):
     un_vote_end = 3
 
 
+class CycleVoteFilterEnum(Enum):
+    all = 0
+    voted = 1
+    un_vote = 2
+
+
 class DAOQueryArgs(BaseObjectArgs):
     query: Any
 
