@@ -2,7 +2,9 @@ import random
 import time
 import random
 
-from app.common.models.icpdao.cycle import Cycle, CycleVote, CycleVoteConfirm, CycleVoteConfirmStatus
+from mongoengine import Q
+
+from app.common.models.icpdao.cycle import Cycle, CycleVote, CycleVoteConfirm, CycleVoteConfirmStatus, CycleVoteType
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job
 from tests.base import Base
@@ -186,3 +188,39 @@ mutation {
         )
         vote = CycleVote.objects(id=str(self.vote1.id)).first()
         assert vote.vote_result_stat_type_all == 75
+
+    def test_get_vote(self):
+        self.clear_db()
+        self.create_vote()
+
+        res = CycleVote.objects.filter(Q(vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=False))
+
+        assert res.count() == CycleVote.objects(vote_type=CycleVoteType.PAIR.value).count()
+
+        res = self.graph_query(
+            str(self.icpper1.id),
+            self.update_pair_vote % (str(self.vote4.id), str(self.job4.id))
+        )
+
+        res = CycleVote.objects.filter(Q(vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=False))
+        assert res.count() == CycleVote.objects(vote_type=CycleVoteType.PAIR.value).count() - 1
+
+        res = CycleVote.objects.filter(Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id__ne=str(self.icpper2.id)))
+        assert res.count() == CycleVote.objects(vote_type=CycleVoteType.ALL.value).count()
+        res = self.graph_query(
+            str(self.icpper2.id),
+            self.update_all_vote % (str(self.vote1.id), 'true')
+        )
+        res = CycleVote.objects.filter(
+            Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id__ne=str(self.icpper2.id)))
+        assert res.count() == CycleVote.objects(vote_type=CycleVoteType.ALL.value).count() - 1
+        self.graph_query(
+            str(self.icpper4.id),
+            self.update_all_vote % (str(self.vote2.id), 'true')
+        )
+        res = CycleVote.objects.filter(
+            Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id__ne=str(self.icpper2.id)))
+        assert res.count() == CycleVote.objects(vote_type=CycleVoteType.ALL.value).count() - 1
+        res = CycleVote.objects.filter(
+            Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id=str(self.icpper4.id)))
+
