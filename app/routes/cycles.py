@@ -29,7 +29,8 @@ from app.routes.schema import CycleIcpperStatSortedTypeEnum, CycleIcpperStatSort
     JobsQuerySortedTypeEnum, JobsQueryPairTypeEnum, CycleVotePairTaskStatusEnum, \
     CreateCycleVotePairTaskByOwnerStatusEnum, CycleFilterEnum, CreateCycleVoteResultStatTaskByOwnerStatusEnum, \
     CycleVoteResultStatTaskStatusEnum, CycleVoteResultTypeAllResultTypeEnum, \
-    CreateCycleVoteResultPublishTaskByOwnerStatusEnum, CycleVoteResultPublishTaskStatusEnum, CommonPaginationArgs
+    CreateCycleVoteResultPublishTaskByOwnerStatusEnum, CycleVoteResultPublishTaskStatusEnum, CommonPaginationArgs, \
+    CycleVoteFilterEnum
 
 
 class IcpperStatQuery(ObjectType):
@@ -309,6 +310,8 @@ class CycleVoteQuery(ObjectType):
 class CycleVotesQuery(ObjectType):
     nodes = List(CycleVoteQuery)
     confirm = Boolean()
+    user_un_vote_total = Int()
+    user_voted_total = Int()
     total = Int()
 
     @property
@@ -351,16 +354,35 @@ class CycleVotesQuery(ObjectType):
     def is_myself(self, is_myself):
         setattr(self, '_is_myself', is_myself)
 
+    @property
+    def filter(self):
+        return getattr(self, '_filter')
+
+    @filter.setter
+    def filter(self, filter):
+        setattr(self, '_filter', filter)
+
     def _base_queryset(self, info):
         query = CycleVote.objects.filter(cycle_id=self.cycle_id)
+        current_user = get_current_user_by_graphql(info)
         if self.is_myself:
-            current_user = get_current_user_by_graphql(info)
             query = query.filter(Q(voter_id=str(current_user.id)) | Q(vote_type=CycleVoteType.ALL.value))
         if self.is_public is not None:
             if self.is_public:
                 query = query.filter(Q(is_result_public=self.is_public) | Q(vote_type=CycleVoteType.ALL.value))
             else:
                 query = query.filter(is_result_public=self.is_public, vote_type=CycleVoteType.PAIR.value)
+        # NOTICE: filter all type belongs current_user.id
+        if self.filter == CycleVoteFilterEnum.un_vote:
+            query = query.filter(
+                Q(voter_id=str(current_user.id), vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=False) |
+                Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id__ne=str(current_user.id))
+            )
+        if self.filter == CycleVoteFilterEnum.voted:
+            query = query.filter(
+                Q(voter_id=str(current_user.id), vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=True) |
+                Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id=str(current_user.id))
+            )
         query = query.order_by('-vote_type', '_id')
         return query
 
@@ -380,6 +402,20 @@ class CycleVotesQuery(ObjectType):
         query = self._base_queryset(info)
 
         return query.limit(self.first).skip(self.offset).count()
+
+    def resolve_user_un_vote_total(self, info):
+        current_user = get_current_user_by_graphql(info)
+        return CycleVote.objects(
+            Q(voter_id=str(current_user.id), vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=False) |
+            Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id__ne=str(current_user.id))
+        ).count()
+
+    def resolve_user_voted_total(self, info):
+        current_user = get_current_user_by_graphql(info)
+        return CycleVote.objects(
+            Q(voter_id=str(current_user.id), vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=True) |
+            Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id=str(current_user.id))
+        ).count()
 
     def resolve_confirm(self, info):
         cycle = Cycle.objects(id=self.cycle_id).first()
@@ -476,6 +512,7 @@ class CycleQuery(ObjectType):
         CycleVotesQuery,
         is_public=Boolean(),
         is_myself=Boolean(),
+        filter=CycleVoteFilterEnum(default_value=0),
         first=Int(default_value=20),
         offset=Int(default_value=0)
     )
@@ -542,7 +579,10 @@ class CycleQuery(ObjectType):
         offset = kwargs.get('offset')
         is_public = kwargs.get('is_public', None)
         is_myself = kwargs.get('is_myself', None)
-        return CycleVotesQuery(cycle_id=self.cycle_id, first=first, offset=offset, is_public=is_public, is_myself=is_myself)
+        _filter = kwargs.get('filter')
+        return CycleVotesQuery(
+            cycle_id=self.cycle_id, first=first, offset=offset,
+            is_public=is_public, is_myself=is_myself, filter=_filter)
 
     def resolve_pair_task(self, info):
         cycle = Cycle.objects(id=self.cycle_id).first()
