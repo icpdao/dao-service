@@ -2,6 +2,7 @@ import decimal
 from datetime import datetime, timezone, timedelta
 import time
 import random
+import web3
 
 from app.common.models.icpdao.cycle import CycleVotePairTask, CycleVote, CycleIcpperStat, Cycle, CycleVoteType, \
     VoteResultTypeAll, VoteResultTypeAllResultType, CycleVotePairTaskStatus, CycleVoteConfirm, CycleVoteConfirmStatus
@@ -2546,7 +2547,8 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
             github_login=mock_user_name,
             github_user_id=_get_github_user_id(mock_user_name),
             avatar='/xxxx',
-            status=UserStatus.ICPPER.value
+            status=UserStatus.ICPPER.value,
+            erc20_address=web3.Account.create().address
         ).save()
         mock_users.append(user)
 
