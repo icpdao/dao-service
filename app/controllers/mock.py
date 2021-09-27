@@ -2462,8 +2462,21 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
     ).save()
 
 
-def create_one_empty_cycle(dao_name, job_times, pair_times, vote_times):
-    dao = DAO.objects(name=dao_name).first()
+def create_one_empty_cycle(owner_user, dao_name, job_times, pair_times, vote_times):
+    if dao_name == 'icpdao-test-vote':
+        github_owner_id = 91443188
+    else:
+        github_owner_id = _get_github_user_id(dao_name)
+    # DAO
+    dao = DAO(
+        name=dao_name,
+        logo='https://s3.amazonaws.com/dev.files.icpdao/avatar/rc-upload-1623139230084-2',
+        desc='{}_{}_{}'.format(dao_name, dao_name, dao_name),
+        owner_id=str(owner_user.id),
+        github_owner_id=github_owner_id,
+        github_owner_name=dao_name
+    )
+    dao.save()
 
     end_at = int(time.time()) + job_times
     # Cycle
@@ -2580,4 +2593,4 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
     create_end_and_in_stat_time_cycle_dao(owner_user, icpper_user)
     create_tip_cycle_dao(owner_user, icpper_user, mock_users)
     create_end_cycle_and_mint_dao(owner_user, icpper_user, mock_users)
-    create_one_empty_cycle("icpdao-test-vote", 10 * 60, 5 * 60, 10 * 60)
+    create_one_empty_cycle(owner_user, "icpdao-test-vote", 10 * 60, 5 * 60, 10 * 60)
