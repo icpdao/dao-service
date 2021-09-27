@@ -2462,6 +2462,23 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
     ).save()
 
 
+def create_one_empty_cycle(dao_name, job_times, pair_times, vote_times):
+    dao = DAO.objects(name=dao_name).first()
+
+    end_at = int(time.time()) + job_times
+    # Cycle
+    cycle = Cycle(
+        dao_id=str(dao.id),
+        begin_at=0,
+        end_at=end_at,
+        pair_begin_at=end_at,
+        pair_end_at=end_at + pair_times,
+        vote_begin_at=end_at + pair_times,
+        vote_end_at=end_at + pair_times + vote_times
+    )
+    cycle.save()
+
+
 def create_end_cycle_dao(owner_user, icpper_user):
     create_one_end_cycle_data(owner_user, icpper_user, 'icpdao-test-icp')
 
@@ -2509,7 +2526,8 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
         "end-and-in-vote-time",
         "end-and-in-stat-time",
         "end-and-tip",
-        "end-and-mint"
+        "end-and-mint",
+        "icpdao-test-vote"
     ]
 
     mock_user_names = [
@@ -2562,3 +2580,4 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
     create_end_and_in_stat_time_cycle_dao(owner_user, icpper_user)
     create_tip_cycle_dao(owner_user, icpper_user, mock_users)
     create_end_cycle_and_mint_dao(owner_user, icpper_user, mock_users)
+    create_one_empty_cycle("icpdao-test-vote", 10 * 60, 5 * 60, 10 * 60)
