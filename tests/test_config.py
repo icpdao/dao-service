@@ -2,6 +2,7 @@ import os
 import time
 
 from app.common.models.icpdao.cycle import Cycle
+from app.common.models.icpdao.dao import DAOJobConfig
 from app.common.utils.errors import CONFIG_UPDATE_INVALID_ERROR
 from tests.base import Base
 from unittest import TestCase
@@ -206,13 +207,19 @@ mutation {
         )
         assert ret.status_code == 200
 
+        config = DAOJobConfig.objects(dao_id=str(dao_id)).first()
+        assert config.manual is True
+
         ret = self.graph_query(
             self.icpper.id,
             self.update_job_config % (
-                dao_id, 'timeZone: 480, timeZoneRegion: "Asia/Beijing"'
+                dao_id, 'timeZone: 480, timeZoneRegion: "Asia/Beijing", manual: false'
             )
         )
         assert ret.status_code == 200
+
+        config = DAOJobConfig.objects(dao_id=str(dao_id)).first()
+        assert config.manual is False
 
     def test_query_token_config(self):
         ret = self.graph_query(self.icpper.id, self.create_dao % 'test_dao_3')
