@@ -14,7 +14,6 @@ from app.common.utils.access import check_is_dao_owner
 from app.common.utils.errors import CONFIG_UPDATE_INVALID_ERROR, COMMON_NOT_FOUND_DAO_ERROR, CYCLE_NOT_FOUND_ERROR, \
     CYCLE_PREVIEW_PARAMS_INVALID_ERROR
 from app.common.utils.route_helper import get_current_user_by_graphql
-from app.controllers.task import create_cycle_by_params
 
 
 class UpdateDAOJobConfig(Mutation):
@@ -32,6 +31,7 @@ class UpdateDAOJobConfig(Mutation):
         voting_begin_hour = Int()
         voting_end_day = Int()
         voting_end_hour = Int()
+        manual = Boolean()
 
     ok = Boolean()
 
@@ -90,6 +90,7 @@ class DAOJobCycle(ObjectType):
     pair_end_at = Int()
     vote_begin_at = Int()
     vote_end_at = Int()
+
 
 class DAOTokenConfig(BaseObjectType):
     eth_dao_id = String()
