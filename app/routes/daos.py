@@ -8,7 +8,7 @@ from graphene import ObjectType, String, Field, Int, \
 from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
 
-from app.common.models.icpdao.cycle import Cycle
+from app.common.models.icpdao.cycle import Cycle, CycleVotePairTask, CycleVotePairTaskStatus
 from app.common.models.icpdao.user import UserStatus, User
 from app.common.models.logic.user_helper import pre_icpper_to_icpper, check_user_access_token
 from app.common.schema import BaseObjectType, BaseObjectArgs
@@ -21,7 +21,7 @@ from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, IC
 from app.routes.cycles import CyclesQuery, JobQuery, JobsQuery, JobStatQuery, CycleQuery
 from app.common.models.icpdao.dao import DAO as DAOModel, DAOJobConfig
 from app.common.models.icpdao.dao import DAOFollow as DAOFollowModel
-from app.common.models.icpdao.job import Job as JobModel, JobStatusEnum
+from app.common.models.icpdao.job import Job as JobModel, JobStatusEnum, Job
 from app.common.schema.icpdao import DAOSchema, UserSchema
 from app.common.models.icpdao.user_github_token import UserGithubToken
 from app.common.utils.access import check_is_icpper, check_is_dao_owner
@@ -284,7 +284,8 @@ class DAO(ObjectType):
     @staticmethod
     def resolve_last_cycle(parent, info):
         dao = getattr(parent, 'query')
-        cycle = Cycle.objects(dao_id=str(dao.id)).order_by("-begin_at").first()
+        current_at = int(time.time())
+        cycle = Cycle.objects(dao_id=str(dao.id), vote_end_at__gt=current_at).order_by("begin_at").first()
         if not cycle:
             return None
         return CycleQuery(datum=cycle, cycle_id=str(cycle.id))
@@ -511,6 +512,9 @@ class UpdateDaoLastCycleStep(Mutation):
         if next_step == UpdateDaoLastCycleStepEnum.PAIR:
             if not (last_cycle.begin_at < current_at and last_cycle.end_at > current_at):
                 raise ValueError(COMMON_PARAMS_INVALID)
+            job_count = Job.objects.filter(cycle_id=str(last_cycle.id), status__nin=[JobStatusEnum.AWAITING_MERGER.value]).count()
+            if job_count == 0:
+                raise ValueError(COMMON_PARAMS_INVALID)
             last_cycle.end_at = current_at
             last_cycle.pair_begin_at = current_at
 
@@ -518,6 +522,9 @@ class UpdateDaoLastCycleStep(Mutation):
             if not (last_cycle.begin_at < current_at and last_cycle.end_at < current_at):
                 raise ValueError(COMMON_PARAMS_INVALID)
             if not (last_cycle.pair_begin_at < current_at and last_cycle.pair_end_at > current_at):
+                raise ValueError(COMMON_PARAMS_INVALID)
+            task = CycleVotePairTask.objects(dao_id=dao_id, cycle_id=str(last_cycle.id)).order_by('-id').first()
+            if not task or task.status != CycleVotePairTaskStatus.SUCCESS.value:
                 raise ValueError(COMMON_PARAMS_INVALID)
             last_cycle.pair_end_at = current_at
             last_cycle.vote_begin_at = current_at
