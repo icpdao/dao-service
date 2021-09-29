@@ -8,16 +8,17 @@ from graphene import ObjectType, String, Field, Int, \
 from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
 
+from app.common.models.icpdao.cycle import Cycle
 from app.common.models.icpdao.user import UserStatus, User
 from app.common.models.logic.user_helper import pre_icpper_to_icpper, check_user_access_token
 from app.common.schema import BaseObjectType, BaseObjectArgs
 from app.common.utils.errors import CYCLE_DAO_LIST_USER_NOT_FOUND_ERROR, DAO_LIST_QUERY_NOT_USER_ERROR, \
-    COMMON_NOT_FOUND_DAO_ERROR, COMMON_NOT_PERMISSION_ERROR, COMMON_NOT_AUTH_ERROR
+    COMMON_NOT_FOUND_DAO_ERROR, COMMON_NOT_PERMISSION_ERROR, COMMON_NOT_AUTH_ERROR, COMMON_PARAMS_INVALID
 from app.routes.data_loaders import UserLoader
 from app.routes.token_mint_records import TokenMintRecordsQuery, TokenMintSplitInfoQuery
 from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
 
-from app.routes.cycles import CyclesQuery, JobQuery, JobsQuery, JobStatQuery
+from app.routes.cycles import CyclesQuery, JobQuery, JobsQuery, JobStatQuery, CycleQuery
 from app.common.models.icpdao.dao import DAO as DAOModel, DAOJobConfig
 from app.common.models.icpdao.dao import DAOFollow as DAOFollowModel
 from app.common.models.icpdao.job import Job as JobModel, JobStatusEnum
@@ -28,7 +29,8 @@ from app.common.utils.route_helper import get_current_user_by_graphql, set_custo
 from app.common.utils.github_rest_api import org_member_role_is_admin, check_icp_app_installed_status_of_org, get_icp_app_jwt, get_github_org_id
 from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
     DAOsSortedTypeEnum, CycleFilterEnum, CyclesQueryArgs, IcppersQuerySortedEnum, IcppersQuerySortedTypeEnum, \
-    JobsQuerySortedEnum, JobsQuerySortedTypeEnum, CommonPaginationArgs, TokenMintRecordStatusEnum
+    JobsQuerySortedEnum, JobsQuerySortedTypeEnum, CommonPaginationArgs, TokenMintRecordStatusEnum, \
+    UpdateDaoLastCycleStepEnum
 from app.routes.follow import DAOFollowUDSchema
 from settings import (
     ICPDAO_GITHUB_APP_CLIENT_ID,
@@ -217,6 +219,7 @@ class DAO(ObjectType):
     datum = Field(DAOSchema)
     following = Field(DAOFollowUDSchema)
     cycles = Field(CyclesQuery, filter=List(CycleFilterEnum))
+    last_cycle = Field(CycleQuery)
     icppers = Field(
         IcppersQuery,
         sorted=IcppersQuerySortedEnum(default_value=0),
@@ -277,6 +280,14 @@ class DAO(ObjectType):
         dao = getattr(parent, 'query')
         return CyclesQuery(_args=CyclesQueryArgs(
           dao_id=str(dao.id), filter=filter))
+
+    @staticmethod
+    def resolve_last_cycle(parent, info):
+        dao = getattr(parent, 'query')
+        cycle = Cycle.objects(dao_id=str(dao.id)).order_by("-begin_at").first()
+        if not cycle:
+            return None
+        return CycleQuery(datum=cycle, cycle_id=str(cycle.id))
 
     @staticmethod
     def resolve_icppers(parent, info, sorted_type, first, offset, sorted):
@@ -472,3 +483,55 @@ class DAOGithubAppStatus(ObjectType):
         self.is_github_org_owner = is_github_org_owner
 
         return self
+
+
+class UpdateDaoLastCycleStep(Mutation):
+    class Arguments:
+        dao_id = String(required=True)
+        next_step = UpdateDaoLastCycleStepEnum()
+
+    dao = Field(DAO)
+
+    def mutate(self, info, dao_id, next_step):
+        dao = DAOModel.objects(id=dao_id).first()
+        if not dao:
+            raise ValueError(COMMON_NOT_FOUND_DAO_ERROR)
+
+        # not owner
+        current_user = get_current_user_by_graphql(info)
+        if str(current_user.id) != dao.owner_id:
+            raise ValueError(COMMON_NOT_PERMISSION_ERROR)
+
+        last_cycle = Cycle.objects(dao_id=dao_id).order_by("-begin_at").first()
+
+        if not last_cycle:
+            raise ValueError(COMMON_PARAMS_INVALID)
+
+        current_at = int(time.time())
+        if next_step == UpdateDaoLastCycleStepEnum.PAIR:
+            if not (last_cycle.begin_at < current_at and last_cycle.end_at > current_at):
+                raise ValueError(COMMON_PARAMS_INVALID)
+            last_cycle.end_at = current_at
+            last_cycle.pair_begin_at = current_at
+
+        if next_step == UpdateDaoLastCycleStepEnum.VOTE:
+            if not (last_cycle.begin_at < current_at and last_cycle.end_at < current_at):
+                raise ValueError(COMMON_PARAMS_INVALID)
+            if not (last_cycle.pair_begin_at < current_at and last_cycle.pair_end_at > current_at):
+                raise ValueError(COMMON_PARAMS_INVALID)
+            last_cycle.pair_end_at = current_at
+            last_cycle.vote_begin_at = current_at
+
+        if next_step == UpdateDaoLastCycleStepEnum.VOTE_END:
+            if not (last_cycle.begin_at < current_at and last_cycle.end_at < current_at):
+                raise ValueError(COMMON_PARAMS_INVALID)
+            if not (last_cycle.pair_begin_at < current_at and last_cycle.pair_end_at < current_at):
+                raise ValueError(COMMON_PARAMS_INVALID)
+            if not (last_cycle.vote_begin_at < current_at and last_cycle.vote_end_at > current_at):
+                raise ValueError(COMMON_PARAMS_INVALID)
+            last_cycle.vote_end_at = current_at
+
+        last_cycle.save()
+
+        result_dao = DAO().get_query(info, dao_id)
+        return UpdateDaoLastCycleStep(dao=result_dao)

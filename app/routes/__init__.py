@@ -15,7 +15,7 @@ from app.routes.cycles import CycleQuery, CreateCycleVotePairTaskByOwner, \
     ChangeVoteResultPublic, CreateCycleVoteResultStatTaskByOwner, CreateCycleVoteResultPublishTaskByOwner, \
     UserIcpperStatsQuery, CycleByTokenUnreleasedQuery, MarkCyclesTokenReleased, VotingCycleQuery
 from app.routes.daos import DAOs, CreateDAO, DAO, UpdateDAOBaseInfo, DAOGithubAppStatus, DAOsStat, DAOItem, DAOStat, \
-    get_query_dao_list, HomeStats
+    get_query_dao_list, HomeStats, UpdateDaoLastCycleStep
 from app.routes.follow import UpdateDAOFollow
 from app.routes.jobs import Jobs, CreateJob, UpdateJob, UpdateJobVoteTypeByOwner, UpdateIcpperStatOwnerEi, DeleteJob
 from app.routes.mock import CreateMock
@@ -213,6 +213,7 @@ class Mutations(ObjectType):
     update_vote_confirm = UpdateVoteConfirm.Field()
     create_cycle_vote_pair_task_by_owner = CreateCycleVotePairTaskByOwner.Field()
     change_vote_result_public = ChangeVoteResultPublic.Field()
+    update_dao_last_cycle_step = UpdateDaoLastCycleStep.Field()
     create_mock = CreateMock.Field()
     createCycleVoteResultStatTaskByOwner = CreateCycleVoteResultStatTaskByOwner.Field()
     createCycleVoteResultPublishTaskByOwner = CreateCycleVoteResultPublishTaskByOwner.Field()
