@@ -1,3 +1,4 @@
+import decimal
 import time
 from decimal import Decimal
 import random
@@ -2497,6 +2498,29 @@ mutation{
             vote_end_at=2147483647
         )
         test_cycle_1.save()
+
+        res = self.graph_query(
+            self.icpper.id, self.update_dao_last_cycle_step % (str(test_dao.id), 'PAIR')
+        )
+        assert len(res.json()["errors"]) > 0
+
+        Job(
+            dao_id=str(test_dao.id),
+            user_id=str(self.icpper.id),
+            title="{}:{}:{}:1".format(test_dao.name, "dao_end_cycle", self.icpper.github_login),
+            body_text="xxxxx",
+            size=decimal.Decimal('1.0'),
+            github_repo_owner=test_dao.name,
+            github_repo_name='mock',
+            github_repo_owner_id=_get_github_user_id(test_dao.name),
+            github_repo_id=1,
+            github_issue_number=1,
+            bot_comment_database_id=1,
+            status=JobStatusEnum.TOKEN_RELEASED.value,
+            income=decimal.Decimal(100),
+            pair_type=JobPairTypeEnum.PAIR.value,
+            cycle_id=str(test_cycle_1.id),
+        ).save()
 
         res = self.graph_query(
             self.icpper.id, self.update_dao_last_cycle_step % (str(test_dao.id), 'PAIR')
