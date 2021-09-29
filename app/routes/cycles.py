@@ -30,7 +30,7 @@ from app.routes.schema import CycleIcpperStatSortedTypeEnum, CycleIcpperStatSort
     CreateCycleVotePairTaskByOwnerStatusEnum, CycleFilterEnum, CreateCycleVoteResultStatTaskByOwnerStatusEnum, \
     CycleVoteResultStatTaskStatusEnum, CycleVoteResultTypeAllResultTypeEnum, \
     CreateCycleVoteResultPublishTaskByOwnerStatusEnum, CycleVoteResultPublishTaskStatusEnum, CommonPaginationArgs, \
-    CycleVoteFilterEnum
+    CycleVoteFilterEnum, UpdateDaoLastCycleStepEnum, CycleStepEnum
 
 
 class IcpperStatQuery(ObjectType):
@@ -494,6 +494,10 @@ class CycleVoteResultPublishTaskQuery(ObjectType):
     status = Field(CycleVoteResultPublishTaskStatusEnum)
 
 
+class CycleStepQuery(ObjectType):
+    status = Field(CycleStepEnum)
+
+
 class CycleQuery(ObjectType):
     datum = Field(CycleSchema)
     stat = Field(CycleStatQuery)
@@ -524,6 +528,7 @@ class CycleQuery(ObjectType):
     pair_task = Field(CycleVotePairTaskQuery)
     vote_result_stat_task = Field(CycleVoteResultStatTaskQuery)
     vote_result_publish_task = Field(CycleVoteResultPublishTaskQuery)
+    step = Field(CycleStepQuery)
 
     @property
     def cycle_id(self):
@@ -612,6 +617,18 @@ class CycleQuery(ObjectType):
         if not task:
             return None
         return CycleVoteResultPublishTaskQuery(status=task.status)
+
+    def resolve_step(self, info):
+        cycle = Cycle.objects(id=self.cycle_id).first()
+        current_at = int(time.time())
+        if cycle.begin_at < current_at and cycle.end_at > current_at:
+            return CycleStepQuery(status=CycleStepEnum.JOB)
+        if cycle.pair_begin_at <= current_at and cycle.pair_end_at > current_at:
+            return CycleStepQuery(status=CycleStepEnum.PAIR)
+        if cycle.vote_begin_at <= current_at and cycle.vote_end_at > current_at:
+            return CycleStepQuery(status=CycleStepEnum.VOTE)
+        if cycle.vote_end_at <= current_at:
+            return CycleStepQuery(status=CycleStepEnum.VOTE_END)
 
 
 class CyclesQuery(BaseObjectType):

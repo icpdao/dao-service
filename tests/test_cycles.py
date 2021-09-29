@@ -585,6 +585,18 @@ query{
     }
     """
 
+    get_last_cycle_pair_task = """
+    query{
+        dao(id: "%s"){
+            lastCycle {
+                pairTask{
+                    status
+                }
+            }
+        }
+    }
+    """
+
     update_job_vote_type_by_owner = """
 mutation{
     updateJobVoteTypeByOwner(id: "%s", voteType: %s){
@@ -698,6 +710,41 @@ mutation{
     }
 }
 """
+
+    update_dao_last_cycle_step = """
+mutation{
+    updateDaoLastCycleStep(daoId: "%s", nextStep: %s){
+        dao {
+            lastCycle {
+                datum {
+                    id
+                    beginAt
+                    endAt  
+                    pairBeginAt
+                    pairEndAt
+                    voteBeginAt
+                    voteEndAt
+                }
+                jobs {
+                    total
+                }
+                pairTask {
+                    status
+                }
+                voteResultStatTask {
+                    status
+                }
+                voteResultPublishTask {
+                    status
+                }
+                step {
+                    status
+                }
+            }
+        }
+    }
+}
+    """
 
     @staticmethod
     def get_cycle_time_by_end_at(end_at):
@@ -1431,6 +1478,11 @@ mutation{
         )
         test_dao.save()
 
+        res = self.graph_query(
+            self.icpper1.id, self.get_last_cycle_pair_task % str(test_dao.id)
+        )
+        assert res.json()['data']['dao']['lastCycle'] is None
+
         end_at = time.time()
         begin_at, end_at, pair_begin_at, pair_end_at, vote_begin_at, vote_end_at = self.get_cycle_time_by_end_at(end_at)
         test_cycle_2 = Cycle(
@@ -1498,6 +1550,12 @@ mutation{
         )
 
         pair_task = res.json()['data']['cycle']['pairTask']
+        assert pair_task['status'] == CycleVotePairTaskStatusEnum.get(CycleVotePairTaskStatus.INIT.value).name
+
+        res = self.graph_query(
+            self.icpper1.id, self.get_last_cycle_pair_task % str(test_dao.id)
+        )
+        pair_task = res.json()['data']['dao']['lastCycle']['pairTask']
         assert pair_task['status'] == CycleVotePairTaskStatusEnum.get(CycleVotePairTaskStatus.INIT.value).name
 
     def test_update_job_vote_type_by_owner(self):
@@ -2409,4 +2467,41 @@ mutation{
         stats = CycleIcpperStat.objects(cycle_id=str(cycle.id)).first()
         assert stats.income == Decimal('230')
 
+    def test_update_dao_last_cycle_step(self):
+        self.__class__.clear_db()
+        self.icpper = self.__class__.create_icpper_user()
+        self.icpper1 = self.__class__.create_icpper_user(nickname='icpper1', github_login='iccper1')
+        test_dao = DAO(
+            name='test_dao',
+            logo='xxx.png',
+            desc='test_dao_desc',
+            owner_id=str(self.icpper.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
+        )
+        test_dao.save()
 
+        res = self.graph_query(
+            self.icpper.id, self.get_cycles % str(test_dao.id)
+        )
+
+        assert len(res.json()['data']['dao']['cycles']['nodes']) == 0
+
+        test_cycle_1 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=0,
+            end_at=2147483647,
+            pair_begin_at=2147483647,
+            pair_end_at=2147483647,
+            vote_begin_at=2147483647,
+            vote_end_at=2147483647
+        )
+        test_cycle_1.save()
+
+        res = self.graph_query(
+            self.icpper.id, self.update_dao_last_cycle_step % (str(test_dao.id), 'PAIR')
+        )
+        last_cycle = res.json()["data"]["updateDaoLastCycleStep"]["dao"]["lastCycle"]
+        assert last_cycle["datum"]["endAt"] == last_cycle["datum"]["pairBeginAt"]
+        assert last_cycle["datum"]["endAt"] < 2147483647
+        assert last_cycle["step"]["status"] == "PAIR"

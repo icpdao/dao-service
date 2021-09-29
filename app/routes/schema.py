@@ -185,3 +185,16 @@ class TokenMintRecordStatusEnum(Enum):
     SUCCESS = MintRecordStatusEnum.SUCCESS.value
     FAIL = MintRecordStatusEnum.FAIL.value
     DROPED = MintRecordStatusEnum.DROPED.value
+
+
+class UpdateDaoLastCycleStepEnum(Enum):
+    PAIR = "PAIR"
+    VOTE = "VOTE"
+    VOTE_END = "VOTE_END"
+
+
+class CycleStepEnum(Enum):
+    JOB = "JOB"
+    PAIR = "PAIR"
+    VOTE = "VOTE"
+    VOTE_END = "VOTE_END"
