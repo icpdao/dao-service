@@ -991,7 +991,8 @@ mutation{
         icpper_stat_list = res.json()['data']['cycle']['icpperStats']['nodes']
         total = res.json()['data']['cycle']['icpperStats']['total']
 
-        assert icpper_stat_list[0]['datum'] is None
+        assert icpper_stat_list[0]['datum']["voteEi"] is None
+        assert icpper_stat_list[0]['datum']["ownerEi"] is None
 
         res = self.graph_query(
             self.icpper2.id, self.get_cycle_icpper_stats_params_by_icpper % str(test_cycle_2.id)
