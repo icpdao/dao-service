@@ -8,7 +8,7 @@ from graphene import ObjectType, List, Int, Float, String, Field, Mutation, Bool
 import settings
 from app.common.models.icpdao.cycle import CycleIcpperStat, Cycle
 from app.common.models.icpdao.github_app_token import GithubAppToken
-from app.common.models.icpdao.job import Job as JobModel, JobPR as JobPRModel, JobStatusEnum, JobPRComment
+from app.common.models.icpdao.job import Job as JobModel, JobPR as JobPRModel, JobStatusEnum, JobPRComment, JobPR
 from app.common.models.icpdao.dao import DAO as DAOModel
 from app.common.models.icpdao.user import User
 
@@ -20,7 +20,7 @@ from app.common.utils.errors import JOB_UPDATE_STATUS_INVALID_ERROR, JOB_QUERY_N
 from app.common.utils.github_app.client import GithubAppClient
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.common.utils import check_size
-from app.controllers.task import delete_issue_comment, sync_job_pr
+from app.controllers.task import delete_issue_comment, sync_job_pr, sync_job_issue_status_comment
 from app.routes.schema import SortedTypeEnum, UpdateJobVoteTypeByOwnerArgumentPairTypeEnum
 
 from app.controllers.job import update_job_by_size, create_job, update_job_pr, create_auto_pr
@@ -307,3 +307,57 @@ class UpdateIcpperStatOwnerEi(Mutation):
             vote_ei=icpper_stat.vote_ei,
             owner_ei=icpper_stat.owner_ei
         )
+
+
+class RefreshJob(Mutation):
+    class Arguments:
+        id = String(required=True)
+
+    ok = Boolean()
+
+    def mutate(root, info, id):
+        current_user = get_current_user_by_graphql(info)
+        if not current_user:
+            raise PermissionError(COMMON_NOT_AUTH_ERROR)
+        job = JobModel.objects(id=id).first()
+        if not job:
+            raise FileNotFoundError(JOB_QUERY_NOT_FOUND_ERROR)
+
+        dao = DAOModel.objects(id=job.dao_id).first()
+        if not dao:
+            raise ValueError(COMMON_NOT_FOUND_DAO_ERROR)
+        app_token = GithubAppToken.get_token(
+            app_id=settings.ICPDAO_GITHUB_APP_ID,
+            app_private_key=settings.ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY,
+            github_owner_name=dao.github_owner_name,
+            github_owner_id=dao.github_owner_id,
+        )
+        if app_token is None:
+            raise ValueError('NOT APP TOKEN')
+        app_client = GithubAppClient(app_token, job.github_repo_owner)
+
+        job_pr_list = JobPR.objects(job_id=str(job.id))
+        for job_pr in job_pr_list:
+            success, ret = app_client.get_pr(
+                job_pr.github_repo_name,
+                job_pr.github_pr_number,
+            )
+            if success is False:
+                continue
+            status = ret["state"]
+            title = ret["title"]
+            merged_user_github_user_id = ret["merged_user_github_user_id"]
+            merged_at = ret["merged_at"]
+
+            job_pr.status = status
+            job_pr.title = title
+            job_pr.merged_user_github_user_id = merged_user_github_user_id
+            job_pr.merged_at = merged_at
+            job_pr.save()
+
+        need_sync_job_ids = [str(job.id)]
+        background = info.context['background']
+        background.add_task(
+            sync_job_issue_status_comment, app_client, set(need_sync_job_ids))
+
+        return RefreshJob(ok=True)
