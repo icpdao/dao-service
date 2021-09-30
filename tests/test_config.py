@@ -205,6 +205,15 @@ mutation {
                         "pairEndDay: 17, votingBeginDay: 18, votingEndDay: 20"
             )
         )
+        assert ret.status_code == 400
+
+        ret = self.graph_query(
+            self.icpper.id,
+            self.update_job_config % (
+                dao_id, "deadlineDay: 15, pairBeginDay: 15, "
+                        "pairEndDay: 17, votingBeginDay: 17, votingEndDay: 20"
+            )
+        )
         assert ret.status_code == 200
 
         config = DAOJobConfig.objects(dao_id=str(dao_id)).first()

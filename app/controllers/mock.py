@@ -123,7 +123,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         dao_id=str(dao.id),
         begin_at=deadline_day_datetime.timestamp() - 30 * 24 * 60 * 60,
         end_at=deadline_day_datetime.timestamp(),
-        pair_begin_at=deadline_day_datetime.timestamp() + 12 * 60 * 60,
+        pair_begin_at=deadline_day_datetime.timestamp(),
         pair_end_at=deadline_day_datetime.timestamp() + 36 * 60 * 60,
         vote_begin_at=deadline_day_datetime.timestamp() + 36 * 60 * 60,
         vote_end_at=deadline_day_datetime.timestamp() + 72 * 60 * 60,
@@ -386,7 +386,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         tzinfo=current_datetime.tzinfo
     )
     end_at = current_datetime.timestamp()
-    pair_begin_at = end_at + 24 * 60 * 60
+    pair_begin_at = end_at
     pair_end_at = pair_begin_at + 24 * 60 * 60
     vote_begin_at = pair_end_at
     vote_end_at = vote_begin_at + 36 * 60 * 60
@@ -778,7 +778,7 @@ def create_in_vote_time_cycle_data(owner_user, icpper_user, dao_name):
     )
     pair_end_at = current_datetime.timestamp() - 1 * 60 * 60
     pair_begin_at = pair_end_at - 24 * 60 * 60
-    end_at = pair_begin_at - 12 * 60 * 60
+    end_at = pair_begin_at
 
     vote_begin_at = pair_end_at
     vote_end_at = vote_begin_at + 36 * 60 * 60
@@ -1024,7 +1024,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
     vote_begin_at = vote_end_at - 12 * 60 * 60
     pair_end_at = vote_begin_at
     pair_begin_at = pair_end_at - 12 * 60 * 60
-    end_at = pair_begin_at - 12 * 60 * 60
+    end_at = pair_begin_at
 
     # Cycle
     cycle = Cycle(
@@ -1315,7 +1315,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         dao_id=str(dao.id),
         begin_at=deadline_day_datetime.timestamp() - 30 * 24 * 60 * 60,
         end_at=deadline_day_datetime.timestamp(),
-        pair_begin_at=deadline_day_datetime.timestamp() + 12 * 60 * 60,
+        pair_begin_at=deadline_day_datetime.timestamp(),
         pair_end_at=deadline_day_datetime.timestamp() + 36 * 60 * 60,
         vote_begin_at=deadline_day_datetime.timestamp() + 36 * 60 * 60,
         vote_end_at=deadline_day_datetime.timestamp() + 72 * 60 * 60,
@@ -1687,7 +1687,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         dao_id=str(dao.id),
         begin_at=deadline_day_datetime.timestamp() - 30 * 24 * 60 * 60,
         end_at=deadline_day_datetime.timestamp(),
-        pair_begin_at=deadline_day_datetime.timestamp() + 12 * 60 * 60,
+        pair_begin_at=deadline_day_datetime.timestamp(),
         pair_end_at=deadline_day_datetime.timestamp() + 36 * 60 * 60,
         vote_begin_at=deadline_day_datetime.timestamp() + 36 * 60 * 60,
         vote_end_at=deadline_day_datetime.timestamp() + 72 * 60 * 60,
@@ -2029,7 +2029,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
     vote_begin_at = vote_end_at - 12 * 60 * 60
     pair_end_at = vote_begin_at
     pair_begin_at = pair_end_at - 12 * 60 * 60
-    end_at = pair_begin_at - 12 * 60 * 60
+    end_at = pair_begin_at
 
     # Cycle
     cycle = Cycle(
@@ -2256,7 +2256,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
     vote_begin_at = vote_end_at - 12 * 60 * 60
     pair_end_at = vote_begin_at
     pair_begin_at = pair_end_at - 12 * 60 * 60
-    end_at = pair_begin_at - 12 * 60 * 60
+    end_at = pair_begin_at
 
     # Cycle
     cycle = Cycle(
