@@ -2532,7 +2532,8 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
         "end-and-in-vote-time",
         "end-and-in-stat-time",
         "end-and-tip",
-        "end-and-mint"
+        "end-and-mint",
+        "icpdao-test-vote"
     ]
 
     mock_user_names = [
