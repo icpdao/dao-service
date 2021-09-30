@@ -2478,18 +2478,10 @@ def create_one_empty_cycle(owner_user, dao_name, job_times, pair_times, vote_tim
     )
     dao.save()
 
-    end_at = int(time.time()) + job_times
-    # Cycle
-    cycle = Cycle(
-        dao_id=str(dao.id),
-        begin_at=0,
-        end_at=end_at,
-        pair_begin_at=end_at,
-        pair_end_at=end_at + pair_times,
-        vote_begin_at=end_at + pair_times,
-        vote_end_at=end_at + pair_times + vote_times
+    dao_job_config = DAOJobConfig(
+        dao_id=str(dao.id)
     )
-    cycle.save()
+    dao_job_config.save()
 
 
 def create_end_cycle_dao(owner_user, icpper_user):
@@ -2532,6 +2524,7 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
     ]
     
     dao_name_list = [
+        "icpdao-test-vote",
         "end-and-in-pair-timeend-and-in-vote-time",
         "icpdao-test-icp",
         "end-and-not-pair",
