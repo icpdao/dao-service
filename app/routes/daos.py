@@ -102,9 +102,9 @@ def get_query_dao_list(info, **kwargs):
 
     if _search:
         if query:
-            query = query & Q(name__contains=_search)
+            query = query & Q(name__icontains=_search)
         else:
-            query = Q(name__contains=_search)
+            query = Q(name__icontains=_search)
 
     if query:
         query_dao_list = DAOModel.objects(query)

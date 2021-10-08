@@ -205,7 +205,7 @@ mutation {
         assert first_number > end_number
 
         # search
-        ret = self.graph_query(self.icpper1.id, self.get_daos_by_params % 'filter: owner, sorted: number, sortedType: desc, search: "dao1"')
+        ret = self.graph_query(self.icpper1.id, self.get_daos_by_params % 'filter: owner, sorted: number, sortedType: desc, search: "Dao1"')
         res = ret.json()
         assert len(res['data']['daos']['dao']) == 1
         assert res['data']['daos']['total'] == 1
