@@ -2524,7 +2524,6 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
     ]
     
     dao_name_list = [
-        "icpdao-test-vote",
         "end-and-in-pair-timeend-and-in-vote-time",
         "icpdao-test-icp",
         "end-and-not-pair",
@@ -2585,4 +2584,3 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
     create_end_and_in_stat_time_cycle_dao(owner_user, icpper_user)
     create_tip_cycle_dao(owner_user, icpper_user, mock_users)
     create_end_cycle_and_mint_dao(owner_user, icpper_user, mock_users)
-    create_one_empty_cycle(owner_user, "icpdao-test-vote", 10 * 60, 5 * 60, 10 * 60)
