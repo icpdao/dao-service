@@ -122,7 +122,7 @@ def sync_job_issue_status_comment(app_client, job_ids):
                     job.cycle_id = str(link_cycle.id)
                 job.save()
                 need_update_comment_jobs.append(job)
-                pre_icpper_to_icpper(job.user_id)
+                _process_user_role_change(job.user_id)
         else:
             if not job.cycle_id:
                 raise ValueError("NOT AWAITING MERGED JOB NOT CYCLE")
@@ -223,3 +223,7 @@ def delete_issue_comment(dao_id, github_repo_owner, need_delete_bot_comment_info
         print('exception log_exception' + str(ex))
         print(msg)
         raise ex
+
+
+def _process_user_role_change(user_id):
+    pre_icpper_to_icpper(user_id)

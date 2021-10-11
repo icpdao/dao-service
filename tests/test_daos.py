@@ -137,10 +137,11 @@ mutation {
 
     def test_create_dao(self):
         dao_name='test_dao_1'
-        ret = self.graph_query(self.user_1.id, self.create_dao % dao_name)
-        assert ret.status_code == 400
-        data = ret.json()
-        assert data['errors'][0]['message'] == 'error.common.not_permission'
+        # NOTE: 去掉角色权限限制，把逻辑调整成：任何用户都可以创建 dao
+        # ret = self.graph_query(self.user_1.id, self.create_dao % dao_name)
+        # assert ret.status_code == 400
+        # data = ret.json()
+        # assert data['errors'][0]['message'] == 'error.common.not_permission'
 
         ret = self.graph_query(self.icpper.id, self.create_dao % dao_name)
         assert ret.status_code == 200

@@ -59,11 +59,11 @@ class Base:
         return record
 
     @staticmethod
-    def create_normal_user(nickname='test_user'):
+    def create_normal_user(nickname='test_user', github_login="test_github_login"):
         github_user_id = _get_github_user_id(nickname)
         record = User(
             nickname=nickname,
-            github_login='test_github_login',
+            github_login=github_login,
             github_user_id=github_user_id,
             status=UserStatus.NORMAL.value,
             avatar='test_avatar'
