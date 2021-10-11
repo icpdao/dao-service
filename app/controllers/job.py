@@ -181,8 +181,10 @@ def create_job(info, issue_link, size, auto_create_pr, prs):
     current_user = get_current_user_by_graphql(info)
     if not current_user:
         raise PermissionError(COMMON_NOT_AUTH_ERROR)
-    if current_user.status == UserStatus.NORMAL.value:
-        raise PermissionError(JOB_CREATE_USER_ROLE_ERROR)
+
+    # NOTE: 去掉角色权限限制，把逻辑调整成：任何用户都可以创建 job
+    # if current_user.status == UserStatus.NORMAL.value:
+    #     raise PermissionError(JOB_CREATE_USER_ROLE_ERROR)
 
     if os.environ.get('IS_UNITEST') != 'yes':
         check_user_access_token(current_user, ICPDAO_GITHUB_APP_CLIENT_ID, ICPDAO_GITHUB_APP_CLIENT_SECRET)

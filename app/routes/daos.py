@@ -396,7 +396,10 @@ class CreateDAO(Mutation):
     @staticmethod
     def mutate(root, info: ResolveInfo, **kwargs):
         current_user = get_current_user_by_graphql(info)
-        if not current_user or current_user.status == UserStatus.NORMAL.value:
+        # NOTE: 去掉角色权限限制，把逻辑调整成：任何用户都可以创建 dao
+        # if not current_user or current_user.status == UserStatus.NORMAL.value:
+        #     raise PermissionError(COMMON_NOT_PERMISSION_ERROR)
+        if not current_user:
             raise PermissionError(COMMON_NOT_PERMISSION_ERROR)
 
         # TODO: mock test data

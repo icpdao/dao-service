@@ -179,7 +179,7 @@ mutation {
             status=201
         )
         cls.icpper = cls.create_icpper_user("mockicpper", "mockicpper")
-        cls.normal_user = cls.create_normal_user('mockuser1')
+        cls.normal_user = cls.create_normal_user('mockuser1', 'mockuser1')
         cls.pre_icpper = cls.create_pre_icpper_user()
         UserGithubToken(
             github_user_id=cls.icpper.github_user_id,
@@ -199,7 +199,15 @@ mutation {
             refresh_token_expires_in=1,
             token_at=int(time.time())
         ).save()
-
+        UserGithubToken(
+            github_user_id=cls.normal_user.github_user_id,
+            github_login=cls.normal_user.github_login,
+            access_token="xxxx",
+            expires_in=1,
+            refresh_token="xxx",
+            refresh_token_expires_in=1,
+            token_at=int(time.time())
+        ).save()
         Icppership(
             progress=IcppershipProgress.ACCEPT.value,
             status=IcppershipStatus.PRE_ICPPER.value,
@@ -287,11 +295,12 @@ mutation {
         )
         assert res.json()['errors'][0]['message'] == JOB_CREATE_ISSUE_REPEAT_ERROR
 
-        res = self.graph_query(
-            str(self.normal_user.id),
-            self.create_job % (mark_issue, str(mark_size))
-        )
-        assert res.json()['errors'][0]['message'] == 'error.mark_job.user_role'
+        # NTOE: 去掉了用户角色限制
+        # res = self.graph_query(
+        #     str(self.normal_user.id),
+        #     self.create_job % (mark_issue, str(mark_size))
+        # )
+        # assert res.json()['errors'][0]['message'] == 'error.mark_job.user_role'
 
         res = self.graph_query(
             str(self.icpper.id),
@@ -437,6 +446,125 @@ mutation {
         assert pre_icpper.status == UserStatus.ICPPER.value
         assert icppership.progress == IcppershipProgress.ACCEPT.value
         assert icppership.status == IcppershipStatus.ICPPER.value
+
+    @responses.activate
+    def test_normal_create_job(self):
+        dao_id = self.get_or_create_dao()
+        responses.add(
+            responses.GET,
+            "https://api.github.com/orgs/mockdao",
+            json={
+                'id': _get_github_user_id('mockdao')
+            }
+        )
+        responses.add(
+            responses.GET,
+            "https://api.github.com/repos/mockdao/mockrepo",
+            json={
+                "id": 222,
+                "name": "mockrepo",
+                "owner": {
+                    "id": _get_github_user_id("mockdao"),
+                    "login": "mockdao"
+                }
+            }
+        )
+        responses.add(
+            responses.GET,
+            "https://api.github.com/repos/mockdao/mockrepo/issues/13",
+            json={"user": {"login": self.normal_user.github_login, "id": _get_github_user_id(self.normal_user.github_login)}, "state": "open", "title": "xxx", "body": "xxx"}
+        )
+        responses.add(
+            responses.GET,
+            "https://api.github.com/repos/mockdao/mockrepo/issues/12",
+            json={"user": {"login": self.normal_user.github_login,
+                           "id": _get_github_user_id(self.normal_user.github_login)}, "state": "open", "title": "xxx",
+                  "body": "xxx"}
+        )
+        responses.add(
+            responses.GET,
+            "https://api.github.com/repos/mockdao/mockrepo/issues/211",
+            json={"user": {"login": self.normal_user.github_login,
+                           "id": _get_github_user_id(self.normal_user.github_login)}, "state": "open", "title": "xxx",
+                  "body": "xxx", 'id': 5551}
+        )
+        responses.add(
+            responses.POST,
+            "https://api.github.com/repos/mockdao/mockrepo/issues/13/comments",
+            json={"id": 433}
+        )
+        mark_issue = "https://github.com/mockdao/mockrepo/issues/13"
+        mark_size = 2.3
+        res = self.graph_query(
+            str(self.normal_user.id),
+            self.create_job % (mark_issue, str(mark_size))
+        )
+
+        assert res.status_code == 200
+        data = res.json()
+        assert data['data']['createJob']['job']['node']['daoId'] == dao_id
+        assert data['data']['createJob']['job']['node']['githubRepoOwner'] == "mockdao"
+        assert data['data']['createJob']['job']['node']['githubIssueNumber'] == 13
+        assert data['data']['createJob']['job']['node']['size'] == 2.3
+
+        responses.add(
+            responses.GET,
+            "https://api.github.com/repos/mockdao/mockrepo/pulls/211",
+            json={
+                'user': {'login': self.normal_user.github_login, "id": _get_github_user_id(self.normal_user.github_login)},
+                'id': 5551,
+                'node_id': 'xxx',
+                'number': 211,
+                'state': 'open',
+                'title': 'xxx',
+                "merged_at": datetime.datetime.utcnow().isoformat(),
+                "merged": True,
+                "merged_by": {
+                    "login": self.normal_user.github_login,
+                    "id": _get_github_user_id(self.normal_user.github_login)
+                },
+                'created_at': '', 'updated_at': ''
+            }
+        )
+
+        responses.add(
+            responses.GET,
+            "https://api.github.com/repos/mockdao/mockrepo/pulls/211/reviews",
+            json={}
+        )
+        responses.add(
+            responses.PATCH,
+            "https://api.github.com/repos/mockdao/mockrepo/issues/comments/433",
+            json={}
+        )
+        responses.add(
+            responses.POST,
+            "https://api.github.com/repos/mockdao/mockrepo/issues/211/comments",
+            json={'id': 8777}
+        )
+        responses.add(
+            responses.PATCH,
+            "https://api.github.com/repos/mockdao/mockrepo/issues/comments/8777",
+            json={'id': 8888}
+        )
+        res = self.graph_query(
+            str(self.normal_user.id),
+            self.query_jobs % ("mockdao", "0", str(int(time.time())))
+        )
+        job_id = res.json()['data']['jobs']['job'][0]['node']['id']
+        job_size = res.json()['data']['jobs']['job'][0]['node']['size']
+        res = self.graph_query(
+            str(self.normal_user.id),
+            self.update_job_pr % (
+                job_id, job_size,
+                '5551', "https://github.com/mockdao/mockrepo/pull/211"
+            )
+        )
+        assert res.json()['data']['updateJob']['job']['prs'][0]['githubPrNumber'] == 211
+        assert res.json()['data']['updateJob']['job']['prs'][0]['id']
+
+        normal_user = User.objects(id=str(self.normal_user.id)).first()
+        assert normal_user.status == UserStatus.NORMAL.value
 
     @responses.activate
     def test_query_jobs(self):
