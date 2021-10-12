@@ -242,8 +242,8 @@ mutation {
         assert len(nodes) == 3
         assert stat['icpperCount'] == 3
         assert stat['jobCount'] == 6
-        assert int(float(stat['size'])) == int(float(sum([Decimal(d['size']) for d in mock_data])))
-        assert int(float(stat['income'])) == int(float(sum([Decimal(d['income']) for d in mock_data])))
+        assert Decimal(stat['size']) - sum([Decimal(d['size']) for d in mock_data]) < Decimal("0.1")
+        assert Decimal(stat['income']) - sum([Decimal(d['income']) for d in mock_data]) < Decimal("0.00001")
         return dao, u1
 
     def test_query_dao_jobs(self):
