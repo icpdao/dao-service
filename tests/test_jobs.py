@@ -623,14 +623,16 @@ mutation {
             self.query_jobs % ("mockdao", "0", str(int(time.time())))
         )
         assert len(res.json()['data']['jobs']['job']) == 3
-        assert res.json()['data']['jobs']['stat']['size'] == 2.3 + 4.3 + 5.3
+        # 2.3 + 4.3 + 5.3 = 11.9
+        assert str(res.json()['data']['jobs']['stat']['size']) == "11.9"
 
         res = self.graph_query(
             str(self.normal_user.id),
             self.query_other_user_jobs % ("mockdao", "0", str(int(time.time())), self.icpper.github_login)
         )
         assert len(res.json()['data']['jobs']['job']) == 3
-        assert res.json()['data']['jobs']['stat']['size'] == 2.3 + 4.3 + 5.3
+        # 2.3 + 4.3 + 5.3 = 11.9
+        assert str(res.json()['data']['jobs']['stat']['size']) == "11.9"
 
     @responses.activate
     def test_update_job_size(self):
@@ -668,7 +670,8 @@ mutation {
             str(self.icpper.id),
             self.query_jobs % ("mockdao", "0", str(int(time.time())))
         )
-        assert res.json()['data']['jobs']['stat']['size'] == 3.4 + 7.2 + 13.1
+        # 3.4 + 7.2 + 13.1  23.7
+        assert res.json()['data']['jobs']['stat']['size'] == "23.7"
 
     @responses.activate
     def test_update_job_pr(self):

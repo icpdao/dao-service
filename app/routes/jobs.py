@@ -6,6 +6,7 @@ from collections import defaultdict
 from graphene import ObjectType, List, Int, Float, String, Field, Mutation, Boolean, Decimal, InputObjectType
 
 import settings
+from app.common.models.extension.decimal128_field import any_to_decimal
 from app.common.models.icpdao.cycle import CycleIcpperStat, Cycle
 from app.common.models.icpdao.github_app_token import GithubAppToken
 from app.common.models.icpdao.job import Job as JobModel, JobPR as JobPRModel, JobStatusEnum, JobPRComment, JobPR
@@ -20,6 +21,7 @@ from app.common.utils.errors import JOB_UPDATE_STATUS_INVALID_ERROR, JOB_QUERY_N
 from app.common.utils.github_app.client import GithubAppClient
 from app.common.utils.route_helper import get_current_user_by_graphql
 from app.common.utils import check_size
+from app.common.models.extension.graphene_decimal128 import Decimal128Float
 from app.controllers.task import delete_issue_comment, sync_job_pr, sync_job_issue_status_comment
 from app.routes.schema import SortedTypeEnum, UpdateJobVoteTypeByOwnerArgumentPairTypeEnum
 
@@ -27,7 +29,7 @@ from app.controllers.job import update_job_by_size, create_job, update_job_pr, c
 
 
 class JobsStat(ObjectType):
-    size = Float()
+    size = Decimal()
     token_name = String()
     token_count = Float()
 
@@ -102,7 +104,8 @@ class Jobs(ObjectType):
 
     def resolve_stat(self, info):
         query_list = getattr(self, 'query_list')
-        size = query_list.sum('size')
+        # TODO mock 待实现
+        size = any_to_decimal(query_list.sum('size'))
         return JobsStat(size=size, token_name='', token_count=0)
 
     def resolve_total(self, info):

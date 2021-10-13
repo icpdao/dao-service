@@ -1052,16 +1052,16 @@ def _update_mentor_income(token_mint_record):
     token_symbol = token.functions.symbol().call()
     token_name = token.functions.name().call()
 
-    all_ratio = 0
+    all_ratio = decimal.Decimal("0")
     for ratio in token_mint_record.mint_token_amount_ratio_list:
         all_ratio += ratio
-    unit_ratio_token_decimal = token_mint_record.mint_value / decimal.Decimal(str(all_ratio))
+    unit_ratio_token_decimal = token_mint_record.mint_value / all_ratio
     for record in token_mint_record.mint_icpper_records:
         job_user_id = record.user_id
         for index, memtor_record in enumerate(record.mentor_list):
             mentor_id = memtor_record.mentor_id
             icpper_id = job_user_id if index == 0 else record.mentor_list[index-1]
-            token_count = unit_ratio_token_decimal * decimal.Decimal(str(memtor_record.mentor_radio))
+            token_count = unit_ratio_token_decimal * memtor_record.mentor_radio
             MentorTokenIncomeStat.objects(
                 mentor_id=mentor_id,
                 icpper_id=icpper_id,
