@@ -34,7 +34,7 @@ jobs:
     - name: Launch MongoDB
       uses: wbari/start-mongoDB@v0.2
       with:
-        mongoDBVersion: 3.2
+        mongoDBVersion: 4.4
 
     - name: Start Redis
       uses: zhulik/redis-action@1.1.0
