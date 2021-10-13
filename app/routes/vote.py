@@ -5,7 +5,9 @@ from graphene import Mutation, String, Boolean
 from app.common.models.icpdao.cycle import CycleVote, CycleVoteType, Cycle, \
     VoteResultTypeAllResultType, CycleVoteConfirm, CycleVoteConfirmStatus
 from app.common.models.icpdao.job import Job
-from app.common.utils.errors import COMMON_NOT_AUTH_ERROR, CYCLE_NOT_FOUND_ERROR, CYCLE_VOTE_TIME_ERROR
+from app.common.models.icpdao.user import UserStatus
+from app.common.utils.errors import COMMON_NOT_AUTH_ERROR, CYCLE_NOT_FOUND_ERROR, CYCLE_VOTE_TIME_ERROR, \
+    COMMON_NOT_PERMISSION_ERROR
 from app.common.utils.route_helper import get_current_user_by_graphql
 
 
@@ -20,6 +22,8 @@ class UpdatePairVote(Mutation):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
             raise PermissionError(COMMON_NOT_AUTH_ERROR)
+        if current_user.status == UserStatus.NORMAL.value:
+            raise PermissionError(COMMON_NOT_PERMISSION_ERROR)
         cycle_vote = CycleVote.objects(id=id).first()
         if not cycle_vote:
             raise ValueError('NOT FOUND VOTE')
@@ -57,6 +61,8 @@ class UpdateALLVote(Mutation):
         current_user = get_current_user_by_graphql(info)
         if not current_user:
             raise PermissionError(COMMON_NOT_AUTH_ERROR)
+        if current_user.status == UserStatus.NORMAL.value:
+            raise PermissionError(COMMON_NOT_PERMISSION_ERROR)
         cycle_vote = CycleVote.objects(id=id).first()
         if not cycle_vote:
             raise ValueError('NOT FOUND VOTE')
