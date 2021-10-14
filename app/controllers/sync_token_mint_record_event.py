@@ -1025,7 +1025,7 @@ def _sync_event(token_mint_record):
             for log in rich_logs:
                 token_transfer_event_log_list.append(TokenTransferEventLog(
                     to_address=log["args"]["to"],
-                    value=log["args"]["value"]
+                    value=Web3.fromWei(log["args"]["value"], "ether")
                 ))
             token_mint_record.token_transfer_event_logs = token_transfer_event_log_list
             token_mint_record.status = MintRecordStatusEnum.SUCCESS.value
