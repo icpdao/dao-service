@@ -6,6 +6,7 @@ from collections import defaultdict
 from graphene import ObjectType, Field, List, Int, Decimal, Boolean, Mutation, String, Float
 from mongoengine import Q
 
+from app.common.models.extension.decimal128_field import any_to_decimal
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType, CycleVotePairTask, \
     CycleVotePairTaskStatus, CycleVoteResultStatTask, CycleVoteResultStatTaskStatus, CycleVoteResultPublishTask, \
     CycleVoteResultPublishTaskStatus, CycleVoteConfirm, CycleVoteConfirmStatus
@@ -162,7 +163,7 @@ class JobsQuery(BaseObjectType):
         query = self._args.get('query')
         return JobStatQuery(
             icpper_count=len(query.distinct('user_id')), job_count=query.count(),
-            size=decimal.Decimal(query.sum('size')), income=decimal.Decimal(query.sum('income')))
+            size=any_to_decimal(query.sum('size')), income=any_to_decimal(query.sum('income')))
 
 
 class UserIcpperStatsQuery(ObjectType):

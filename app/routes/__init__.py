@@ -3,6 +3,7 @@ import decimal
 from graphene import ObjectType, String, Field, Int, List
 
 import settings
+from app.common.models.extension.decimal128_field import any_to_decimal
 from app.common.models.icpdao.github_app_token import GithubAppToken
 from app.common.models.icpdao.job import Job
 from app.common.models.icpdao.dao import DAO as DAOModel
@@ -110,19 +111,19 @@ class Query(ObjectType):
         all_dao_ids = DAOModel.objects().distinct('_id')
         all_dao_ids_str = [str(i) for i in all_dao_ids]
         icpper = Job.objects(dao_id__in=all_dao_ids_str).distinct('user_id')
-        size = Job.objects(dao_id__in=all_dao_ids_str).sum('size')
-        income = Job.objects(dao_id__in=all_dao_ids_str).sum('income')
+        size = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('size'))
+        income = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('income'))
         return HomeStats(
-            dao=len(all_dao_ids_str), icpper=len(icpper), size=decimal.Decimal(size), income=decimal.Decimal(income))
+            dao=len(all_dao_ids_str), icpper=len(icpper), size=size, income=income)
 
     @staticmethod
     def resolve_daos(root, info, **kwargs):
         query_dao_list, all_dao_ids = get_query_dao_list(info, **kwargs)
         all_dao_ids_str = [str(i) for i in all_dao_ids]
         icpper = Job.objects(dao_id__in=all_dao_ids_str).distinct('user_id')
-        size = Job.objects(dao_id__in=all_dao_ids_str).sum('size')
-        income = Job.objects(dao_id__in=all_dao_ids_str).sum('income')
-        stat = DAOsStat(icpper=len(icpper), size=decimal.Decimal(size), income=decimal.Decimal(income))
+        size = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('size'))
+        income = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('income'))
+        stat = DAOsStat(icpper=len(icpper), size=size, income=income)
         return DAOs(_args=DAOQueryArgs(query=query_dao_list), stat=stat, total=len(all_dao_ids))
 
     @staticmethod
