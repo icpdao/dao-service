@@ -15,6 +15,7 @@ from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.models.icpdao.user import User
 from app.common.schema import BaseObjectType, BaseObjectArgs
 from app.common.schema.icpdao import CycleSchema, CycleIcpperStatSchema, UserSchema, JobSchema, CycleVoteSchema
+from app.common.schema.incomes import TokenIncomeSchema
 from app.common.utils.access import check_is_dao_owner
 from app.common.utils.errors import CYCLE_VOTE_CONFIRM_INVALID_ERROR, CYCLE_VOTE_NOT_FOUND_ERROR, COMMON_NOT_AUTH_ERROR, \
     CYCLE_ICPPER_STAT_NOT_FOUND_ERROR, CYCLE_TOKEN_RELEASED_CHECK_ERROR, CYCLE_NOT_FOUND_ERROR, \
@@ -142,7 +143,7 @@ class JobStatQuery(ObjectType):
     icpper_count = Int()
     job_count = Int()
     size = Decimal()
-    income = Decimal()
+    incomes = List(TokenIncomeSchema)
 
 
 class JobsQuery(BaseObjectType):
@@ -163,7 +164,7 @@ class JobsQuery(BaseObjectType):
         query = self._args.get('query')
         return JobStatQuery(
             icpper_count=len(query.distinct('user_id')), job_count=query.count(),
-            size=any_to_decimal(query.sum('size')), income=any_to_decimal(query.sum('income')))
+            size=any_to_decimal(query.sum('size')), incomes=query.group_incomes())
 
 
 class UserIcpperStatsQuery(ObjectType):
@@ -440,7 +441,7 @@ class CycleStatQuery(ObjectType):
     icpper_count = Int()
     job_count = Int()
     size = Decimal()
-    income = Decimal()
+    incomes = List(TokenIncomeSchema)
 
     @property
     def cycle_id(self):
@@ -475,12 +476,8 @@ class CycleStatQuery(ObjectType):
             size += item.size
         return size
 
-    def resolve_income(self, info):
-        income = decimal.Decimal('0')
-        icpper_stat_list = self._get_icpper_stats(info)
-        for item in icpper_stat_list:
-            income += item.income
-        return income
+    def resolve_incomes(self, info):
+        return CycleIcpperStat.objects(cycle_id=self.cycle_id).group_incomes()
 
 
 class CycleVotePairTaskQuery(ObjectType):
@@ -853,33 +850,5 @@ class MarkCyclesTokenReleased(Mutation):
     ok = Boolean()
 
     def mutate(self, info, dao_id, cycle_ids, unit_size_value):
-        check_is_dao_owner(get_current_user_by_graphql(info), dao_id=dao_id)
-        decimal_unit = decimal.Decimal(unit_size_value)
-        for cid in cycle_ids:
-            cycle = Cycle.objects(
-                id=cid, dao_id=dao_id, token_released_at__exists=False, vote_result_published_at__exists=True).first()
-            if not cycle:
-                raise ValueError(CYCLE_TOKEN_RELEASED_CHECK_ERROR)
-
-        stats = CycleIcpperStat.objects(cycle_id__in=cycle_ids, dao_id=dao_id).all()
-        jobs = Job.objects(dao_id=dao_id, cycle_id__in=cycle_ids).all()
-        jobs_dict = defaultdict(lambda: defaultdict(list))
-
-        for job in jobs:
-            jobs_dict[job.cycle_id][job.user_id].append(job)
-
-        for ss in stats:
-            ss.income = decimal_unit * ss.size
-            uint_size = decimal.Decimal(0)
-            if ss.job_size > 0:
-                uint_size = ss.size / ss.job_size
-
-            for job in jobs_dict[ss.cycle_id][ss.user_id]:
-                job.income = job.size * uint_size * decimal_unit
-                job.status = JobStatusEnum.TOKEN_RELEASED.value
-                job.save()
-
-            ss.save()
-
-        Cycle.objects(id__in=cycle_ids).update(token_released_at=int(time.time()))
-        return MarkCyclesTokenReleased(ok=True)
+        # DEPRECATION
+        raise DeprecationWarning

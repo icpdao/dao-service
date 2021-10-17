@@ -2,6 +2,8 @@ import decimal
 
 from app.common.models.icpdao.cycle import CycleIcpperStat
 from app.common.models.icpdao.job import Job, JobStatusEnum
+from app.common.models.icpdao.base import TokenIncome
+from app.common.models.icpdao.dao import DAO
 
 
 def create_or_update_cycle_icpper_stat(dao_id, cycle_id, user_id, job_count, job_size):
@@ -16,6 +18,10 @@ def create_or_update_cycle_icpper_stat(dao_id, cycle_id, user_id, job_count, job
     elif not is_dict and update_result.upserted_id:
         is_new = True
 
+    dao = DAO.objects(id=dao_id).first()
+
+    assert dao, f"not find dao={dao_id}"
+
     if is_new:
         cis = CycleIcpperStat.objects(
             dao_id=dao_id, user_id=user_id, cycle_id=cycle_id
@@ -27,7 +33,10 @@ def create_or_update_cycle_icpper_stat(dao_id, cycle_id, user_id, job_count, job
             create_at__lt=cis.create_at
         ).order_by('-create_at').first()
 
-        cis.income = decimal.Decimal('0')
+        # cis.income = decimal.Decimal('0')
+        if dao.token_address and dao.token_chain_id:
+            cis.incomes = [TokenIncome(
+                token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal('0'))]
         cis.vote_ei = decimal.Decimal('0')
         cis.owner_ei = decimal.Decimal('0')
         cis.ei = decimal.Decimal('0')

@@ -2,6 +2,9 @@ import os
 import time
 from decimal import Decimal
 
+import web3
+
+from app.common.models.icpdao.base import TokenIncome
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.icppership import Icppership, IcppershipProgress, IcppershipStatus
 from app.common.models.icpdao.job import Job, JobStatusEnum
@@ -58,14 +61,22 @@ query {
         }
         jobCount
         size
-        income
+        incomes {
+          tokenChainId
+          tokenAddress
+          income
+        }
         joinTime
       }
       stat {
         icpperCount
         jobCount
         size
-        income
+        incomes {
+          tokenChainId
+          tokenAddress
+          income
+        }
       }
       total
     }
@@ -97,7 +108,11 @@ query {
             icpperCount
             jobCount
             size
-            income
+            incomes {
+              tokenChainId
+              tokenAddress
+              income
+            }
           }
           total
         }
@@ -218,6 +233,7 @@ mutation {
         u2 = self.__class__.create_icpper_user("test_2", "test_github_login_2")
         u3 = self.__class__.create_icpper_user("test_3", "test_github_login_3")
         dao = DAO(name="d1", owner_id=str(u1.id), github_owner_id=1, github_owner_name="d1").save()
+        mock_token_address = web3.Account.create().address
         mock_data = [
             {'uid': str(u1.id), 'size': '1', 'income': '1.111'},
             {'uid': str(u1.id), 'size': '2.3', 'income': '222.222'},
@@ -229,12 +245,15 @@ mutation {
         for d, i in enumerate(mock_data):
             Job(
                 dao_id=str(dao.id), user_id=i['uid'], title=f'{d}-title',
-                size=Decimal(i['size']), income=Decimal(i['income']), create_at=1 if d % 2 == 0 else int(time.time()),
+                size=Decimal(i['size']), incomes=[
+                    TokenIncome(token_chain_id="3", token_address=mock_token_address, income=Decimal(i['income']))
+                ], create_at=1 if d % 2 == 0 else int(time.time()),
                 github_repo_owner="xxx", github_repo_name="xxx", github_repo_owner_id=1, github_repo_id=1,
                 github_issue_number=1, bot_comment_database_id=1,
                 status=JobStatusEnum.WAITING_FOR_TOKEN.value if d % 2 == 0 else JobStatusEnum.TOKEN_RELEASED.value
             ).save()
         res = self.graph_query(str(u1.id), self.query_dao_icpper % (str(dao.id), "joinTime", "desc", 20, 0))
+
         nodes = res.json()['data']['dao']['icppers']['nodes']
         stat = res.json()['data']['dao']['icppers']['stat']
         total = res.json()['data']['dao']['icppers']['total']
@@ -243,7 +262,7 @@ mutation {
         assert stat['icpperCount'] == 3
         assert stat['jobCount'] == 6
         assert Decimal(stat['size']) - sum([Decimal(d['size']) for d in mock_data]) < Decimal("0.1")
-        assert Decimal(stat['income']) - sum([Decimal(d['income']) for d in mock_data]) < Decimal("0.00001")
+        assert Decimal(stat['incomes'][0]['income']) - sum([Decimal(d['income']) for d in mock_data]) < Decimal("0.00001")
         return dao, u1
 
     def test_query_dao_jobs(self):
