@@ -145,7 +145,42 @@ class HomeStats(ObjectType):
     dao = Int()
     icpper = Int()
     size = Decimal()
+    income_sum = Field(
+        Decimal,
+        token_chain_id=String(default_value="1")
+    )
     incomes = List(TokenIncomeSchema)
+
+    def get_query(self):
+        all_dao_ids = DAOModel.objects().distinct('_id')
+        all_dao_ids_str = [str(i) for i in all_dao_ids]
+        setattr(self, 'all_dao_ids_str', all_dao_ids_str)
+        return self
+
+    @staticmethod
+    def resolve_income_sum(parent, info, token_chain_id="1"):
+        all_dao_ids_str = getattr(parent, 'all_dao_ids_str')
+        return any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum_incomes(token_chain_id))
+
+    @staticmethod
+    def resolve_dao(parent, info):
+        all_dao_ids_str = getattr(parent, 'all_dao_ids_str')
+        return len(all_dao_ids_str)
+
+    @staticmethod
+    def resolve_icpper(parent, info):
+        all_dao_ids_str = getattr(parent, 'all_dao_ids_str')
+        return len(Job.objects(dao_id__in=all_dao_ids_str).distinct('user_id'))
+
+    @staticmethod
+    def resolve_size(parent, info):
+        all_dao_ids_str = getattr(parent, 'all_dao_ids_str')
+        return any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('size'))
+
+    @staticmethod
+    def resolve_incomes(parent, info):
+        all_dao_ids_str = getattr(parent, 'all_dao_ids_str')
+        return Job.objects(dao_id__in=all_dao_ids_str).group_incomes()
 
 
 class DAOStat(ObjectType):
