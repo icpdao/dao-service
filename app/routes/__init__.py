@@ -107,16 +107,6 @@ class Query(ObjectType):
     )
 
     @staticmethod
-    def resolve_stats(root, info):
-        all_dao_ids = DAOModel.objects().distinct('_id')
-        all_dao_ids_str = [str(i) for i in all_dao_ids]
-        icpper = Job.objects(dao_id__in=all_dao_ids_str).distinct('user_id')
-        size = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('size'))
-        incomes = Job.objects(dao_id__in=all_dao_ids_str).group_incomes()
-        return HomeStats(
-            dao=len(all_dao_ids_str), icpper=len(icpper), size=size, incomes=incomes)
-
-    @staticmethod
     def resolve_daos(root, info, **kwargs):
         query_dao_list, all_dao_ids = get_query_dao_list(info, **kwargs)
         all_dao_ids_str = [str(i) for i in all_dao_ids]
