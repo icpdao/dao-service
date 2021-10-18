@@ -64,7 +64,7 @@ class DAOsSortedEnum(Enum):
 
 class JobSortedEnum(Enum):
     size = 0
-    income = 1
+    # income = 1
 
 
 class DAOsSortedTypeEnum(Enum):
@@ -85,7 +85,7 @@ class DAOFollowTypeEnum(Enum):
 class CycleIcpperStatSortedEnum(Enum):
     jobCount = 0
     size = 1
-    income = 2
+    # income = 2
 
 
 class CycleIcpperStatSortedTypeEnum(Enum):
@@ -107,7 +107,7 @@ class IcppersQuerySortedTypeEnum(Enum):
 
 class JobsQuerySortedEnum(Enum):
     size = 'size'
-    income = 'income'
+    # income = 'income'
     updateAt = 'update_at'
 
 

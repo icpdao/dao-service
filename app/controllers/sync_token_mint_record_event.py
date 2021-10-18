@@ -8,10 +8,11 @@ from web3 import Web3
 from web3.exceptions import TransactionNotFound
 
 from app.common.models.icpdao.cycle import CycleIcpperStat, Cycle
+from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.models.icpdao.token import TokenMintRecord, MintRecordStatusEnum, TokenTransferEventLog, \
     MentorTokenIncomeStat
-
+from app.common.utils.errors import COMMON_NOT_FOUND_DAO_ERROR, DAO_NOT_TOKEN_ADDRESS_ERROR
 
 TOKEN_ABI = """
   [
@@ -1084,17 +1085,43 @@ def _update_income(token_mint_record):
     jobs = Job.objects(dao_id=dao_id, cycle_id__in=cycle_ids).all()
     jobs_dict = defaultdict(lambda: defaultdict(list))
 
+    dao = DAO.objects(id=dao_id).first()
+    assert dao, COMMON_NOT_FOUND_DAO_ERROR
+    assert dao.token_address, DAO_NOT_TOKEN_ADDRESS_ERROR
+
     for job in jobs:
         jobs_dict[job.cycle_id][job.user_id].append(job)
 
     for ss in stats:
-        ss.income = decimal_unit * ss.size
+        # ss.income = decimal_unit * ss.size
+        token_income = ss.incomes.filter(
+            token_chain_id=dao.token_chain_id,
+            token_address=dao.token_address).first()
+        if token_income:
+            ss.incomes.filter(
+                token_chain_id=dao.token_chain_id,
+                token_address=dao.token_address).update(income=decimal_unit * ss.size)
+        else:
+            ss.incomes.create(
+                token_chain_id=dao.token_chain_id,
+                token_address=dao.token_address, income=decimal_unit * ss.size)
         uint_size = decimal.Decimal(0)
         if ss.job_size > 0:
             uint_size = ss.size / ss.job_size
 
         for job in jobs_dict[ss.cycle_id][ss.user_id]:
-            job.income = job.size * uint_size * decimal_unit
+            # job.income = job.size * uint_size * decimal_unit
+            job_token_income = job.incomes.filter(
+                token_chain_id=dao.token_chain_id,
+                token_address=dao.token_address).first()
+            if job_token_income:
+                job.incomes.filter(
+                    token_chain_id=dao.token_chain_id,
+                    token_address=dao.token_address).update(income=job.size * uint_size * decimal_unit)
+            else:
+                job.incomes.create(
+                    token_chain_id=dao.token_chain_id,
+                    token_address=dao.token_address, income=job.size * uint_size * decimal_unit)
             job.status = JobStatusEnum.TOKEN_RELEASED.value
             job.save()
 

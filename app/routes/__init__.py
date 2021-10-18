@@ -112,9 +112,9 @@ class Query(ObjectType):
         all_dao_ids_str = [str(i) for i in all_dao_ids]
         icpper = Job.objects(dao_id__in=all_dao_ids_str).distinct('user_id')
         size = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('size'))
-        income = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('income'))
+        incomes = Job.objects(dao_id__in=all_dao_ids_str).group_incomes()
         return HomeStats(
-            dao=len(all_dao_ids_str), icpper=len(icpper), size=size, income=income)
+            dao=len(all_dao_ids_str), icpper=len(icpper), size=size, incomes=incomes)
 
     @staticmethod
     def resolve_daos(root, info, **kwargs):
@@ -122,8 +122,9 @@ class Query(ObjectType):
         all_dao_ids_str = [str(i) for i in all_dao_ids]
         icpper = Job.objects(dao_id__in=all_dao_ids_str).distinct('user_id')
         size = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('size'))
-        income = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('income'))
-        stat = DAOsStat(icpper=len(icpper), size=size, income=income)
+        # all dao income use all dao all token address all income, PS: to be a lot bigger than it actually is
+        incomes = Job.objects(dao_id__in=all_dao_ids_str).group_incomes()
+        stat = DAOsStat(icpper=len(icpper), size=size, incomes=incomes)
         return DAOs(_args=DAOQueryArgs(query=query_dao_list), stat=stat, total=len(all_dao_ids))
 
     @staticmethod
