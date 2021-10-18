@@ -148,7 +148,7 @@ class JobStatQuery(ObjectType):
 
 class JobsQuery(BaseObjectType):
     nodes = List(JobQuery)
-    stat = Field(JobStatQuery)
+    stat = Field(JobStatQuery, token_chain_id=String(default_value='1'))
     total = Int()
 
     def resolve_total(self, info):
@@ -160,11 +160,11 @@ class JobsQuery(BaseObjectType):
         set_custom_attr_by_graphql(info, 'user_loader', UserLoader())
         return [JobQuery(datum=item) for item in query.limit(self._args.get('first')).skip(self._args.get('offset'))]
 
-    def resolve_stat(self, info):
+    def resolve_stat(self, info, token_chain_id):
         query = self._args.get('query')
         return JobStatQuery(
             icpper_count=len(query.distinct('user_id')), job_count=query.count(),
-            size=any_to_decimal(query.sum('size')), incomes=query.group_incomes())
+            size=any_to_decimal(query.sum('size')), incomes=query.group_incomes(token_chain_id=token_chain_id))
 
 
 class UserIcpperStatsQuery(ObjectType):
@@ -441,7 +441,7 @@ class CycleStatQuery(ObjectType):
     icpper_count = Int()
     job_count = Int()
     size = Decimal()
-    incomes = List(TokenIncomeSchema)
+    incomes = Field(List(TokenIncomeSchema), token_chain_id=String(default_value='1'))
 
     @property
     def cycle_id(self):
@@ -476,8 +476,8 @@ class CycleStatQuery(ObjectType):
             size += item.size
         return size
 
-    def resolve_incomes(self, info):
-        return CycleIcpperStat.objects(cycle_id=self.cycle_id).group_incomes()
+    def resolve_incomes(self, info, token_chain_id):
+        return CycleIcpperStat.objects(cycle_id=self.cycle_id).group_incomes(token_chain_id=token_chain_id)
 
 
 class CycleVotePairTaskQuery(ObjectType):
