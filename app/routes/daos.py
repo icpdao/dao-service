@@ -86,6 +86,8 @@ def get_query_dao_list(info, **kwargs):
     _offset = kwargs.get('offset')
     _first = kwargs.get('first')
 
+    token_chain_id = kwargs.get('token_chain_id')
+
     query = None
     if _filter:
         if _filter != DAOsFilterEnum.all:
@@ -125,7 +127,8 @@ def get_query_dao_list(info, **kwargs):
         token = any_to_decimal(job_query.sum('incomes.income'))
         dao_list.append(dict(
             following=following, job=job, size=size, token=token, number=item.number, datum=item,
-            stat=DAOStat(following=following, job=job, size=size, incomes=job_query.group_incomes())
+            stat=DAOStat(
+                following=following, job=job, size=size, incomes=job_query.group_incomes(token_chain_id=token_chain_id))
         ))
 
     if _sorted is not None or _sorted_type is not None:
@@ -149,7 +152,10 @@ class HomeStats(ObjectType):
         Decimal,
         token_chain_id=String(default_value="1")
     )
-    incomes = List(TokenIncomeSchema)
+    incomes = Field(
+        List(TokenIncomeSchema),
+        token_chain_id=String(default_value="1")
+    )
 
     def get_query(self):
         all_dao_ids = DAOModel.objects().distinct('_id')
@@ -178,9 +184,9 @@ class HomeStats(ObjectType):
         return any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('size'))
 
     @staticmethod
-    def resolve_incomes(parent, info):
+    def resolve_incomes(parent, info, token_chain_id):
         all_dao_ids_str = getattr(parent, 'all_dao_ids_str')
-        return Job.objects(dao_id__in=all_dao_ids_str).group_incomes()
+        return Job.objects(dao_id__in=all_dao_ids_str).group_incomes(token_chain_id=token_chain_id)
 
 
 class DAOStat(ObjectType):
@@ -198,7 +204,7 @@ class DAOsStat(ObjectType):
 
 class DAOItem(ObjectType):
     datum = Field(DAOSchema)
-    stat = Field(DAOStat)
+    stat = Field(DAOStat, token_chain_id=String(default_value="1"))
     is_following = Boolean(required=True)
     is_owner = Boolean(required=True)
 
@@ -207,12 +213,15 @@ class DAOItem(ObjectType):
         return parent.datum
 
     @staticmethod
-    def resolve_stat(parent, info):
+    def resolve_stat(parent, info, token_chain_id):
         following = DAOFollowModel.objects(dao_id=str(parent.datum.id)).count()
         job_query = JobModel.objects(dao_id=str(parent.datum.id), status__nin=[JobStatusEnum.AWAITING_MERGER.value])
         job = job_query.count()
         size = any_to_decimal(job_query.sum('size'))
-        return DAOStat(following=following, job=job, size=size, incomes=job_query.group_incomes())
+        return DAOStat(
+            following=following, job=job, size=size,
+            incomes=job_query.group_incomes(token_chain_id=token_chain_id)
+        )
 
     @staticmethod
     def resolve_is_following(parent, info):
@@ -272,7 +281,8 @@ class DAO(ObjectType):
         first=Int(default_value=20),
         offset=Int(default_value=0),
         begin_time=Int(),
-        end_time=Int()
+        end_time=Int(),
+        token_chain_id=String(default_value="1")
     )
     token_mint_records = Field(
         TokenMintRecordsQuery,
@@ -419,7 +429,7 @@ class DAO(ObjectType):
             query = query.order_by(sort_string)
         return query
 
-    def resolve_jobs(self, info, sorted_type, first, offset, sorted, begin_time=None, end_time=None):
+    def resolve_jobs(self, info, sorted_type, first, offset, sorted, token_chain_id, begin_time=None, end_time=None):
         dao = getattr(self, 'query')
         query = self._jobs_base_queryset(
             dao_id=str(dao.id), sorted=sorted, sorted_type=sorted_type, begin_time=begin_time, end_time=end_time)
@@ -427,7 +437,7 @@ class DAO(ObjectType):
             _args=CommonPaginationArgs(query=query, first=first, offset=offset),
             stat=JobStatQuery(
                 icpper_count=len(query.distinct('user_id')), job_count=query.count(),
-                size=any_to_decimal(query.sum('size')), incomes=query.group_incomes())
+                size=any_to_decimal(query.sum('size')), incomes=query.group_incomes(token_chain_id=token_chain_id))
         )
 
     def resolve_token_mint_records(self, info, first, offset, status=None, chain_id=None, token_contract_address=None):

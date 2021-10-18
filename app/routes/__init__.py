@@ -42,7 +42,8 @@ class Query(ObjectType):
         search=String(),
         first=Int(default_value=20),
         offset=Int(default_value=0),
-        user_name=String()
+        user_name=String(),
+        token_chain_id=String(default_value='1')
     )
 
     dao = Field(
@@ -113,7 +114,7 @@ class Query(ObjectType):
         icpper = Job.objects(dao_id__in=all_dao_ids_str).distinct('user_id')
         size = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('size'))
         # all dao income use all dao all token address all income, PS: to be a lot bigger than it actually is
-        incomes = Job.objects(dao_id__in=all_dao_ids_str).group_incomes()
+        incomes = Job.objects(dao_id__in=all_dao_ids_str).group_incomes(token_chain_id=kwargs.get('token_chain_id', '1'))
         stat = DAOsStat(icpper=len(icpper), size=size, incomes=incomes)
         return DAOs(_args=DAOQueryArgs(query=query_dao_list), stat=stat, total=len(all_dao_ids))
 
