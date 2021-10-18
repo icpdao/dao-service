@@ -54,7 +54,7 @@ query {
       logo
       ownerId
     }
-    icppers(sorted: %s, sortedType: %s, first: %s, offset: %s) {
+    icppers(sorted: %s, sortedType: %s, first: %s, offset: %s, tokenChainId: "3") {
       nodes {
         user {
           id
