@@ -272,7 +272,8 @@ class DAO(ObjectType):
         sorted=IcppersQuerySortedEnum(default_value=0),
         sorted_type=IcppersQuerySortedTypeEnum(default_value=1),
         first=Int(default_value=20),
-        offset=Int(default_value=0)
+        offset=Int(default_value=0),
+        token_chain_id=String(default_value="1")
     )
     jobs = Field(
         JobsQuery,
@@ -339,7 +340,7 @@ class DAO(ObjectType):
         return CycleQuery(datum=cycle, cycle_id=str(cycle.id))
 
     @staticmethod
-    def resolve_icppers(parent, info, sorted_type, first, offset, sorted):
+    def resolve_icppers(parent, info, sorted_type, first, offset, sorted, token_chain_id):
         dao = getattr(parent, 'query')
 
         format_sorted_type = 1 if sorted_type == IcppersQuerySortedTypeEnum.asc.value else -1
@@ -351,6 +352,7 @@ class DAO(ObjectType):
         ).aggregate([
             {"$unwind": "$incomes"},
             {"$sort": {"create_at": 1}},
+            {"$match": {"incomes.token_chain_id": token_chain_id}},
             {"$group": {
                 "_id": {
                     "user_id": "$user_id",
