@@ -112,7 +112,7 @@ query{
 
     create_token_mint_record = """
 mutation {
-  createTokenMintRecord(daoId: "%s", startCycleId: "%s", endCycleId: "%s", tokenContractAddress: "%s", startTimestamp: %s, endTimestamp: %s, tickLower: %s, tickUpper: %s, chainId: "%s") {
+  createTokenMintRecord(daoId: "%s", startCycleId: "%s", endCycleId: "%s", tokenContractAddress: "%s", startTimestamp: %s, endTimestamp: %s, tickLower: %s, tickUpper: %s, chainId: "%s", tokenSymbol: "TEST") {
     tokenMintRecord {
         id
         daoId
@@ -182,6 +182,7 @@ mutation {
 
         for number in range(1, 31):
             TokenMintRecord(
+                token_symbol="TEST",
                 dao_id=str(self.mock_dao_1.id),
                 chain_id="1",
                 token_contract_address=self.token_contract_address,
@@ -195,6 +196,7 @@ mutation {
             ).save()
         for number in range(1, 31):
             TokenMintRecord(
+                token_symbol="TEST",
                 dao_id=str(self.mock_dao_2.id),
                 chain_id="1",
                 token_contract_address=self.token_contract_address,
@@ -232,6 +234,7 @@ mutation {
 
         for number in range(1, 4):
             TokenMintRecord(
+                token_symbol="TEST",
                 dao_id=str(self.mock_dao.id),
                 chain_id="1",
                 token_contract_address=self.token_contract_address,
@@ -245,6 +248,7 @@ mutation {
             ).save()
         for number in range(4, 7):
             TokenMintRecord(
+                token_symbol="TEST",
                 dao_id=str(self.mock_dao.id),
                 chain_id="1",
                 token_contract_address=self.token_contract_address,
@@ -283,6 +287,7 @@ mutation {
 
         for number in range(2, 5):
             TokenMintRecord(
+                token_symbol="TEST",
                 dao_id=str(self.mock_dao.id),
                 token_contract_address=self.token_contract_address,
                 total_real_size=decimal.Decimal(str(number)),
@@ -296,6 +301,7 @@ mutation {
             ).save()
         for number in range(5, 8):
             TokenMintRecord(
+                token_symbol="TEST",
                 dao_id=str(self.mock_dao.id),
                 token_contract_address=self.token_contract_address,
                 total_real_size=decimal.Decimal(str(number)),
@@ -335,6 +341,7 @@ mutation {
 
         for number in range(2, 5):
             TokenMintRecord(
+                token_symbol="TEST",
                 dao_id=str(self.mock_dao.id),
                 token_contract_address=self.token_contract_address_1,
                 total_real_size=decimal.Decimal(str(number)),
@@ -348,6 +355,7 @@ mutation {
             ).save()
         for number in range(5, 8):
             TokenMintRecord(
+                token_symbol="TEST",
                 dao_id=str(self.mock_dao.id),
                 token_contract_address=self.token_contract_address_2,
                 total_real_size=decimal.Decimal(str(number)),

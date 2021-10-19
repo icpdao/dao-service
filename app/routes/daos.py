@@ -357,7 +357,8 @@ class DAO(ObjectType):
                 "_id": {
                     "user_id": "$user_id",
                     "token_chain_id": "$incomes.token_chain_id",
-                    "token_address": "$incomes.token_address"
+                    "token_address": "$incomes.token_address",
+                    "token_symbol": "$incomes.token_symbol"
                 },
                 "size_sum": {"$sum": "$size"},
                 "job_count": {"$sum": 1},
@@ -374,6 +375,7 @@ class DAO(ObjectType):
                 "incomes": {"$push": {
                     "token_chain_id": "$_id.token_chain_id",
                     "token_address": "$_id.token_address",
+                    "token_symbol": "$_id.token_symbol",
                     "income": "$income_sum"
                 }}
             }},
@@ -385,16 +387,21 @@ class DAO(ObjectType):
         job_count = 0
         size_stat = decimal.Decimal(0)
         income_stat = decimal.Decimal(0)
-        incomes_stat = defaultdict(lambda: defaultdict(lambda: decimal.Decimal(0)))
+        incomes_stat = defaultdict(lambda: defaultdict(lambda: {'income': decimal.Decimal(0), 'symbol': ''}))
         for d in job_group_user:
             job_count += d['job_count']
             size_stat += any_to_decimal(d['size_sum'])
             income_stat += any_to_decimal(d['income_sum'])
             for ins in d['incomes']:
-                incomes_stat[ins['token_chain_id']][ins['token_address']] += ins['income'].to_decimal()
+                incomes_stat[ins['token_chain_id']][ins['token_address']]['income'] += ins['income'].to_decimal()
+                incomes_stat[ins['token_chain_id']][ins['token_address']]['symbol'] = ins['token_symbol']
 
         incomes = [TokenIncomeSchema(
-            token_chain_id=i, token_address=j, income=incomes_stat[i][j]) for i in incomes_stat for j in incomes_stat[i]]
+            token_chain_id=i,
+            token_address=j,
+            token_symbol=incomes_stat[i][j]['symbol'],
+            income=incomes_stat[i][j]['income']
+        ) for i in incomes_stat for j in incomes_stat[i]]
 
         data = job_group_user[offset:first+offset]
         nodes = []
@@ -407,6 +414,7 @@ class DAO(ObjectType):
                 incomes=[TokenIncomeSchema(
                     token_chain_id=r["token_chain_id"],
                     token_address=r["token_address"],
+                    token_symbol=r["token_symbol"],
                     income=r["income"]
                 ) for r in d['incomes']]
             ))

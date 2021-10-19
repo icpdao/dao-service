@@ -246,14 +246,14 @@ mutation {
             Job(
                 dao_id=str(dao.id), user_id=i['uid'], title=f'{d}-title',
                 size=Decimal(i['size']), incomes=[
-                    TokenIncome(token_chain_id="3", token_address=mock_token_address, income=Decimal(i['income']))
+                    TokenIncome(token_chain_id="3", token_address=mock_token_address, token_symbol="TEST", income=Decimal(i['income']))
                 ], create_at=1 if d % 2 == 0 else int(time.time()),
                 github_repo_owner="xxx", github_repo_name="xxx", github_repo_owner_id=1, github_repo_id=1,
                 github_issue_number=1, bot_comment_database_id=1,
                 status=JobStatusEnum.WAITING_FOR_TOKEN.value if d % 2 == 0 else JobStatusEnum.TOKEN_RELEASED.value
             ).save()
         res = self.graph_query(str(u1.id), self.query_dao_icpper % (str(dao.id), "joinTime", "desc", 20, 0))
-
+        print(res.json())
         nodes = res.json()['data']['dao']['icppers']['nodes']
         stat = res.json()['data']['dao']['icppers']['stat']
         total = res.json()['data']['dao']['icppers']['total']
