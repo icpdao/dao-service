@@ -21,6 +21,15 @@ def _get_github_user_id(github_login):
     return github_user_id
 
 
+def _get_random_existed_token(income: decimal.Decimal):
+    ad = random.choice([
+        '0x1f9840a85d5af5bf1d1762f925bdaddc4201f984',
+        '0x6f40d4a6237c257fff2db00fa0510deeecd303eb',
+        '0x35bd01fc9d6d5d81ca9e055db88dc49aa2c699a8'
+    ])
+    return TokenIncome(token_chain_id='1', token_address=ad, income=income)
+
+
 class DeleteDaoMock:
     def __init__(self, dao):
         self.dao = dao
@@ -157,6 +166,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(100)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
@@ -192,6 +202,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(200)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
@@ -227,6 +238,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(100)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
@@ -262,6 +274,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(400)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
@@ -366,6 +379,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(300)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.0'),
@@ -382,6 +396,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.1'),
@@ -445,6 +460,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(100)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
@@ -480,6 +496,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(200)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
@@ -515,6 +532,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(100)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
@@ -550,6 +568,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(400)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
@@ -635,6 +654,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(100)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
@@ -670,6 +690,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(200)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
@@ -705,6 +726,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(100)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
@@ -740,6 +762,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(400)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
@@ -795,6 +818,7 @@ def _create_job(dao, cycle, user, repo_name, repo_id, start_number, pair_type):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(100)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=pair_type,
         cycle_id=str(cycle.id),
@@ -1108,6 +1132,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(100)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
@@ -1143,6 +1168,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(200)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
@@ -1178,6 +1204,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(100)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
@@ -1213,6 +1240,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(400)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
@@ -1410,6 +1438,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(100)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
@@ -1445,6 +1474,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(200)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
@@ -1480,6 +1510,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(100)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
@@ -1515,6 +1546,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(400)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
@@ -1625,6 +1657,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(300)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.0'),
@@ -1641,6 +1674,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.1'),
@@ -1659,6 +1693,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
             incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+                _get_random_existed_token(decimal.Decimal(200))
         ],
             vote_ei=decimal.Decimal('1.0'),
             owner_ei=decimal.Decimal('0.1'),
@@ -1676,6 +1711,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+_get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
@@ -1693,6 +1729,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+_get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
@@ -1813,6 +1850,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(100)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
@@ -1848,6 +1886,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(200)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
@@ -1883,6 +1922,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(100)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
@@ -1918,6 +1958,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(400)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+        _get_random_existed_token(decimal.Decimal(200))
         ],
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
@@ -2028,6 +2069,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(300)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.0'),
@@ -2044,6 +2086,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.1'),
@@ -2062,6 +2105,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
             incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+                _get_random_existed_token(decimal.Decimal(200))
         ],
             vote_ei=decimal.Decimal('1.0'),
             owner_ei=decimal.Decimal('0.1'),
@@ -2079,6 +2123,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+        _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
@@ -2096,6 +2141,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
@@ -2183,6 +2229,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(300)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.0'),
@@ -2206,6 +2253,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.3'),
@@ -2230,6 +2278,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
@@ -2255,6 +2304,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+_get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
@@ -2280,6 +2330,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
@@ -2306,6 +2357,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+_get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
@@ -2332,6 +2384,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+        _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
@@ -2358,6 +2411,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.9'),
         owner_ei=decimal.Decimal('0'),
@@ -2383,6 +2437,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+        _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.9'),
         owner_ei=decimal.Decimal('0'),
@@ -2437,6 +2492,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(300)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.0'),
@@ -2460,6 +2516,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+_get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.3'),
@@ -2483,6 +2540,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
@@ -2507,6 +2565,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
@@ -2531,6 +2590,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
@@ -2556,6 +2616,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+_get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
@@ -2581,6 +2642,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
@@ -2606,6 +2668,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.9'),
         owner_ei=decimal.Decimal('0'),
@@ -2630,6 +2693,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         incomes=[
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, income=decimal.Decimal(500)),
             TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, income=decimal.Decimal(200)),
+            _get_random_existed_token(decimal.Decimal(200))
         ],
         vote_ei=decimal.Decimal('0.9'),
         owner_ei=decimal.Decimal('0'),
