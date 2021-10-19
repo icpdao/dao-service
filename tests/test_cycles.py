@@ -981,7 +981,7 @@ mutation{
             user_id=str(self.icpper1.id),
             job_count=1,
             size=Decimal('10'),
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('1000'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('1000'))],
             vote_ei=1,
             owner_ei=Decimal('0.1'),
             ei=Decimal('1.1')
@@ -996,7 +996,7 @@ mutation{
             user_id=str(self.icpper1.id),
             job_count=2,
             size=Decimal('5'),
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('500'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('500'))],
             vote_ei=1,
             owner_ei=Decimal('0.1'),
             ei=Decimal('1.1'),
@@ -1010,7 +1010,7 @@ mutation{
             user_id=str(self.icpper2.id),
             job_count=3,
             size=Decimal('7'),
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('700'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('700'))],
             vote_ei=1,
             owner_ei=Decimal('0.2'),
             ei=Decimal('1.2'),
@@ -1149,7 +1149,7 @@ mutation{
             github_issue_number=1,
             bot_comment_database_id=1,
             status=JobStatusEnum.MERGED.value,
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('10'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('10'))],
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1167,7 +1167,7 @@ mutation{
             github_issue_number=2,
             bot_comment_database_id=2,
             status=JobStatusEnum.MERGED.value,
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('20'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('20'))],
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1185,7 +1185,7 @@ mutation{
             github_issue_number=3,
             bot_comment_database_id=3,
             status=JobStatusEnum.MERGED.value,
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('30'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('30'))],
             pair_type=JobPairTypeEnum.ALL.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1284,7 +1284,7 @@ mutation{
             github_issue_number=1,
             bot_comment_database_id=1,
             status=JobStatusEnum.MERGED.value,
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('10'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('10'))],
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1302,7 +1302,7 @@ mutation{
             github_issue_number=2,
             bot_comment_database_id=2,
             status=JobStatusEnum.MERGED.value,
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('20'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('20'))],
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1320,7 +1320,7 @@ mutation{
             github_issue_number=3,
             bot_comment_database_id=3,
             status=JobStatusEnum.MERGED.value,
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('30'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('30'))],
             pair_type=JobPairTypeEnum.ALL.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1689,7 +1689,7 @@ mutation{
             github_issue_number=1,
             bot_comment_database_id=1,
             status=JobStatusEnum.MERGED.value,
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('10'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('10'))],
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1786,7 +1786,7 @@ mutation{
             github_issue_number=1,
             bot_comment_database_id=1,
             status=JobStatusEnum.MERGED.value,
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('10'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('10'))],
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1804,7 +1804,7 @@ mutation{
             github_issue_number=2,
             bot_comment_database_id=2,
             status=JobStatusEnum.MERGED.value,
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('20'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('20'))],
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1822,7 +1822,7 @@ mutation{
             github_issue_number=3,
             bot_comment_database_id=3,
             status=JobStatusEnum.MERGED.value,
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('30'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('30'))],
             pair_type=JobPairTypeEnum.ALL.value,
             cycle_id=str(test_cycle_2.id)
         )
@@ -1953,7 +1953,7 @@ mutation{
             user_id=str(self.icpper1.id),
             job_count=2,
             size=Decimal('5'),
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('500'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('500'))],
             vote_ei=1,
             owner_ei=Decimal('0.1'),
             ei=Decimal('1.1')
@@ -1966,7 +1966,7 @@ mutation{
             user_id=str(self.icpper2.id),
             job_count=3,
             size=Decimal('7'),
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('700'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('700'))],
             vote_ei=1,
             owner_ei=Decimal('0.2'),
             ei=Decimal('1.2')
@@ -2513,7 +2513,7 @@ mutation{
             user_id=str(self.icpper1.id),
             job_count=1,
             size=Decimal('10'),
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=Decimal('1000'))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('1000'))],
             vote_ei=1,
             owner_ei=Decimal('0.1'),
             ei=Decimal('1.1')
@@ -2586,7 +2586,7 @@ mutation{
             github_issue_number=1,
             bot_comment_database_id=1,
             status=JobStatusEnum.TOKEN_RELEASED.value,
-            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, income=decimal.Decimal(100))],
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=decimal.Decimal(100))],
             pair_type=JobPairTypeEnum.PAIR.value,
             cycle_id=str(test_cycle_1.id),
         ).save()

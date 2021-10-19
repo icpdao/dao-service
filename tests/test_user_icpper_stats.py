@@ -132,7 +132,7 @@ class TestUserIcpperStats(Base):
                 user_id=str(self.icpper.id),
                 job_count=1,
                 size=Decimal('10') + Decimal(count),
-                incomes=[TokenIncome(token_chain_id='3', token_address=web3.Account.create().address, income=Decimal('1000'))],
+                incomes=[TokenIncome(token_chain_id='3', token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('1000'))],
                 vote_ei=1,
                 owner_ei=Decimal('0.1'),
                 ei=Decimal('1.1'),

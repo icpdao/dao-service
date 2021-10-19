@@ -1085,26 +1085,26 @@ def _update_income(token_mint_record):
     jobs = Job.objects(dao_id=dao_id, cycle_id__in=cycle_ids).all()
     jobs_dict = defaultdict(lambda: defaultdict(list))
 
-    dao = DAO.objects(id=dao_id).first()
-    assert dao, COMMON_NOT_FOUND_DAO_ERROR
-    assert dao.token_address, DAO_NOT_TOKEN_ADDRESS_ERROR
-
     for job in jobs:
         jobs_dict[job.cycle_id][job.user_id].append(job)
 
     for ss in stats:
         # ss.income = decimal_unit * ss.size
         token_income = ss.incomes.filter(
-            token_chain_id=dao.token_chain_id,
-            token_address=dao.token_address).first()
+            token_chain_id=token_mint_record.chain_id,
+            token_address=token_mint_record.token_contract_address).first()
         if token_income:
             ss.incomes.filter(
-                token_chain_id=dao.token_chain_id,
-                token_address=dao.token_address).update(income=decimal_unit * ss.size)
+                token_chain_id=token_mint_record.chain_id,
+                token_address=token_mint_record.token_contract_address
+            ).update(income=decimal_unit * ss.size)
         else:
             ss.incomes.create(
-                token_chain_id=dao.token_chain_id,
-                token_address=dao.token_address, income=decimal_unit * ss.size)
+                token_chain_id=token_mint_record.chain_id,
+                token_address=token_mint_record.token_contract_address,
+                token_symbol=token_mint_record.token_symbol,
+                income=decimal_unit * ss.size
+            )
         uint_size = decimal.Decimal(0)
         if ss.job_size > 0:
             uint_size = ss.size / ss.job_size
@@ -1112,16 +1112,20 @@ def _update_income(token_mint_record):
         for job in jobs_dict[ss.cycle_id][ss.user_id]:
             # job.income = job.size * uint_size * decimal_unit
             job_token_income = job.incomes.filter(
-                token_chain_id=dao.token_chain_id,
-                token_address=dao.token_address).first()
+                token_chain_id=token_mint_record.chain_id,
+                token_address=token_mint_record.token_contract_address).first()
             if job_token_income:
                 job.incomes.filter(
-                    token_chain_id=dao.token_chain_id,
-                    token_address=dao.token_address).update(income=job.size * uint_size * decimal_unit)
+                    token_chain_id=token_mint_record.chain_id,
+                    token_address=token_mint_record.token_contract_address
+                ).update(income=job.size * uint_size * decimal_unit)
             else:
                 job.incomes.create(
-                    token_chain_id=dao.token_chain_id,
-                    token_address=dao.token_address, income=job.size * uint_size * decimal_unit)
+                    token_chain_id=token_mint_record.chain_id,
+                    token_address=token_mint_record.token_contract_address,
+                    token_symbol=token_mint_record.token_symbol,
+                    income=job.size * uint_size * decimal_unit
+                )
             job.status = JobStatusEnum.TOKEN_RELEASED.value
             job.save()
 
