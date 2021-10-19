@@ -1,5 +1,3 @@
-import decimal
-
 from graphene import ObjectType, String, Field, Int, List
 
 import settings
@@ -106,6 +104,10 @@ class Query(ObjectType):
         way=OpenGithubWayEnum(required=True),
         parameter=List(String)
     )
+
+    @staticmethod
+    def resolve_stats(root, info):
+        return HomeStats().get_query()
 
     @staticmethod
     def resolve_daos(root, info, **kwargs):
