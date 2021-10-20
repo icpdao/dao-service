@@ -671,7 +671,7 @@ class CycleByTokenUnreleasedQuery(BaseObjectType):
     nodes = List(CycleQuery)
 
     def resolve_nodes(self, info):
-        last_timestamp = self._args.get('last_timestamp')
+        last_timestamp = int(self._args.get('last_timestamp'))
         dao_id = self._args.get('dao_id')
         token_chain_id = self._args.get('token_chain_id')
         token_address = self._args.get('token_address')
