@@ -9,7 +9,7 @@ from app.common.models.icpdao.cycle import CycleVotePairTask, CycleVote, CycleIc
     VoteResultTypeAll, VoteResultTypeAllResultType, CycleVotePairTaskStatus, CycleVoteConfirm, CycleVoteConfirmStatus
 from app.common.models.icpdao.dao import DAO, DAOJobConfig, DAOFollow
 from app.common.models.icpdao.icppership import Icppership, IcppershipProgress, IcppershipStatus, MentorRelationStat, \
-    MentorRelationStatTokenStat
+    MentorRelationStatTokenStat, MentorLevel7IcpperCountStat
 from app.common.models.icpdao.job import Job, JobPR, JobPRComment, JobStatusEnum, JobPairTypeEnum, JobPRStatusEnum
 from app.common.models.icpdao.token import MentorTokenIncomeStat
 from app.common.models.icpdao.user import User, UserStatus
@@ -2022,7 +2022,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         mentor_id=str(owner_user.id),
         icpper_id=str(icpper_user.id),
         relation=True,
-        has_reward_icpper_count=4,
+        has_reward_icpper_count=1,
         token_stat=[MentorRelationStatTokenStat(token_chain_id="3", token_count=1001)],
     ).save()
     MentorTokenIncomeStat(
@@ -2054,6 +2054,44 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         token_name='test_token_3',
         token_symbol='ICPDT3',
         total_value=decimal.Decimal(1111)
+    ).save()
+    MentorRelationStat(
+        mentor_id=str(owner_user.id),
+        icpper_id=str(mock_users[0].id),
+        relation=True,
+        has_reward_icpper_count=1
+    ).save()
+    MentorRelationStat(
+        mentor_id=str(owner_user.id),
+        icpper_id=str(mock_users[1].id),
+        relation=True,
+        has_reward_icpper_count=2
+    ).save()
+    MentorRelationStat(
+        mentor_id=str(mock_users[1].id),
+        icpper_id=str(mock_users[2].id),
+        relation=True,
+        has_reward_icpper_count=1
+    ).save()
+    MentorLevel7IcpperCountStat(
+        mentor_id=str(owner_user.id),
+        level_1_count=3,
+        level_2_count=4,
+        level_3_count=4,
+        level_4_count=4,
+        level_5_count=4,
+        level_6_count=4,
+        level_7_count=4
+    ).save()
+    MentorLevel7IcpperCountStat(
+        mentor_id=str(mock_users[1].id),
+        level_1_count=1,
+        level_2_count=1,
+        level_3_count=1,
+        level_4_count=1,
+        level_5_count=1,
+        level_6_count=1,
+        level_7_count=1
     ).save()
 
 
@@ -2568,7 +2606,7 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
     delete_dao_name_list = [
         "icpdao-test-fushang318github-change"
     ]
-    
+
     dao_name_list = [
         "end-and-in-pair-timeend-and-in-vote-time",
         "icpdao-test-icp",
@@ -2601,10 +2639,17 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
             DeleteDaoMock(dao).delete()
 
     mock_user_ids = User.objects(github_login__in=mock_user_names).distinct('_id')
+    owner_and_icpper_user_ids = User.objects(github_login__in=[owner_github_user_login, icpper_github_user_login]).distinct('_id')
 
     Icppership.objects(icpper_user_id__in=mock_user_ids).delete()
     MentorRelationStat.objects(token_stat__token_count=1001).delete()
+    MentorRelationStat.objects(icpper_id__in=mock_user_ids).delete()
+    MentorLevel7IcpperCountStat.objects(mentor_id__in=mock_user_ids).delete()
     MentorTokenIncomeStat.objects(token_name__in=['test_token_1', 'test_token_2', 'test_token_3']).delete()
+
+    Icppership.objects(icpper_user_id__in=owner_and_icpper_user_ids).delete()
+    MentorRelationStat.objects(icpper_id__in=owner_and_icpper_user_ids).delete()
+    MentorLevel7IcpperCountStat.objects(mentor_id__in=owner_and_icpper_user_ids).delete()
 
     User.objects(github_login__in=mock_user_names).delete()
 
