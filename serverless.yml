@@ -23,6 +23,7 @@ provider:
     ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY: ${env:ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY}
     ICPDAO_ETH_DAO_ID_SALT: ${env:ICPDAO_ETH_DAO_ID_SALT}
     ICPDAO_ETH_DAOSTAKING_ADDRESS: ${env:ICPDAO_ETH_DAOSTAKING_ADDRESS}
+    ICPDAO_MINT_TOKEN_ETH_CHAIN_ID: ${env:ICPDAO_MINT_TOKEN_ETH_CHAIN_ID}
   region: us-east-1
   stage: ${opt:stage}
   stackName: icpdao-dao-servcie-${self:provider.stage}
