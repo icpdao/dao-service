@@ -965,7 +965,8 @@ def run_sync_token_mint_record_event_task(token_mint_record_id):
 
     try:
         if record.status == MintRecordStatusEnum.SUCCESS.value:
-            if not record.stated and record.chain_id == ICPDAO_MINT_TOKEN_ETH_CHAIN_ID:
+            # if not record.stated and record.chain_id == ICPDAO_MINT_TOKEN_ETH_CHAIN_ID:
+            if not record.stated:
                 record.last_sync_event_at = int(time.time())
                 record.save()
                 _stat(record)
@@ -976,7 +977,8 @@ def run_sync_token_mint_record_event_task(token_mint_record_id):
             record.save()
             _sync_event(record)
             record = TokenMintRecord.objects(id=token_mint_record_id).first()
-            if record.status == MintRecordStatusEnum.SUCCESS.value and record.chain_id == ICPDAO_MINT_TOKEN_ETH_CHAIN_ID:
+            # if record.status == MintRecordStatusEnum.SUCCESS.value and record.chain_id == ICPDAO_MINT_TOKEN_ETH_CHAIN_ID:
+            if record.status == MintRecordStatusEnum.SUCCESS.value:
                 _stat(record)
     except Exception as ex:
         msg = traceback.format_exc()
@@ -1040,8 +1042,8 @@ def _sync_event(token_mint_record):
 
 
 def _stat(token_mint_record):
-    if token_mint_record.chain_id != ICPDAO_MINT_TOKEN_ETH_CHAIN_ID:
-        return
+    # if token_mint_record.chain_id != ICPDAO_MINT_TOKEN_ETH_CHAIN_ID:
+    #     return
     _update_income(token_mint_record)
     _update_mentor_income(token_mint_record)
     token_mint_record.stated = True

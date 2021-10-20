@@ -73,7 +73,9 @@ class Query(ObjectType):
     cycles_by_token_unreleased = Field(
         CycleByTokenUnreleasedQuery,
         dao_id=String(required=True),
-        last_timestamp=Int(required=True)
+        last_timestamp=Int(required=True),
+        token_address=String(required=True),
+        token_chain_id=String(default_value='1')
     )
 
     voting_cycle = Field(VotingCycleQuery)
@@ -149,9 +151,10 @@ class Query(ObjectType):
         return CycleQuery(cycle_id=id)
 
     @staticmethod
-    def resolve_cycles_by_token_unreleased(root, info, dao_id, last_timestamp):
+    def resolve_cycles_by_token_unreleased(root, info, dao_id, last_timestamp, token_chain_id, token_address):
         return CycleByTokenUnreleasedQuery(
-            _args=CyclesTokenUnreleasedQueryArgs(dao_id=dao_id, last_timestamp=last_timestamp)
+            _args=CyclesTokenUnreleasedQueryArgs(
+                dao_id=dao_id, last_timestamp=last_timestamp, token_chain_id=token_chain_id, token_address=token_address)
         )
 
     @staticmethod

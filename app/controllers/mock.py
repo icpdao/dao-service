@@ -8,7 +8,8 @@ from app.common.models.icpdao.base import TokenIncome
 from app.common.models.icpdao.cycle import CycleVotePairTask, CycleVote, CycleIcpperStat, Cycle, CycleVoteType, \
     VoteResultTypeAll, VoteResultTypeAllResultType, CycleVotePairTaskStatus, CycleVoteConfirm, CycleVoteConfirmStatus
 from app.common.models.icpdao.dao import DAO, DAOJobConfig, DAOFollow
-from app.common.models.icpdao.icppership import Icppership, IcppershipProgress, IcppershipStatus, MentorRelationStat
+from app.common.models.icpdao.icppership import Icppership, IcppershipProgress, IcppershipStatus, MentorRelationStat, \
+    MentorRelationStatTokenStat
 from app.common.models.icpdao.job import Job, JobPR, JobPRComment, JobStatusEnum, JobPairTypeEnum, JobPRStatusEnum
 from app.common.models.icpdao.token import MentorTokenIncomeStat
 from app.common.models.icpdao.user import User, UserStatus
@@ -2022,7 +2023,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         icpper_id=str(icpper_user.id),
         relation=True,
         has_reward_icpper_count=4,
-        token_count=1001,
+        token_stat=[MentorRelationStatTokenStat(token_chain_id="3", token_count=1001)],
     ).save()
     MentorTokenIncomeStat(
         mentor_id=str(owner_user.id),
@@ -2602,7 +2603,7 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
     mock_user_ids = User.objects(github_login__in=mock_user_names).distinct('_id')
 
     Icppership.objects(icpper_user_id__in=mock_user_ids).delete()
-    MentorRelationStat.objects(token_count=1001).delete()
+    MentorRelationStat.objects(token_stat__token_count=1001).delete()
     MentorTokenIncomeStat.objects(token_name__in=['test_token_1', 'test_token_2', 'test_token_3']).delete()
 
     User.objects(github_login__in=mock_user_names).delete()

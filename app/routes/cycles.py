@@ -12,6 +12,7 @@ from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, Cy
     CycleVoteResultPublishTaskStatus, CycleVoteConfirm, CycleVoteConfirmStatus
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job, JobStatusEnum
+from app.common.models.icpdao.token import TokenMintRecord, MintRecordStatusEnum
 from app.common.models.icpdao.user import User
 from app.common.schema import BaseObjectType, BaseObjectArgs
 from app.common.schema.icpdao import CycleSchema, CycleIcpperStatSchema, UserSchema, JobSchema, CycleVoteSchema
@@ -20,7 +21,7 @@ from app.common.utils.access import check_is_dao_owner
 from app.common.utils.errors import CYCLE_VOTE_CONFIRM_INVALID_ERROR, CYCLE_VOTE_NOT_FOUND_ERROR, COMMON_NOT_AUTH_ERROR, \
     CYCLE_ICPPER_STAT_NOT_FOUND_ERROR, CYCLE_TOKEN_RELEASED_CHECK_ERROR, CYCLE_NOT_FOUND_ERROR, \
     COMMON_NOT_FOUND_DAO_ERROR, COMMON_NOT_PERMISSION_ERROR, CYCLE_PAIR_TIME_ERROR, CYCLE_VOTE_RESULT_STAT_TIME_ERROR, \
-    CYCLE_VOTE_RESULT_PUBLISH_TIME_ERROR, CYCLE_VOTE_RESULT_PUBLISH_INVALID_ERROR
+    CYCLE_VOTE_RESULT_PUBLISH_TIME_ERROR, CYCLE_VOTE_RESULT_PUBLISH_INVALID_ERROR, COMMON_PARAMS_INVALID
 from app.common.utils.route_helper import get_custom_attr_by_graphql, set_custom_attr_by_graphql, \
     get_current_user_by_graphql
 from app.controllers.pair import run_pair_task
@@ -672,9 +673,21 @@ class CycleByTokenUnreleasedQuery(BaseObjectType):
     def resolve_nodes(self, info):
         last_timestamp = self._args.get('last_timestamp')
         dao_id = self._args.get('dao_id')
-        query = Q(dao_id=dao_id) & Q(token_released_at__exists=False) & Q(
-            end_at__gt=last_timestamp) & Q(vote_result_published_at__exists=True)
-        cycle_list = Cycle.objects(query).order_by('-begin_at')
+        token_chain_id = self._args.get('token_chain_id')
+        token_address = self._args.get('token_address')
+        last_token_mint = TokenMintRecord.objects(
+            dao_id=dao_id,
+            chain_id=token_chain_id,
+            token_contract_address=token_address,
+            status__in=[
+                MintRecordStatusEnum.INIT.value, MintRecordStatusEnum.PENDING.value, MintRecordStatusEnum.SUCCESS.value]
+        ).order_by('-end_timestamp').first()
+        if last_token_mint:
+            last_cycle = Cycle.objects(id=last_token_mint.end_cycle_id).first()
+            assert last_cycle, COMMON_PARAMS_INVALID
+            assert last_timestamp == last_cycle.end_at
+            # last_timestamp = last_timestamp if last_timestamp > last_cycle.end_at else last_cycle.end_at
+        cycle_list = Cycle.objects(dao_id=dao_id, end_at__gt=last_timestamp).order_by('-begin_at')
         return [CycleQuery(datum=i, cycle_id=str(i.id)) for i in cycle_list]
 
 

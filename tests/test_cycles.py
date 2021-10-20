@@ -743,7 +743,7 @@ mutation($ownerEi: Decimal){
 
     get_cycles_by_token_unreleased = """
 query {
-    cyclesByTokenUnreleased(daoId: "%s", lastTimestamp: 1) {
+    cyclesByTokenUnreleased(daoId: "%s", lastTimestamp: 1, tokenAddress: "xxxx") {
         nodes {
             datum {
                 daoId
