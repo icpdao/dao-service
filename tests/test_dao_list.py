@@ -29,7 +29,11 @@ query{
         following
         job
         size
-        token
+        incomes {
+          tokenChainId
+          tokenAddress
+          income
+        }
       }
       isFollowing
       isOwner
@@ -37,7 +41,11 @@ query{
     stat{
       icpper
       size
-      income
+      incomes {
+        tokenChainId
+        tokenAddress
+        income
+      }
     }
     total
   }
@@ -58,11 +66,15 @@ query{
         ownerId
         updateAt
       }
-      stat{
+      stat {
         following
         job
         size
-        token
+        incomes {
+          tokenChainId
+          tokenAddress
+          income
+        }
       }
       isFollowing
       isOwner
@@ -70,7 +82,11 @@ query{
     stat{
       icpper
       size
-      income
+      incomes {
+        tokenChainId
+        tokenAddress
+        income
+      }
     }
     total
   }
@@ -98,6 +114,7 @@ mutation {
 
         ret = self.graph_query(self.icpper.id, self.get_daos_no_params)
         res = ret.json()
+
         res_daos = res['data']['daos']['dao']
         assert len(res_daos) == 0
 
@@ -122,7 +139,7 @@ mutation {
 
         assert res_stat['icpper'] == 0
         assert res_stat['size'] == '0'
-        assert res_stat['income'] == '0'
+        assert len(res_stat['incomes']) == 0
 
         assert len(res_daos) == 2
         for dao_item in res_daos:
@@ -171,6 +188,7 @@ mutation {
         ).save()
         ret = self.graph_query(self.icpper1.id, self.get_daos_by_params % 'filter: all')
         res = ret.json()
+
         assert len(res['data']['daos']['dao']) == 3
         assert res['data']['daos']['total'] == 3
 

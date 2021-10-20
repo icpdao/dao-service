@@ -1,5 +1,3 @@
-import decimal
-
 from graphene import ObjectType, String, Field, Int, List
 
 import settings
@@ -42,7 +40,8 @@ class Query(ObjectType):
         search=String(),
         first=Int(default_value=20),
         offset=Int(default_value=0),
-        user_name=String()
+        user_name=String(),
+        token_chain_id=String(default_value='1')
     )
 
     dao = Field(
@@ -74,7 +73,9 @@ class Query(ObjectType):
     cycles_by_token_unreleased = Field(
         CycleByTokenUnreleasedQuery,
         dao_id=String(required=True),
-        last_timestamp=Int(required=True)
+        last_timestamp=Int(required=True),
+        token_address=String(required=True),
+        token_chain_id=String(default_value='1')
     )
 
     voting_cycle = Field(VotingCycleQuery)
@@ -108,13 +109,7 @@ class Query(ObjectType):
 
     @staticmethod
     def resolve_stats(root, info):
-        all_dao_ids = DAOModel.objects().distinct('_id')
-        all_dao_ids_str = [str(i) for i in all_dao_ids]
-        icpper = Job.objects(dao_id__in=all_dao_ids_str).distinct('user_id')
-        size = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('size'))
-        income = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('income'))
-        return HomeStats(
-            dao=len(all_dao_ids_str), icpper=len(icpper), size=size, income=income)
+        return HomeStats().get_query()
 
     @staticmethod
     def resolve_daos(root, info, **kwargs):
@@ -122,8 +117,9 @@ class Query(ObjectType):
         all_dao_ids_str = [str(i) for i in all_dao_ids]
         icpper = Job.objects(dao_id__in=all_dao_ids_str).distinct('user_id')
         size = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('size'))
-        income = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('income'))
-        stat = DAOsStat(icpper=len(icpper), size=size, income=income)
+        # all dao income use all dao all token address all income, PS: to be a lot bigger than it actually is
+        incomes = Job.objects(dao_id__in=all_dao_ids_str).group_incomes(token_chain_id=kwargs.get('token_chain_id', '1'))
+        stat = DAOsStat(icpper=len(icpper), size=size, incomes=incomes)
         return DAOs(_args=DAOQueryArgs(query=query_dao_list), stat=stat, total=len(all_dao_ids))
 
     @staticmethod
@@ -155,9 +151,10 @@ class Query(ObjectType):
         return CycleQuery(cycle_id=id)
 
     @staticmethod
-    def resolve_cycles_by_token_unreleased(root, info, dao_id, last_timestamp):
+    def resolve_cycles_by_token_unreleased(root, info, dao_id, last_timestamp, token_chain_id, token_address):
         return CycleByTokenUnreleasedQuery(
-            _args=CyclesTokenUnreleasedQueryArgs(dao_id=dao_id, last_timestamp=last_timestamp)
+            _args=CyclesTokenUnreleasedQueryArgs(
+                dao_id=dao_id, last_timestamp=last_timestamp, token_chain_id=token_chain_id, token_address=token_address)
         )
 
     @staticmethod

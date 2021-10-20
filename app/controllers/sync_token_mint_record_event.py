@@ -8,10 +8,13 @@ from web3 import Web3
 from web3.exceptions import TransactionNotFound
 
 from app.common.models.icpdao.cycle import CycleIcpperStat, Cycle
+from app.common.models.icpdao.dao import DAO
+from app.common.models.icpdao.icppership import MentorRelationStat
 from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.models.icpdao.token import TokenMintRecord, MintRecordStatusEnum, TokenTransferEventLog, \
     MentorTokenIncomeStat
-
+from app.common.utils.errors import COMMON_NOT_FOUND_DAO_ERROR, DAO_NOT_TOKEN_ADDRESS_ERROR
+from settings import ICPDAO_MINT_TOKEN_ETH_CHAIN_ID
 
 TOKEN_ABI = """
   [
@@ -938,6 +941,7 @@ TOKEN_ABI = """
 CHAIN_ID_INFO = {
     "1": "mainnet",
     "3": "ropsten",
+    "5": "goerli",
     "4": "rinkeby",
     "42": "kovan",
 }
@@ -961,6 +965,7 @@ def run_sync_token_mint_record_event_task(token_mint_record_id):
 
     try:
         if record.status == MintRecordStatusEnum.SUCCESS.value:
+            # if not record.stated and record.chain_id == ICPDAO_MINT_TOKEN_ETH_CHAIN_ID:
             if not record.stated:
                 record.last_sync_event_at = int(time.time())
                 record.save()
@@ -972,6 +977,7 @@ def run_sync_token_mint_record_event_task(token_mint_record_id):
             record.save()
             _sync_event(record)
             record = TokenMintRecord.objects(id=token_mint_record_id).first()
+            # if record.status == MintRecordStatusEnum.SUCCESS.value and record.chain_id == ICPDAO_MINT_TOKEN_ETH_CHAIN_ID:
             if record.status == MintRecordStatusEnum.SUCCESS.value:
                 _stat(record)
     except Exception as ex:
@@ -1036,6 +1042,8 @@ def _sync_event(token_mint_record):
 
 
 def _stat(token_mint_record):
+    # if token_mint_record.chain_id != ICPDAO_MINT_TOKEN_ETH_CHAIN_ID:
+    #     return
     _update_income(token_mint_record)
     _update_mentor_income(token_mint_record)
     token_mint_record.stated = True
@@ -1056,6 +1064,7 @@ def _update_mentor_income(token_mint_record):
     for ratio in token_mint_record.mint_token_amount_ratio_list:
         all_ratio += ratio
     unit_ratio_token_decimal = token_mint_record.mint_value / all_ratio
+
     for record in token_mint_record.mint_icpper_records:
         job_user_id = record.user_id
         for index, memtor_record in enumerate(record.mentor_list):
@@ -1066,13 +1075,24 @@ def _update_mentor_income(token_mint_record):
                 mentor_id=mentor_id,
                 icpper_id=icpper_id,
                 dao_id=dao_id,
-                token_contract_address=token_contract_address,
+                token_chain_id=chain_id,
+                token_address=token_contract_address,
                 token_name=token_name,
                 token_symbol=token_symbol
             ).update_one(
                 upsert=True,
                 inc__total_value=token_count
             )
+            counts = MentorTokenIncomeStat.objects(
+                mentor_id=mentor_id, icpper_id=icpper_id, token_chain_id=chain_id).distinct('token_address')
+            stat_record = MentorRelationStat.objects(mentor_id=mentor_id, icpper_id=icpper_id).first()
+            if stat_record:
+                stat_token_record = stat_record.token_stat.filter(token_chain_id=chain_id).first()
+                if stat_token_record:
+                    stat_record.token_stat.filter(token_chain_id=chain_id).update(token_count=len(counts))
+                else:
+                    stat_record.token_stat.create(token_chain_id=chain_id, token_count=len(counts))
+                stat_record.save()
 
 
 def _update_income(token_mint_record):
@@ -1088,13 +1108,43 @@ def _update_income(token_mint_record):
         jobs_dict[job.cycle_id][job.user_id].append(job)
 
     for ss in stats:
-        ss.income = decimal_unit * ss.size
+        # ss.income = decimal_unit * ss.size
+        token_income = ss.incomes.filter(
+            token_chain_id=token_mint_record.chain_id,
+            token_address=token_mint_record.token_contract_address).first()
+        if token_income:
+            ss.incomes.filter(
+                token_chain_id=token_mint_record.chain_id,
+                token_address=token_mint_record.token_contract_address
+            ).update(income=decimal_unit * ss.size)
+        else:
+            ss.incomes.create(
+                token_chain_id=token_mint_record.chain_id,
+                token_address=token_mint_record.token_contract_address,
+                token_symbol=token_mint_record.token_symbol,
+                income=decimal_unit * ss.size
+            )
         uint_size = decimal.Decimal(0)
         if ss.job_size > 0:
             uint_size = ss.size / ss.job_size
 
         for job in jobs_dict[ss.cycle_id][ss.user_id]:
-            job.income = job.size * uint_size * decimal_unit
+            # job.income = job.size * uint_size * decimal_unit
+            job_token_income = job.incomes.filter(
+                token_chain_id=token_mint_record.chain_id,
+                token_address=token_mint_record.token_contract_address).first()
+            if job_token_income:
+                job.incomes.filter(
+                    token_chain_id=token_mint_record.chain_id,
+                    token_address=token_mint_record.token_contract_address
+                ).update(income=job.size * uint_size * decimal_unit)
+            else:
+                job.incomes.create(
+                    token_chain_id=token_mint_record.chain_id,
+                    token_address=token_mint_record.token_contract_address,
+                    token_symbol=token_mint_record.token_symbol,
+                    income=job.size * uint_size * decimal_unit
+                )
             job.status = JobStatusEnum.TOKEN_RELEASED.value
             job.save()
 

@@ -4,10 +4,12 @@ import time
 import random
 import web3
 
+from app.common.models.icpdao.base import TokenIncome
 from app.common.models.icpdao.cycle import CycleVotePairTask, CycleVote, CycleIcpperStat, Cycle, CycleVoteType, \
     VoteResultTypeAll, VoteResultTypeAllResultType, CycleVotePairTaskStatus, CycleVoteConfirm, CycleVoteConfirmStatus
 from app.common.models.icpdao.dao import DAO, DAOJobConfig, DAOFollow
-from app.common.models.icpdao.icppership import Icppership, IcppershipProgress, IcppershipStatus, MentorRelationStat
+from app.common.models.icpdao.icppership import Icppership, IcppershipProgress, IcppershipStatus, MentorRelationStat, \
+    MentorRelationStatTokenStat, MentorLevel7IcpperCountStat
 from app.common.models.icpdao.job import Job, JobPR, JobPRComment, JobStatusEnum, JobPairTypeEnum, JobPRStatusEnum
 from app.common.models.icpdao.token import MentorTokenIncomeStat
 from app.common.models.icpdao.user import User, UserStatus
@@ -18,6 +20,31 @@ def _get_github_user_id(github_login):
     github_user_id = int(random.random() * 10000)
     random.seed()
     return github_user_id
+
+
+def _get_dao_mock_token(dao, income):
+    return TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, token_symbol="DM", income=income)
+
+
+def _get_dao_other_mock(dao, income):
+    return TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, token_symbol="DMN", income=income)
+
+
+def _get_random_existed_token(income: decimal.Decimal):
+    ad = random.choice([
+        ['0x1f9840a85d5af5bf1d1762f925bdaddc4201f984', 'UNI'],
+        ['0x6f40d4a6237c257fff2db00fa0510deeecd303eb', 'INST'],
+        ['0x35bd01fc9d6d5d81ca9e055db88dc49aa2c699a8', 'FWB']
+    ])
+    return TokenIncome(token_chain_id='1', token_address=ad[0], token_symbol=ad[1], income=income)
+
+
+def _get_mock_token_income(dao, incomes):
+    return [
+        _get_dao_mock_token(dao, incomes[0]),
+        _get_dao_other_mock(dao, incomes[1]),
+        _get_random_existed_token(incomes[2])
+    ]
 
 
 class DeleteDaoMock:
@@ -84,7 +111,11 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         desc='{}_{}_{}'.format(dao_name, dao_name, dao_name),
         owner_id=str(owner_user.id),
         github_owner_id=github_owner_id,
-        github_owner_name=dao_name
+        github_owner_name=dao_name,
+        token_chain_id="3",
+        token_address=web3.Account.create().address,
+        token_name=dao_name,
+        token_symbol=dao_name
     )
     dao.save()
 
@@ -149,7 +180,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=1,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(100),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(100), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -181,7 +212,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=3,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(200),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(200), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -213,7 +244,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=5,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(100),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(100), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -245,7 +276,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=7,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(400),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(400), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -346,7 +377,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         size=decimal.Decimal('3.0'),
         job_size=decimal.Decimal('3.0'),
         un_voted_all_vote=False,
-        income=decimal.Decimal(300),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(300), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.0'),
         ei=decimal.Decimal('1.0')
@@ -359,7 +390,7 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
         un_voted_all_vote=False,
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.1'),
         ei=decimal.Decimal('1.1')
@@ -419,7 +450,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=1,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=decimal.Decimal(100),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(100), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -451,7 +482,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=3,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=decimal.Decimal(200),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(200), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -483,7 +514,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=5,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=decimal.Decimal(100),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(100), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -515,7 +546,7 @@ def create_not_pair_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=7,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=decimal.Decimal(400),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(400), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -597,7 +628,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=1,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=decimal.Decimal(100),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(100), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -629,7 +660,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=3,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=decimal.Decimal(200),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(200), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -661,7 +692,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=5,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=decimal.Decimal(100),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(100), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -693,7 +724,7 @@ def create_in_pair_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=7,
         bot_comment_database_id=1,
         status=JobStatusEnum.MERGED.value,
-        income=decimal.Decimal(400),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(400), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -745,7 +776,7 @@ def _create_job(dao, cycle, user, repo_name, repo_id, start_number, pair_type):
         github_issue_number=start_number * 2,
         bot_comment_database_id=start_number,
         status=JobStatusEnum.MERGED.value,
-        income=decimal.Decimal(100),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(100), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=pair_type,
         cycle_id=str(cycle.id),
     ).save()
@@ -1055,7 +1086,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=1,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(100),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(100), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -1087,7 +1118,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=3,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(200),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(200), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -1119,7 +1150,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=5,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(100),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(100), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -1151,7 +1182,7 @@ def create_in_stat_time_cycle_data(owner_user, icpper_user, dao_name):
         github_issue_number=7,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(400),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(400), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(cycle.id),
     ).save()
@@ -1276,7 +1307,11 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         desc='{}_{}_{}'.format(dao_name, dao_name, dao_name),
         owner_id=str(owner_user.id),
         github_owner_id=_get_github_user_id(dao_name),
-        github_owner_name=dao_name
+        github_owner_name=dao_name,
+        token_chain_id="3",
+        token_address=web3.Account.create().address,
+        token_name=dao_name,
+        token_symbol=dao_name
     )
     dao.save()
 
@@ -1341,7 +1376,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         github_issue_number=1,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(100),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(100), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -1373,7 +1408,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         github_issue_number=3,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(200),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(200), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -1405,7 +1440,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         github_issue_number=5,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(100),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(100), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -1437,7 +1472,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         github_issue_number=7,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(400),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(400), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -1544,7 +1579,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         size=decimal.Decimal('3.0'),
         job_size=decimal.Decimal('3.0'),
         un_voted_all_vote=False,
-        income=decimal.Decimal(300),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(300), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.0'),
         ei=decimal.Decimal('1.0')
@@ -1557,7 +1592,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
         un_voted_all_vote=False,
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.1'),
         ei=decimal.Decimal('1.1')
@@ -1572,8 +1607,8 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
             size=decimal.Decimal('5.0'),
             job_size=decimal.Decimal('5.0'),
             un_voted_all_vote=False,
-            income=decimal.Decimal(500),
-            vote_ei=decimal.Decimal('1.0'),
+            incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
+              vote_ei=decimal.Decimal('1.0'),
             owner_ei=decimal.Decimal('0.1'),
             ei=decimal.Decimal('1.1')
         ).save()
@@ -1586,7 +1621,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
         un_voted_all_vote=False,
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.7')
@@ -1600,7 +1635,7 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
         un_voted_all_vote=False,
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.3')
@@ -1648,7 +1683,11 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         desc='{}_{}_{}'.format(dao_name, dao_name, dao_name),
         owner_id=str(owner_user.id),
         github_owner_id=_get_github_user_id(dao_name),
-        github_owner_name=dao_name
+        github_owner_name=dao_name,
+        token_chain_id="3",
+        token_address=web3.Account.create().address,
+        token_name=dao_name,
+        token_symbol=dao_name
     )
     dao.save()
 
@@ -1713,7 +1752,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         github_issue_number=1,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(100),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(100), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -1745,7 +1784,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         github_issue_number=3,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(200),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(200), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -1777,7 +1816,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         github_issue_number=5,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(100),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(100), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.PAIR.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -1809,7 +1848,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         github_issue_number=7,
         bot_comment_database_id=1,
         status=JobStatusEnum.TOKEN_RELEASED.value,
-        income=decimal.Decimal(400),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(400), decimal.Decimal(200), decimal.Decimal(200)]),
         pair_type=JobPairTypeEnum.ALL.value,
         cycle_id=str(dao_end_cycle.id),
     ).save()
@@ -1916,7 +1955,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         size=decimal.Decimal('3.0'),
         job_size=decimal.Decimal('3.0'),
         un_voted_all_vote=False,
-        income=decimal.Decimal(300),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(300), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.0'),
         ei=decimal.Decimal('1.0')
@@ -1929,7 +1968,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
         un_voted_all_vote=False,
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.1'),
         ei=decimal.Decimal('1.1')
@@ -1944,8 +1983,8 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
             size=decimal.Decimal('5.0'),
             job_size=decimal.Decimal('5.0'),
             un_voted_all_vote=False,
-            income=decimal.Decimal(500),
-            vote_ei=decimal.Decimal('1.0'),
+            incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
+              vote_ei=decimal.Decimal('1.0'),
             owner_ei=decimal.Decimal('0.1'),
             ei=decimal.Decimal('1.1')
         ).save()
@@ -1958,7 +1997,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
         un_voted_all_vote=False,
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.7')
@@ -1972,7 +2011,7 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
         un_voted_all_vote=False,
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.3')
@@ -1983,14 +2022,15 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         mentor_id=str(owner_user.id),
         icpper_id=str(icpper_user.id),
         relation=True,
-        has_reward_icpper_count=4,
-        token_count=1001,
+        has_reward_icpper_count=1,
+        token_stat=[MentorRelationStatTokenStat(token_chain_id="3", token_count=1001)],
     ).save()
     MentorTokenIncomeStat(
         mentor_id=str(owner_user.id),
         icpper_id=str(icpper_user.id),
         dao_id=str(dao.id),
-        token_contract_address='0'*24,
+        token_chain_id='3',
+        token_address='0'*24,
         token_name='test_token_1',
         token_symbol='ICPDT1',
         total_value=decimal.Decimal(888)
@@ -1999,7 +2039,8 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         mentor_id=str(owner_user.id),
         icpper_id=str(icpper_user.id),
         dao_id=str(dao.id),
-        token_contract_address='0' * 24,
+        token_chain_id='3',
+        token_address='0' * 24,
         token_name='test_token_2',
         token_symbol='ICPDT2',
         total_value=decimal.Decimal(999)
@@ -2008,10 +2049,49 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         mentor_id=str(owner_user.id),
         icpper_id=str(icpper_user.id),
         dao_id=str(dao.id),
-        token_contract_address='0' * 24,
+        token_chain_id='3',
+        token_address='0' * 24,
         token_name='test_token_3',
         token_symbol='ICPDT3',
         total_value=decimal.Decimal(1111)
+    ).save()
+    MentorRelationStat(
+        mentor_id=str(owner_user.id),
+        icpper_id=str(mock_users[0].id),
+        relation=True,
+        has_reward_icpper_count=1
+    ).save()
+    MentorRelationStat(
+        mentor_id=str(owner_user.id),
+        icpper_id=str(mock_users[1].id),
+        relation=True,
+        has_reward_icpper_count=2
+    ).save()
+    MentorRelationStat(
+        mentor_id=str(mock_users[1].id),
+        icpper_id=str(mock_users[2].id),
+        relation=True,
+        has_reward_icpper_count=1
+    ).save()
+    MentorLevel7IcpperCountStat(
+        mentor_id=str(owner_user.id),
+        level_1_count=3,
+        level_2_count=4,
+        level_3_count=4,
+        level_4_count=4,
+        level_5_count=4,
+        level_6_count=4,
+        level_7_count=4
+    ).save()
+    MentorLevel7IcpperCountStat(
+        mentor_id=str(mock_users[1].id),
+        level_1_count=1,
+        level_2_count=1,
+        level_3_count=1,
+        level_4_count=1,
+        level_5_count=1,
+        level_6_count=1,
+        level_7_count=1
     ).save()
 
 
@@ -2056,7 +2136,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         job_count=2,
         size=decimal.Decimal('3.0'),
         job_size=decimal.Decimal('3.0'),
-        income=decimal.Decimal(300),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(300), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.0'),
         ei=decimal.Decimal('1.0'),
@@ -2076,7 +2156,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.3'),
         ei=decimal.Decimal('1.3'),
@@ -2097,7 +2177,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.7'),
@@ -2119,7 +2199,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.3'),
@@ -2141,7 +2221,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.3'),
@@ -2164,7 +2244,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.7'),
@@ -2187,7 +2267,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.3'),
@@ -2210,7 +2290,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.9'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.9'),
@@ -2232,7 +2312,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         job_count=2,
         size=decimal.Decimal('4.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.9'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.9'),
@@ -2283,7 +2363,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('3.0'),
         job_size=decimal.Decimal('3.0'),
-        income=decimal.Decimal(300),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(300), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.0'),
         ei=decimal.Decimal('1.0'),
@@ -2303,7 +2383,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('1.0'),
         owner_ei=decimal.Decimal('0.3'),
         ei=decimal.Decimal('1.3'),
@@ -2323,7 +2403,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.7'),
@@ -2344,7 +2424,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.3'),
@@ -2365,7 +2445,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.3'),
@@ -2387,7 +2467,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.7'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.7'),
@@ -2409,7 +2489,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.3'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.3'),
@@ -2431,7 +2511,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('5.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.9'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.9'),
@@ -2452,7 +2532,7 @@ def create_tip_end_cycle_2_data(owner_user, icpper_user, mock_users, dao_name):
         job_count=2,
         size=decimal.Decimal('4.0'),
         job_size=decimal.Decimal('5.0'),
-        income=decimal.Decimal(500),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
         vote_ei=decimal.Decimal('0.9'),
         owner_ei=decimal.Decimal('0'),
         ei=decimal.Decimal('0.9'),
@@ -2474,7 +2554,11 @@ def create_one_empty_cycle(owner_user, dao_name, job_times, pair_times, vote_tim
         desc='{}_{}_{}'.format(dao_name, dao_name, dao_name),
         owner_id=str(owner_user.id),
         github_owner_id=github_owner_id,
-        github_owner_name=dao_name
+        github_owner_name=dao_name,
+        token_chain_id="3",
+        token_address=web3.Account.create().address,
+        token_name=dao_name,
+        token_symbol=dao_name
     )
     dao.save()
 
@@ -2522,7 +2606,7 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
     delete_dao_name_list = [
         "icpdao-test-fushang318github-change"
     ]
-    
+
     dao_name_list = [
         "end-and-in-pair-timeend-and-in-vote-time",
         "icpdao-test-icp",
@@ -2555,10 +2639,17 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
             DeleteDaoMock(dao).delete()
 
     mock_user_ids = User.objects(github_login__in=mock_user_names).distinct('_id')
+    owner_and_icpper_user_ids = User.objects(github_login__in=[owner_github_user_login, icpper_github_user_login]).distinct('_id')
 
     Icppership.objects(icpper_user_id__in=mock_user_ids).delete()
-    MentorRelationStat.objects(token_count=1001).delete()
+    MentorRelationStat.objects(token_stat__token_count=1001).delete()
+    MentorRelationStat.objects(icpper_id__in=mock_user_ids).delete()
+    MentorLevel7IcpperCountStat.objects(mentor_id__in=mock_user_ids).delete()
     MentorTokenIncomeStat.objects(token_name__in=['test_token_1', 'test_token_2', 'test_token_3']).delete()
+
+    Icppership.objects(icpper_user_id__in=owner_and_icpper_user_ids).delete()
+    MentorRelationStat.objects(icpper_id__in=owner_and_icpper_user_ids).delete()
+    MentorLevel7IcpperCountStat.objects(mentor_id__in=owner_and_icpper_user_ids).delete()
 
     User.objects(github_login__in=mock_user_names).delete()
 

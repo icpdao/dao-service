@@ -2,6 +2,9 @@ import random
 import time
 from decimal import Decimal
 
+import web3
+
+from app.common.models.icpdao.base import TokenIncome
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat
 from app.common.models.icpdao.dao import DAO
 from tests.base import Base
@@ -23,7 +26,11 @@ class TestUserIcpperStats(Base):
                 id
                 jobCount
                 size
-                income
+                incomes {
+                  tokenChainId
+                  tokenAddress
+                  income
+                }
                 ei
                 ownerEi
                 voteEi
@@ -125,7 +132,7 @@ class TestUserIcpperStats(Base):
                 user_id=str(self.icpper.id),
                 job_count=1,
                 size=Decimal('10') + Decimal(count),
-                income=Decimal('1000'),
+                incomes=[TokenIncome(token_chain_id='3', token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('1000'))],
                 vote_ei=1,
                 owner_ei=Decimal('0.1'),
                 ei=Decimal('1.1'),

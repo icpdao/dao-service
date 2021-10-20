@@ -283,6 +283,7 @@ class CreateTokenMintRecord(Mutation):
         start_cycle_id = String(required=True)
         end_cycle_id = String(required=True)
         token_contract_address = String(required=True)
+        token_symbol=String(required=True)
         start_timestamp = Int(required=True)
         end_timestamp = Int(required=True)
         tick_lower = Int(required=True)
@@ -291,7 +292,7 @@ class CreateTokenMintRecord(Mutation):
 
     token_mint_record = Field(TokenMintRecordSchema)
 
-    def mutate(self, info, dao_id, start_cycle_id, end_cycle_id, token_contract_address, start_timestamp, end_timestamp, tick_lower, tick_upper, chain_id):
+    def mutate(self, info, dao_id, start_cycle_id, end_cycle_id, token_contract_address, start_timestamp, end_timestamp, tick_lower, tick_upper, chain_id, token_symbol):
         un_done_record_count = TokenMintRecord.objects(
             dao_id=dao_id,
             token_contract_address=token_contract_address,
@@ -330,6 +331,7 @@ class CreateTokenMintRecord(Mutation):
         record = TokenMintRecord(
             dao_id=dao_id,
             token_contract_address=token_contract_address,
+            token_symbol=token_symbol,
             start_cycle_id=str(start_cycle.id),
             end_cycle_id=str(end_cycle.id),
             cycle_ids=cycle_id_list,

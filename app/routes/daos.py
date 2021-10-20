@@ -7,12 +7,14 @@ from graphene import ObjectType, String, Field, Int, \
     Float, List, Boolean, Mutation, Decimal
 from graphql.execution.executor import ResolveInfo
 from mongoengine import Q
+from collections import defaultdict
 
 from app.common.models.extension.decimal128_field import any_to_decimal
 from app.common.models.icpdao.cycle import Cycle, CycleVotePairTask, CycleVotePairTaskStatus
 from app.common.models.icpdao.user import UserStatus, User
 from app.common.models.logic.user_helper import pre_icpper_to_icpper, check_user_access_token
 from app.common.schema import BaseObjectType, BaseObjectArgs
+from app.common.schema.incomes import TokenIncomeSchema
 from app.common.utils.errors import CYCLE_DAO_LIST_USER_NOT_FOUND_ERROR, DAO_LIST_QUERY_NOT_USER_ERROR, \
     COMMON_NOT_FOUND_DAO_ERROR, COMMON_NOT_PERMISSION_ERROR, COMMON_NOT_AUTH_ERROR, COMMON_PARAMS_INVALID
 from app.routes.data_loaders import UserLoader
@@ -84,6 +86,8 @@ def get_query_dao_list(info, **kwargs):
     _offset = kwargs.get('offset')
     _first = kwargs.get('first')
 
+    token_chain_id = kwargs.get('token_chain_id')
+
     query = None
     if _filter:
         if _filter != DAOsFilterEnum.all:
@@ -120,10 +124,11 @@ def get_query_dao_list(info, **kwargs):
         job_query = JobModel.objects(dao_id=str(item.id), status__nin=[JobStatusEnum.AWAITING_MERGER.value])
         job = job_query.count()
         size = any_to_decimal(job_query.sum('size'))
-        token = any_to_decimal(job_query.sum('income'))
+        token = any_to_decimal(job_query.sum('incomes.income'))
         dao_list.append(dict(
             following=following, job=job, size=size, token=token, number=item.number, datum=item,
-            stat=DAOStat(following=following, job=job, size=size, token=token)
+            stat=DAOStat(
+                following=following, job=job, size=size, incomes=job_query.group_incomes(token_chain_id=token_chain_id))
         ))
 
     if _sorted is not None or _sorted_type is not None:
@@ -143,25 +148,63 @@ class HomeStats(ObjectType):
     dao = Int()
     icpper = Int()
     size = Decimal()
-    income = Decimal()
+    income_sum = Field(
+        Decimal,
+        token_chain_id=String(default_value="1")
+    )
+    incomes = Field(
+        List(TokenIncomeSchema),
+        token_chain_id=String(default_value="1")
+    )
+
+    def get_query(self):
+        all_dao_ids = DAOModel.objects().distinct('_id')
+        all_dao_ids_str = [str(i) for i in all_dao_ids]
+        setattr(self, 'all_dao_ids_str', all_dao_ids_str)
+        return self
+
+    @staticmethod
+    def resolve_income_sum(parent, info, token_chain_id="1"):
+        all_dao_ids_str = getattr(parent, 'all_dao_ids_str')
+        return any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum_incomes(token_chain_id))
+
+    @staticmethod
+    def resolve_dao(parent, info):
+        all_dao_ids_str = getattr(parent, 'all_dao_ids_str')
+        return len(all_dao_ids_str)
+
+    @staticmethod
+    def resolve_icpper(parent, info):
+        all_dao_ids_str = getattr(parent, 'all_dao_ids_str')
+        return len(Job.objects(dao_id__in=all_dao_ids_str).distinct('user_id'))
+
+    @staticmethod
+    def resolve_size(parent, info):
+        all_dao_ids_str = getattr(parent, 'all_dao_ids_str')
+        return any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('size'))
+
+    @staticmethod
+    def resolve_incomes(parent, info, token_chain_id):
+        all_dao_ids_str = getattr(parent, 'all_dao_ids_str')
+        return Job.objects(dao_id__in=all_dao_ids_str).group_incomes(token_chain_id=token_chain_id)
 
 
 class DAOStat(ObjectType):
     following = Int()
     job = Int()
     size = Decimal()
-    token = Decimal()
+    incomes = List(TokenIncomeSchema)
 
 
 class DAOsStat(ObjectType):
     icpper = Int()
     size = Decimal()
-    income = Decimal()
+    incomes = List(TokenIncomeSchema)
 
 
 class DAOItem(ObjectType):
     datum = Field(DAOSchema)
-    stat = Field(DAOStat)
+    stat = Field(DAOStat, token_chain_id=String(default_value="1"))
     is_following = Boolean(required=True)
     is_owner = Boolean(required=True)
 
@@ -170,13 +213,15 @@ class DAOItem(ObjectType):
         return parent.datum
 
     @staticmethod
-    def resolve_stat(parent, info):
+    def resolve_stat(parent, info, token_chain_id):
         following = DAOFollowModel.objects(dao_id=str(parent.datum.id)).count()
         job_query = JobModel.objects(dao_id=str(parent.datum.id), status__nin=[JobStatusEnum.AWAITING_MERGER.value])
         job = job_query.count()
         size = any_to_decimal(job_query.sum('size'))
-        token = any_to_decimal(job_query.sum('income'))
-        return DAOStat(following=following, job=job, size=size, token=token)
+        return DAOStat(
+            following=following, job=job, size=size,
+            incomes=job_query.group_incomes(token_chain_id=token_chain_id)
+        )
 
     @staticmethod
     def resolve_is_following(parent, info):
@@ -199,14 +244,15 @@ class IcppersStatQuery(ObjectType):
     icpper_count = Int()
     job_count = Int()
     size = Decimal()
-    income = Decimal()
+    incomes = List(TokenIncomeSchema)
 
 
 class ICPPERQuery(BaseObjectType):
     user = Field(lambda: UserSchema)
     job_count = Int()
     size = Decimal()
-    income = Decimal()
+    income_sum = Decimal()
+    incomes = List(TokenIncomeSchema)
     join_time = Int()
 
 
@@ -226,7 +272,8 @@ class DAO(ObjectType):
         sorted=IcppersQuerySortedEnum(default_value=0),
         sorted_type=IcppersQuerySortedTypeEnum(default_value=1),
         first=Int(default_value=20),
-        offset=Int(default_value=0)
+        offset=Int(default_value=0),
+        token_chain_id=String(default_value="1")
     )
     jobs = Field(
         JobsQuery,
@@ -235,7 +282,8 @@ class DAO(ObjectType):
         first=Int(default_value=20),
         offset=Int(default_value=0),
         begin_time=Int(),
-        end_time=Int()
+        end_time=Int(),
+        token_chain_id=String(default_value="1")
     )
     token_mint_records = Field(
         TokenMintRecordsQuery,
@@ -292,23 +340,44 @@ class DAO(ObjectType):
         return CycleQuery(datum=cycle, cycle_id=str(cycle.id))
 
     @staticmethod
-    def resolve_icppers(parent, info, sorted_type, first, offset, sorted):
+    def resolve_icppers(parent, info, sorted_type, first, offset, sorted, token_chain_id):
         dao = getattr(parent, 'query')
 
         format_sorted_type = 1 if sorted_type == IcppersQuerySortedTypeEnum.asc.value else -1
         format_sorted = IcppersQuerySortedEnum.get(sorted).value
-
+        # TODO: This aggregation can be simplified.
         job_group_user = JobModel.objects(
             dao_id=str(dao.id),
             status__nin=[JobStatusEnum.AWAITING_MERGER.value]
         ).aggregate([
+            {"$unwind": "$incomes"},
             {"$sort": {"create_at": 1}},
+            {"$match": {"incomes.token_chain_id": token_chain_id}},
             {"$group": {
-                "_id": "$user_id",
+                "_id": {
+                    "user_id": "$user_id",
+                    "token_chain_id": "$incomes.token_chain_id",
+                    "token_address": "$incomes.token_address",
+                    "token_symbol": "$incomes.token_symbol"
+                },
                 "size_sum": {"$sum": "$size"},
                 "job_count": {"$sum": 1},
-                "income_sum": {"$sum": "$income"},
+                "income_sum": {"$sum": "$incomes.income"},
+                # "income_sum": {"$sum": "$income"},
                 "join_time": {"$first": "$create_at"}
+            }},
+            {"$group": {
+                "_id": "$_id.user_id",
+                "size_sum": {"$sum": "$size_sum"},
+                "job_count": {"$sum": "$job_count"},
+                "join_time": {"$first": "$join_time"},
+                "income_sum": {"$sum": "$income_sum"},
+                "incomes": {"$push": {
+                    "token_chain_id": "$_id.token_chain_id",
+                    "token_address": "$_id.token_address",
+                    "token_symbol": "$_id.token_symbol",
+                    "income": "$income_sum"
+                }}
             }},
             {"$sort": {format_sorted: format_sorted_type}}
         ])
@@ -318,10 +387,21 @@ class DAO(ObjectType):
         job_count = 0
         size_stat = decimal.Decimal(0)
         income_stat = decimal.Decimal(0)
+        incomes_stat = defaultdict(lambda: defaultdict(lambda: {'income': decimal.Decimal(0), 'symbol': ''}))
         for d in job_group_user:
             job_count += d['job_count']
             size_stat += any_to_decimal(d['size_sum'])
             income_stat += any_to_decimal(d['income_sum'])
+            for ins in d['incomes']:
+                incomes_stat[ins['token_chain_id']][ins['token_address']]['income'] += ins['income'].to_decimal()
+                incomes_stat[ins['token_chain_id']][ins['token_address']]['symbol'] = ins['token_symbol']
+
+        incomes = [TokenIncomeSchema(
+            token_chain_id=i,
+            token_address=j,
+            token_symbol=incomes_stat[i][j]['symbol'],
+            income=incomes_stat[i][j]['income']
+        ) for i in incomes_stat for j in incomes_stat[i]]
 
         data = job_group_user[offset:first+offset]
         nodes = []
@@ -329,11 +409,19 @@ class DAO(ObjectType):
         for d in data:
             nodes.append(ICPPERQuery(
                 user=user_loader.load(d['_id']), job_count=d['job_count'],
-                size=any_to_decimal(d['size_sum']), income=any_to_decimal(d['income_sum']), join_time=d['join_time']))
+                size=any_to_decimal(d['size_sum']), join_time=d['join_time'],
+                income_sum=any_to_decimal(d['income_sum']),
+                incomes=[TokenIncomeSchema(
+                    token_chain_id=r["token_chain_id"],
+                    token_address=r["token_address"],
+                    token_symbol=r["token_symbol"],
+                    income=r["income"]
+                ) for r in d['incomes']]
+            ))
 
         return IcppersQuery(
             nodes=nodes,
-            stat=IcppersStatQuery(icpper_count=count, job_count=job_count, size=size_stat, income=income_stat),
+            stat=IcppersStatQuery(icpper_count=count, job_count=job_count, size=size_stat, incomes=incomes),
             total=count)
 
     @staticmethod
@@ -351,7 +439,7 @@ class DAO(ObjectType):
             query = query.order_by(sort_string)
         return query
 
-    def resolve_jobs(self, info, sorted_type, first, offset, sorted, begin_time=None, end_time=None):
+    def resolve_jobs(self, info, sorted_type, first, offset, sorted, token_chain_id, begin_time=None, end_time=None):
         dao = getattr(self, 'query')
         query = self._jobs_base_queryset(
             dao_id=str(dao.id), sorted=sorted, sorted_type=sorted_type, begin_time=begin_time, end_time=end_time)
@@ -359,7 +447,7 @@ class DAO(ObjectType):
             _args=CommonPaginationArgs(query=query, first=first, offset=offset),
             stat=JobStatQuery(
                 icpper_count=len(query.distinct('user_id')), job_count=query.count(),
-                size=any_to_decimal(query.sum('size')), income=any_to_decimal(query.sum('income')))
+                size=any_to_decimal(query.sum('size')), incomes=query.group_incomes(token_chain_id=token_chain_id))
         )
 
     def resolve_token_mint_records(self, info, first, offset, status=None, chain_id=None, token_contract_address=None):
@@ -432,6 +520,7 @@ class UpdateDAOBaseInfo(Mutation):
         id = String(required=True)
         desc = String()
         logo = String()
+        token_chain_id = String()
         token_address = String()
         token_name = String()
         token_symbol = String()
