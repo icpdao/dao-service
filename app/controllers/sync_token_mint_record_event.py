@@ -9,6 +9,7 @@ from web3.exceptions import TransactionNotFound
 
 from app.common.models.icpdao.cycle import CycleIcpperStat, Cycle
 from app.common.models.icpdao.dao import DAO
+from app.common.models.icpdao.icppership import MentorRelationStat
 from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.models.icpdao.token import TokenMintRecord, MintRecordStatusEnum, TokenTransferEventLog, \
     MentorTokenIncomeStat
@@ -1061,6 +1062,7 @@ def _update_mentor_income(token_mint_record):
     for ratio in token_mint_record.mint_token_amount_ratio_list:
         all_ratio += ratio
     unit_ratio_token_decimal = token_mint_record.mint_value / all_ratio
+
     for record in token_mint_record.mint_icpper_records:
         job_user_id = record.user_id
         for index, memtor_record in enumerate(record.mentor_list):
@@ -1071,13 +1073,24 @@ def _update_mentor_income(token_mint_record):
                 mentor_id=mentor_id,
                 icpper_id=icpper_id,
                 dao_id=dao_id,
-                token_contract_address=token_contract_address,
+                token_chain_id=chain_id,
+                token_address=token_contract_address,
                 token_name=token_name,
                 token_symbol=token_symbol
             ).update_one(
                 upsert=True,
                 inc__total_value=token_count
             )
+            counts = MentorTokenIncomeStat.objects(
+                mentor_id=mentor_id, icpper_id=icpper_id, token_chain_id=chain_id).distinct('token_address')
+            stat_record = MentorRelationStat.objects(mentor_id=mentor_id, icpper_id=icpper_id).first()
+            if stat_record:
+                stat_token_record = stat_record.token_stat.filter(token_chain_id=chain_id).first()
+                if stat_token_record:
+                    stat_record.token_stat.filter(token_chain_id=chain_id).update(token_count=len(counts))
+                else:
+                    stat_record.token_stat.create(token_chain_id=chain_id, token_count=len(counts))
+                stat_record.save()
 
 
 def _update_income(token_mint_record):

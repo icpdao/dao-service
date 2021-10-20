@@ -2028,7 +2028,8 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         mentor_id=str(owner_user.id),
         icpper_id=str(icpper_user.id),
         dao_id=str(dao.id),
-        token_contract_address='0'*24,
+        token_chain_id='3',
+        token_address='0'*24,
         token_name='test_token_1',
         token_symbol='ICPDT1',
         total_value=decimal.Decimal(888)
@@ -2037,7 +2038,8 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         mentor_id=str(owner_user.id),
         icpper_id=str(icpper_user.id),
         dao_id=str(dao.id),
-        token_contract_address='0' * 24,
+        token_chain_id='3',
+        token_address='0' * 24,
         token_name='test_token_2',
         token_symbol='ICPDT2',
         total_value=decimal.Decimal(999)
@@ -2046,7 +2048,8 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         mentor_id=str(owner_user.id),
         icpper_id=str(icpper_user.id),
         dao_id=str(dao.id),
-        token_contract_address='0' * 24,
+        token_chain_id='3',
+        token_address='0' * 24,
         token_name='test_token_3',
         token_symbol='ICPDT3',
         total_value=decimal.Decimal(1111)
