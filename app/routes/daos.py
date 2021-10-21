@@ -19,13 +19,13 @@ from app.common.utils.errors import CYCLE_DAO_LIST_USER_NOT_FOUND_ERROR, DAO_LIS
     COMMON_NOT_FOUND_DAO_ERROR, COMMON_NOT_PERMISSION_ERROR, COMMON_NOT_AUTH_ERROR, COMMON_PARAMS_INVALID
 from app.routes.data_loaders import UserLoader
 from app.routes.token_mint_records import TokenMintRecordsQuery, TokenMintSplitInfoQuery
-from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME
+from settings import ICPDAO_GITHUB_APP_ID, ICPDAO_GITHUB_APP_RSA_PRIVATE_KEY, ICPDAO_GITHUB_APP_NAME, ICPDAO_MINT_TOKEN_ETH_CHAIN_ID
 
 from app.routes.cycles import CyclesQuery, JobQuery, JobsQuery, JobStatQuery, CycleQuery
-from app.common.models.icpdao.dao import DAO as DAOModel, DAOJobConfig
+from app.common.models.icpdao.dao import DAO as DAOModel, DAOJobConfig, DAOToken
 from app.common.models.icpdao.dao import DAOFollow as DAOFollowModel
 from app.common.models.icpdao.job import Job as JobModel, JobStatusEnum, Job
-from app.common.schema.icpdao import DAOSchema, UserSchema
+from app.common.schema.icpdao import DAOSchema, UserSchema, DAOTokenSchema
 from app.common.models.icpdao.user_github_token import UserGithubToken
 from app.common.utils.access import check_is_icpper, check_is_dao_owner
 from app.common.utils.route_helper import get_current_user_by_graphql, set_custom_attr_by_graphql
@@ -150,11 +150,11 @@ class HomeStats(ObjectType):
     size = Decimal()
     income_sum = Field(
         Decimal,
-        token_chain_id=String(default_value="1")
+        token_chain_id=String(default_value=ICPDAO_MINT_TOKEN_ETH_CHAIN_ID)
     )
     incomes = Field(
         List(TokenIncomeSchema),
-        token_chain_id=String(default_value="1")
+        token_chain_id=String(default_value=ICPDAO_MINT_TOKEN_ETH_CHAIN_ID)
     )
 
     def get_query(self):
@@ -164,7 +164,7 @@ class HomeStats(ObjectType):
         return self
 
     @staticmethod
-    def resolve_income_sum(parent, info, token_chain_id="1"):
+    def resolve_income_sum(parent, info, token_chain_id=ICPDAO_MINT_TOKEN_ETH_CHAIN_ID):
         all_dao_ids_str = getattr(parent, 'all_dao_ids_str')
         return any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum_incomes(token_chain_id))
 
@@ -204,7 +204,7 @@ class DAOsStat(ObjectType):
 
 class DAOItem(ObjectType):
     datum = Field(DAOSchema)
-    stat = Field(DAOStat, token_chain_id=String(default_value="1"))
+    stat = Field(DAOStat, token_chain_id=String(default_value=ICPDAO_MINT_TOKEN_ETH_CHAIN_ID))
     is_following = Boolean(required=True)
     is_owner = Boolean(required=True)
 
@@ -267,13 +267,17 @@ class DAO(ObjectType):
     following = Field(DAOFollowUDSchema)
     cycles = Field(CyclesQuery, filter=List(CycleFilterEnum))
     last_cycle = Field(CycleQuery)
+    token_info = Field(
+        DAOTokenSchema,
+        token_chain_id=String(default_value=ICPDAO_MINT_TOKEN_ETH_CHAIN_ID)
+    )
     icppers = Field(
         IcppersQuery,
         sorted=IcppersQuerySortedEnum(default_value=0),
         sorted_type=IcppersQuerySortedTypeEnum(default_value=1),
         first=Int(default_value=20),
         offset=Int(default_value=0),
-        token_chain_id=String(default_value="1")
+        token_chain_id=String(default_value=ICPDAO_MINT_TOKEN_ETH_CHAIN_ID)
     )
     jobs = Field(
         JobsQuery,
@@ -283,7 +287,7 @@ class DAO(ObjectType):
         offset=Int(default_value=0),
         begin_time=Int(),
         end_time=Int(),
-        token_chain_id=String(default_value="1")
+        token_chain_id=String(default_value=ICPDAO_MINT_TOKEN_ETH_CHAIN_ID)
     )
     token_mint_records = Field(
         TokenMintRecordsQuery,
@@ -338,6 +342,12 @@ class DAO(ObjectType):
         if not cycle:
             return None
         return CycleQuery(datum=cycle, cycle_id=str(cycle.id))
+
+    @staticmethod
+    def resolve_token_info(parent, info, token_chain_id):
+        dao = getattr(parent, 'query')
+        dt = DAOToken.objects(dao_id=str(dao.id), token_chain_id=token_chain_id).first()
+        return dt
 
     @staticmethod
     def resolve_icppers(parent, info, sorted_type, first, offset, sorted, token_chain_id):
@@ -532,11 +542,37 @@ class UpdateDAOBaseInfo(Mutation):
         current_user = get_current_user_by_graphql(info)
         dao = DAOModel.objects(id=id).first()
         check_is_dao_owner(current_user, dao=dao)
+        base_info = {}
+        token_info = {}
         for field, value in kwargs.items():
-            setattr(dao, field, value)
-        if len(kwargs) > 0:
+            if field in ['desc', 'logo']:
+                base_info[field] = value
+            if field in ['token_chain_id', 'token_address', 'token_name', 'token_symbol']:
+                token_info[field] = value
+        if base_info:
+            for field, value in base_info.items():
+                setattr(dao, field, value)
             dao.update_at = int(time.time())
-        dao.save()
+            dao.save()
+        if token_info:
+            dt = DAOToken.objects(
+                dao_id=str(dao.id),
+                token_chain_id=token_info['token_chain_id']
+            ).first()
+            if dt:
+                dt.token_address = token_info['token_address']
+                dt.token_name = token_info['token_name']
+                dt.token_symbol = token_info['token_symbol']
+                dt.update_at = int(time.time())
+                dt.save()
+            else:
+                DAOToken.objects(
+                    dao_id=str(dao.id),
+                    token_chain_id=token_info['token_chain_id'],
+                    token_address=token_info['token_address'],
+                    token_name=token_info['token_name'],
+                    token_symbol=token_info['token_symbol']
+                ).save()
         return UpdateDAOBaseInfo(dao=dao)
 
 
