@@ -355,13 +355,42 @@ class DAO(ObjectType):
 
         format_sorted_type = 1 if sorted_type == IcppersQuerySortedTypeEnum.asc.value else -1
         format_sorted = IcppersQuerySortedEnum.get(sorted).value
-        # TODO: This aggregation can be simplified.
+
+        origin_query = JobModel.objects(
+            dao_id=str(dao.id),
+            status__nin=[JobStatusEnum.AWAITING_MERGER.value]
+        )
+
+        all_icppers_count = len(origin_query.distinct('user_id'))
+        all_job_count = origin_query.count()
+        all_job_size = any_to_decimal(origin_query.sum('size'))
+        all_incomes = origin_query.group_incomes(token_chain_id=token_chain_id)
+
         job_group_user = JobModel.objects(
             dao_id=str(dao.id),
             status__nin=[JobStatusEnum.AWAITING_MERGER.value]
         ).aggregate([
-            {"$unwind": "$incomes"},
             {"$sort": {"create_at": 1}},
+            {"$group": {
+                "_id": "$user_id",
+                "size_sum": {"$sum": "$size"},
+                "job_count": {"$sum": 1},
+                "join_time": {"$first": "$create_at"},
+                "income_sum": {"$sum": "$incomes.income"}
+            }},
+            {"$sort": {format_sorted: format_sorted_type}},
+            {"$skip": offset},
+            {"$limit": first}
+        ])
+        job_group_user = list(job_group_user)
+        icppers = [jgu['_id'] for jgu in job_group_user]
+
+        user_incomes_query = JobModel.objects(
+            dao_id=str(dao.id),
+            status__nin=[JobStatusEnum.AWAITING_MERGER.value],
+            user_id__in=icppers,
+        ).aggregate([
+            {"$unwind": "$incomes"},
             {"$match": {"incomes.token_chain_id": token_chain_id}},
             {"$group": {
                 "_id": {
@@ -370,69 +399,48 @@ class DAO(ObjectType):
                     "token_address": "$incomes.token_address",
                     "token_symbol": "$incomes.token_symbol"
                 },
-                "size_sum": {"$sum": "$size"},
-                "job_count": {"$sum": 1},
                 "income_sum": {"$sum": "$incomes.income"},
-                # "income_sum": {"$sum": "$income"},
-                "join_time": {"$first": "$create_at"}
             }},
             {"$group": {
                 "_id": "$_id.user_id",
-                "size_sum": {"$sum": "$size_sum"},
-                "job_count": {"$sum": "$job_count"},
-                "join_time": {"$first": "$join_time"},
-                "income_sum": {"$sum": "$income_sum"},
                 "incomes": {"$push": {
                     "token_chain_id": "$_id.token_chain_id",
                     "token_address": "$_id.token_address",
                     "token_symbol": "$_id.token_symbol",
                     "income": "$income_sum"
                 }}
-            }},
-            {"$sort": {format_sorted: format_sorted_type}}
+            }}
         ])
+        user_incomes = {}
+        for d in user_incomes_query:
+            user_incomes[d['_id']] = d['incomes']
 
-        job_group_user = list(job_group_user)
-        count = len(job_group_user)
-        job_count = 0
-        size_stat = decimal.Decimal(0)
-        income_stat = decimal.Decimal(0)
-        incomes_stat = defaultdict(lambda: defaultdict(lambda: {'income': decimal.Decimal(0), 'symbol': ''}))
-        for d in job_group_user:
-            job_count += d['job_count']
-            size_stat += any_to_decimal(d['size_sum'])
-            income_stat += any_to_decimal(d['income_sum'])
-            for ins in d['incomes']:
-                incomes_stat[ins['token_chain_id']][ins['token_address']]['income'] += ins['income'].to_decimal()
-                incomes_stat[ins['token_chain_id']][ins['token_address']]['symbol'] = ins['token_symbol']
-
-        incomes = [TokenIncomeSchema(
-            token_chain_id=i,
-            token_address=j,
-            token_symbol=incomes_stat[i][j]['symbol'],
-            income=incomes_stat[i][j]['income']
-        ) for i in incomes_stat for j in incomes_stat[i]]
-
-        data = job_group_user[offset:first+offset]
         nodes = []
         user_loader = UserLoader()
-        for d in data:
+        for d in job_group_user:
             nodes.append(ICPPERQuery(
-                user=user_loader.load(d['_id']), job_count=d['job_count'],
-                size=any_to_decimal(d['size_sum']), join_time=d['join_time'],
+                user=user_loader.load(d['_id']),
+                job_count=d['job_count'],
+                size=any_to_decimal(d['size_sum']),
+                join_time=d['join_time'],
                 income_sum=any_to_decimal(d['income_sum']),
                 incomes=[TokenIncomeSchema(
                     token_chain_id=r["token_chain_id"],
                     token_address=r["token_address"],
                     token_symbol=r["token_symbol"],
                     income=r["income"]
-                ) for r in d['incomes']]
+                ) for r in user_incomes.get(d['_id'], [])]
             ))
 
         return IcppersQuery(
             nodes=nodes,
-            stat=IcppersStatQuery(icpper_count=count, job_count=job_count, size=size_stat, incomes=incomes),
-            total=count)
+            stat=IcppersStatQuery(
+                icpper_count=all_icppers_count, job_count=all_job_count,
+                size=all_job_size,
+                incomes=all_incomes
+            ),
+            total=all_icppers_count
+        )
 
     @staticmethod
     def _jobs_base_queryset(dao_id, sorted, sorted_type, begin_time, end_time):
