@@ -1150,10 +1150,6 @@ def _update_income(token_mint_record):
 
         ss.save()
 
-    # token_released_at 没有什么用处
-    # Cycle.objects(id__in=cycle_ids).update(token_released_at=int(time.time()))
-
-
 def test_run():
     pass
     # token_contract_address = "0x3164d487640e0f208D5Fd2Db3E0eb8E371442143"
