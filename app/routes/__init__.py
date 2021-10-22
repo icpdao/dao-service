@@ -41,7 +41,7 @@ class Query(ObjectType):
         first=Int(default_value=20),
         offset=Int(default_value=0),
         user_name=String(),
-        token_chain_id=String(default_value='1')
+        token_chain_id=String(default_value=settings.ICPDAO_MINT_TOKEN_ETH_CHAIN_ID)
     )
 
     dao = Field(
@@ -75,7 +75,7 @@ class Query(ObjectType):
         dao_id=String(required=True),
         last_timestamp=Int(required=True),
         token_address=String(required=True),
-        token_chain_id=String(default_value='1')
+        token_chain_id=String(default_value=settings.ICPDAO_MINT_TOKEN_ETH_CHAIN_ID)
     )
 
     voting_cycle = Field(VotingCycleQuery)
@@ -118,7 +118,7 @@ class Query(ObjectType):
         icpper = Job.objects(dao_id__in=all_dao_ids_str).distinct('user_id')
         size = any_to_decimal(Job.objects(dao_id__in=all_dao_ids_str).sum('size'))
         # all dao income use all dao all token address all income, PS: to be a lot bigger than it actually is
-        incomes = Job.objects(dao_id__in=all_dao_ids_str).group_incomes(token_chain_id=kwargs.get('token_chain_id', '1'))
+        incomes = Job.objects(dao_id__in=all_dao_ids_str).group_incomes(token_chain_id=kwargs.get('token_chain_id', settings.ICPDAO_MINT_TOKEN_ETH_CHAIN_ID))
         stat = DAOsStat(icpper=len(icpper), size=size, incomes=incomes)
         return DAOs(_args=DAOQueryArgs(query=query_dao_list), stat=stat, total=len(all_dao_ids))
 

@@ -6,6 +6,7 @@ from collections import defaultdict
 from graphene import ObjectType, Field, List, Int, Decimal, Boolean, Mutation, String, Float
 from mongoengine import Q
 
+import settings
 from app.common.models.extension.decimal128_field import any_to_decimal
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType, CycleVotePairTask, \
     CycleVotePairTaskStatus, CycleVoteResultStatTask, CycleVoteResultStatTaskStatus, CycleVoteResultPublishTask, \
@@ -149,7 +150,7 @@ class JobStatQuery(ObjectType):
 
 class JobsQuery(BaseObjectType):
     nodes = List(JobQuery)
-    stat = Field(JobStatQuery, token_chain_id=String(default_value='1'))
+    stat = Field(JobStatQuery, token_chain_id=String(default_value=settings.ICPDAO_MINT_TOKEN_ETH_CHAIN_ID))
     total = Int()
 
     def resolve_total(self, info):
@@ -442,7 +443,7 @@ class CycleStatQuery(ObjectType):
     icpper_count = Int()
     job_count = Int()
     size = Decimal()
-    incomes = Field(List(TokenIncomeSchema), token_chain_id=String(default_value='1'))
+    incomes = Field(List(TokenIncomeSchema), token_chain_id=String(default_value=settings.ICPDAO_MINT_TOKEN_ETH_CHAIN_ID))
 
     @property
     def cycle_id(self):
@@ -687,7 +688,7 @@ class CycleByTokenUnreleasedQuery(BaseObjectType):
             assert last_cycle, COMMON_PARAMS_INVALID
             assert last_timestamp == last_cycle.end_at
             # last_timestamp = last_timestamp if last_timestamp > last_cycle.end_at else last_cycle.end_at
-        cycle_list = Cycle.objects(dao_id=dao_id, end_at__gt=last_timestamp).order_by('-begin_at')
+        cycle_list = Cycle.objects(dao_id=dao_id, end_at__gt=last_timestamp, vote_result_published_at__exists=True).order_by('-begin_at')
         return [CycleQuery(datum=i, cycle_id=str(i.id)) for i in cycle_list]
 
 

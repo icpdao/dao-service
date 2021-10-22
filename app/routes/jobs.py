@@ -14,6 +14,7 @@ from app.common.models.icpdao.dao import DAO as DAOModel
 from app.common.models.icpdao.user import User
 
 from app.common.schema.icpdao import JobSchema, JobPRSchema
+from app.common.schema.incomes import TokenIncomeSchema
 from app.common.utils.errors import JOB_UPDATE_STATUS_INVALID_ERROR, JOB_QUERY_NOT_USER_ERROR, COMMON_NOT_AUTH_ERROR, \
     COMMON_NOT_FOUND_DAO_ERROR, JOB_QUERY_NOT_FOUND_ERROR, COMMON_NOT_PERMISSION_ERROR, JOB_DELETE_INVALID_ERROR, \
     CYCLE_NOT_FOUND_ERROR, CYCLE_PAIR_UPDATE_TYPE_ERROR, CYCLE_ICPPER_STAT_NOT_FOUND_ERROR, \
@@ -30,8 +31,7 @@ from app.controllers.job import update_job_by_size, create_job, update_job_pr, c
 
 class JobsStat(ObjectType):
     size = Decimal()
-    token_name = String()
-    token_count = Float()
+    incomes = List(TokenIncomeSchema)
 
 
 class Job(ObjectType):
@@ -41,7 +41,10 @@ class Job(ObjectType):
 
 class Jobs(ObjectType):
     job = List(Job)
-    stat = Field(JobsStat)
+    stat = Field(
+        JobsStat,
+        token_chain_id=String(default_value=settings.ICPDAO_MINT_TOKEN_ETH_CHAIN_ID)
+    )
     total = Int()
 
     def get_query_job_list(self, info, dao_name=None, begin_time=None,
@@ -102,11 +105,11 @@ class Jobs(ObjectType):
             ))
         return results
 
-    def resolve_stat(self, info):
+    def resolve_stat(self, info, token_chain_id):
         query_list = getattr(self, 'query_list')
-        # TODO mock 待实现
         size = any_to_decimal(query_list.sum('size'))
-        return JobsStat(size=size, token_name='', token_count=0)
+        incomes = query_list.group_incomes(token_chain_id=token_chain_id)
+        return JobsStat(size=size, incomes=incomes)
 
     def resolve_total(self, info):
         return getattr(self, 'total', 0)
