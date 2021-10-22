@@ -750,7 +750,6 @@ query {
                 beginAt
                 endAt
                 voteResultPublishedAt
-                tokenReleasedAt
             }
             icpperStats {
                 nodes {

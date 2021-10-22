@@ -1150,7 +1150,8 @@ def _update_income(token_mint_record):
 
         ss.save()
 
-    Cycle.objects(id__in=cycle_ids).update(token_released_at=int(time.time()))
+    # token_released_at 没有什么用处
+    # Cycle.objects(id__in=cycle_ids).update(token_released_at=int(time.time()))
 
 
 def test_run():

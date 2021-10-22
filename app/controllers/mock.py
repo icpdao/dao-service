@@ -4,10 +4,11 @@ import time
 import random
 import web3
 
+import settings
 from app.common.models.icpdao.base import TokenIncome
 from app.common.models.icpdao.cycle import CycleVotePairTask, CycleVote, CycleIcpperStat, Cycle, CycleVoteType, \
     VoteResultTypeAll, VoteResultTypeAllResultType, CycleVotePairTaskStatus, CycleVoteConfirm, CycleVoteConfirmStatus
-from app.common.models.icpdao.dao import DAO, DAOJobConfig, DAOFollow
+from app.common.models.icpdao.dao import DAO, DAOJobConfig, DAOFollow, DAOToken
 from app.common.models.icpdao.icppership import Icppership, IcppershipProgress, IcppershipStatus, MentorRelationStat, \
     MentorRelationStatTokenStat, MentorLevel7IcpperCountStat
 from app.common.models.icpdao.job import Job, JobPR, JobPRComment, JobStatusEnum, JobPairTypeEnum, JobPRStatusEnum
@@ -23,11 +24,15 @@ def _get_github_user_id(github_login):
 
 
 def _get_dao_mock_token(dao, income):
-    return TokenIncome(token_chain_id=dao.token_chain_id, token_address=dao.token_address, token_symbol="DM", income=income)
+    dt = DAOToken.objects(
+        dao_id=str(dao.id),
+        token_chain_id=settings.ICPDAO_MINT_TOKEN_ETH_CHAIN_ID
+    ).first()
+    return TokenIncome(token_chain_id=settings.ICPDAO_MINT_TOKEN_ETH_CHAIN_ID, token_address=dt.token_address, token_symbol="DM", income=income)
 
 
 def _get_dao_other_mock(dao, income):
-    return TokenIncome(token_chain_id=dao.token_chain_id, token_address=web3.Account.create().address, token_symbol="DMN", income=income)
+    return TokenIncome(token_chain_id=settings.ICPDAO_MINT_TOKEN_ETH_CHAIN_ID, token_address=web3.Account.create().address, token_symbol="DMN", income=income)
 
 
 def _get_random_existed_token(income: decimal.Decimal):
@@ -36,7 +41,7 @@ def _get_random_existed_token(income: decimal.Decimal):
         ['0x6f40d4a6237c257fff2db00fa0510deeecd303eb', 'INST'],
         ['0x35bd01fc9d6d5d81ca9e055db88dc49aa2c699a8', 'FWB']
     ])
-    return TokenIncome(token_chain_id='1', token_address=ad[0], token_symbol=ad[1], income=income)
+    return TokenIncome(token_chain_id=settings.ICPDAO_MINT_TOKEN_ETH_CHAIN_ID, token_address=ad[0], token_symbol=ad[1], income=income)
 
 
 def _get_mock_token_income(dao, incomes):
@@ -111,13 +116,16 @@ def create_one_end_cycle_data(owner_user, icpper_user, dao_name):
         desc='{}_{}_{}'.format(dao_name, dao_name, dao_name),
         owner_id=str(owner_user.id),
         github_owner_id=github_owner_id,
-        github_owner_name=dao_name,
+        github_owner_name=dao_name
+    )
+    dao.save()
+    DAOToken(
+        dao_id=str(dao.id),
         token_chain_id="3",
         token_address=web3.Account.create().address,
         token_name=dao_name,
         token_symbol=dao_name
-    )
-    dao.save()
+    ).save()
 
     # DAOJobConfig
     current_datetime = datetime.fromtimestamp(int(time.time()), tz=timezone(timedelta(hours=8)))
@@ -1307,13 +1315,16 @@ def create_tip_end_cycle_1_data(owner_user, icpper_user, mock_users, dao_name):
         desc='{}_{}_{}'.format(dao_name, dao_name, dao_name),
         owner_id=str(owner_user.id),
         github_owner_id=_get_github_user_id(dao_name),
-        github_owner_name=dao_name,
+        github_owner_name=dao_name
+    )
+    dao.save()
+    DAOToken(
+        dao_id=str(dao.id),
         token_chain_id="3",
         token_address=web3.Account.create().address,
         token_name=dao_name,
         token_symbol=dao_name
-    )
-    dao.save()
+    ).save()
 
     # DAOJobConfig
     current_datetime = datetime.fromtimestamp(int(time.time()), tz=timezone(timedelta(hours=8)))
@@ -1683,13 +1694,16 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
         desc='{}_{}_{}'.format(dao_name, dao_name, dao_name),
         owner_id=str(owner_user.id),
         github_owner_id=_get_github_user_id(dao_name),
-        github_owner_name=dao_name,
+        github_owner_name=dao_name
+    )
+    dao.save()
+    DAOToken(
+        dao_id=str(dao.id),
         token_chain_id="3",
         token_address=web3.Account.create().address,
         token_name=dao_name,
         token_symbol=dao_name
-    )
-    dao.save()
+    ).save()
 
     # DAOJobConfig
     current_datetime = datetime.fromtimestamp(int(time.time()), tz=timezone(timedelta(hours=8)))
@@ -1722,18 +1736,27 @@ def create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, dao_na
     )
     dao_job_config.save()
 
+    begin_at = deadline_day_datetime.timestamp() - 30 * 24 * 60 * 60
+    end_at = begin_at + 16 * 24 * 60 * 60
+    pair_begin_at = end_at
+    pair_end_at = pair_begin_at + 36 * 60 * 60
+    vote_begin_at = pair_end_at
+    vote_end_at = vote_begin_at + 36 * 60 * 60
+    paired_at = pair_begin_at + 1 * 60 * 60
+    vote_result_stat_at = vote_end_at + 1 * 60 * 60
+    vote_result_published_at = vote_result_stat_at + 1 * 60 * 60
     # Cycle
     dao_end_cycle = Cycle(
         dao_id=str(dao.id),
-        begin_at=deadline_day_datetime.timestamp() - 30 * 24 * 60 * 60,
-        end_at=deadline_day_datetime.timestamp(),
-        pair_begin_at=deadline_day_datetime.timestamp(),
-        pair_end_at=deadline_day_datetime.timestamp() + 36 * 60 * 60,
-        vote_begin_at=deadline_day_datetime.timestamp() + 36 * 60 * 60,
-        vote_end_at=deadline_day_datetime.timestamp() + 72 * 60 * 60,
-        paired_at=deadline_day_datetime.timestamp() + 36 * 60 * 60,
-        vote_result_stat_at=deadline_day_datetime.timestamp() + 72 * 60 * 60,
-        vote_result_published_at=deadline_day_datetime.timestamp() + 75 * 60 * 60
+        begin_at=begin_at,
+        end_at=end_at,
+        pair_begin_at=pair_begin_at,
+        pair_end_at=pair_end_at,
+        vote_begin_at=vote_begin_at,
+        vote_end_at=vote_end_at,
+        paired_at=paired_at,
+        vote_result_stat_at=vote_result_stat_at,
+        vote_result_published_at=vote_result_published_at
     )
     dao_end_cycle.save()
 
@@ -2099,18 +2122,236 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
     dao = DAO.objects(name=dao_name).first()
     prev_cycle = Cycle.objects(dao_id=str(dao.id)).first()
 
-    current_datetime = datetime.fromtimestamp(int(time.time()), tz=timezone(timedelta(hours=8)))
-    current_datetime = datetime(
-        year=current_datetime.year,
-        month=current_datetime.month,
-        day=current_datetime.day,
-        tzinfo=current_datetime.tzinfo
+    begin_at = prev_cycle.end_at
+    end_at = begin_at + 13 * 24 * 60 * 60
+    pair_begin_at = end_at
+    pair_end_at = pair_begin_at + 1
+    vote_begin_at = pair_end_at
+    vote_end_at = vote_begin_at + 1
+    paired_at = pair_begin_at + 1
+    vote_result_stat_at = vote_end_at + 1
+    vote_result_published_at = vote_result_stat_at + 1
+
+    # Cycle
+    cycle = Cycle(
+        dao_id=str(dao.id),
+        begin_at=begin_at,
+        end_at=end_at,
+        pair_begin_at=pair_begin_at,
+        pair_end_at=pair_end_at,
+        vote_begin_at=vote_begin_at,
+        vote_end_at=vote_end_at,
+        paired_at=paired_at,
+        vote_result_stat_at=vote_result_stat_at,
+        vote_result_published_at=vote_result_published_at
     )
-    vote_end_at = current_datetime.timestamp() - 1 * 60 * 60
-    vote_begin_at = vote_end_at - 12 * 60 * 60
-    pair_end_at = vote_begin_at
-    pair_begin_at = pair_end_at - 12 * 60 * 60
-    end_at = pair_begin_at
+    cycle.save()
+
+    # CycleIcpperStat
+    last = CycleIcpperStat.objects(dao_id=str(dao.id), cycle_id=str(prev_cycle.id), user_id=str(owner_user.id)).first()
+    CycleIcpperStat(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        user_id=str(owner_user.id),
+        job_count=2,
+        size=decimal.Decimal('3.0'),
+        job_size=decimal.Decimal('3.0'),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(300), decimal.Decimal(200), decimal.Decimal(200)]),
+        vote_ei=decimal.Decimal('1.0'),
+        owner_ei=decimal.Decimal('0.0'),
+        ei=decimal.Decimal('1.0'),
+        last_id=str(last.id),
+        un_voted_all_vote=False
+    ).save()
+    #
+    # have_two_times_lt_08 = BooleanField()
+    # have_two_times_lt_04 = BooleanField()
+    # be_reviewer_has_warning_user_ids = ListField()
+    # be_deducted_size_by_review = DecimalField(precision=2)
+    last = CycleIcpperStat.objects(dao_id=str(dao.id), cycle_id=str(prev_cycle.id), user_id=str(icpper_user.id)).first()
+    CycleIcpperStat(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        user_id=str(icpper_user.id),
+        job_count=2,
+        size=decimal.Decimal('5.0'),
+        job_size=decimal.Decimal('5.0'),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
+        vote_ei=decimal.Decimal('1.0'),
+        owner_ei=decimal.Decimal('0.3'),
+        ei=decimal.Decimal('1.3'),
+        last_id=str(last.id),
+        un_voted_all_vote=False,
+    ).save()
+    #
+    # have_two_times_lt_08 = BooleanField()
+    # have_two_times_lt_04 = BooleanField()
+    # be_reviewer_has_warning_user_ids = ListField()
+    # be_deducted_size_by_review = DecimalField(precision=2)
+    last = CycleIcpperStat.objects(dao_id=str(dao.id), cycle_id=str(prev_cycle.id),
+                                   user_id=str(mock_users[0].id)).first()
+    CycleIcpperStat(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        user_id=str(mock_users[0].id),
+        job_count=2,
+        size=decimal.Decimal('5.0'),
+        job_size=decimal.Decimal('5.0'),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
+        vote_ei=decimal.Decimal('0.7'),
+        owner_ei=decimal.Decimal('0'),
+        ei=decimal.Decimal('0.7'),
+        last_id=str(last.id),
+        un_voted_all_vote=False
+    ).save()
+
+    #
+    # have_two_times_lt_08 = BooleanField()
+    # have_two_times_lt_04 = BooleanField()
+    # be_reviewer_has_warning_user_ids = ListField()
+    # be_deducted_size_by_review = DecimalField(precision=2)
+    last = CycleIcpperStat.objects(dao_id=str(dao.id), cycle_id=str(prev_cycle.id),
+                                   user_id=str(mock_users[1].id)).first()
+    CycleIcpperStat(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        user_id=str(mock_users[1].id),
+        job_count=2,
+        size=decimal.Decimal('5.0'),
+        job_size=decimal.Decimal('5.0'),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
+        vote_ei=decimal.Decimal('0.3'),
+        owner_ei=decimal.Decimal('0'),
+        ei=decimal.Decimal('0.3'),
+        last_id=str(last.id),
+        un_voted_all_vote=False
+    ).save()
+
+    #
+    # have_two_times_lt_08 = BooleanField()
+    # have_two_times_lt_04 = BooleanField()
+    # be_reviewer_has_warning_user_ids = ListField()
+    # be_deducted_size_by_review = DecimalField(precision=2)
+    last = CycleIcpperStat.objects(dao_id=str(dao.id), cycle_id=str(prev_cycle.id),
+                                   user_id=str(mock_users[2].id)).first()
+    CycleIcpperStat(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        user_id=str(mock_users[2].id),
+        job_count=2,
+        size=decimal.Decimal('5.0'),
+        job_size=decimal.Decimal('5.0'),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
+        vote_ei=decimal.Decimal('0.3'),
+        owner_ei=decimal.Decimal('0'),
+        ei=decimal.Decimal('0.3'),
+        last_id=str(last.id),
+        un_voted_all_vote=False,
+        be_reviewer_has_warning_user_ids=[str(mock_users[1].id)]
+    ).save()
+
+    #
+    # have_two_times_lt_08 = BooleanField()
+    # have_two_times_lt_04 = BooleanField()
+    # be_reviewer_has_warning_user_ids = ListField()
+    # be_deducted_size_by_review = DecimalField(precision=2)
+    last = CycleIcpperStat.objects(dao_id=str(dao.id), cycle_id=str(prev_cycle.id),
+                                   user_id=str(mock_users[3].id)).first()
+    CycleIcpperStat(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        user_id=str(mock_users[3].id),
+        job_count=2,
+        size=decimal.Decimal('5.0'),
+        job_size=decimal.Decimal('5.0'),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
+        vote_ei=decimal.Decimal('0.7'),
+        owner_ei=decimal.Decimal('0'),
+        ei=decimal.Decimal('0.7'),
+        last_id=str(last.id),
+        un_voted_all_vote=False,
+        have_two_times_lt_08=True
+    ).save()
+
+    #
+    # have_two_times_lt_08 = BooleanField()
+    # have_two_times_lt_04 = BooleanField()
+    # be_reviewer_has_warning_user_ids = ListField()
+    # be_deducted_size_by_review = DecimalField(precision=2)
+    last = CycleIcpperStat.objects(dao_id=str(dao.id), cycle_id=str(prev_cycle.id),
+                                   user_id=str(mock_users[4].id)).first()
+    CycleIcpperStat(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        user_id=str(mock_users[4].id),
+        job_count=2,
+        size=decimal.Decimal('5.0'),
+        job_size=decimal.Decimal('5.0'),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
+        vote_ei=decimal.Decimal('0.3'),
+        owner_ei=decimal.Decimal('0'),
+        ei=decimal.Decimal('0.3'),
+        last_id=str(last.id),
+        un_voted_all_vote=False,
+        have_two_times_lt_04=True
+    ).save()
+
+    #
+    # have_two_times_lt_08 = BooleanField()
+    # have_two_times_lt_04 = BooleanField()
+    # be_reviewer_has_warning_user_ids = ListField()
+    # be_deducted_size_by_review = DecimalField(precision=2)
+    last = CycleIcpperStat.objects(dao_id=str(dao.id), cycle_id=str(prev_cycle.id),
+                                   user_id=str(mock_users[5].id)).first()
+    CycleIcpperStat(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        user_id=str(mock_users[5].id),
+        job_count=2,
+        size=decimal.Decimal('5.0'),
+        job_size=decimal.Decimal('5.0'),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
+        vote_ei=decimal.Decimal('0.9'),
+        owner_ei=decimal.Decimal('0'),
+        ei=decimal.Decimal('0.9'),
+        last_id=str(last.id),
+        un_voted_all_vote=True
+    ).save()
+
+    #
+    # have_two_times_lt_08 = BooleanField()
+    # have_two_times_lt_04 = BooleanField()
+    # be_reviewer_has_warning_user_ids = ListField()
+    # be_deducted_size_by_review = DecimalField(precision=2)
+    last = CycleIcpperStat.objects(dao_id=str(dao.id), cycle_id=str(prev_cycle.id),
+                                   user_id=str(mock_users[6].id)).first()
+    CycleIcpperStat(
+        dao_id=str(dao.id),
+        cycle_id=str(cycle.id),
+        user_id=str(mock_users[6].id),
+        job_count=2,
+        size=decimal.Decimal('4.0'),
+        job_size=decimal.Decimal('5.0'),
+        incomes=_get_mock_token_income(dao, [decimal.Decimal(500), decimal.Decimal(200), decimal.Decimal(200)]),
+        vote_ei=decimal.Decimal('0.9'),
+        owner_ei=decimal.Decimal('0'),
+        ei=decimal.Decimal('0.9'),
+        last_id=str(last.id),
+        un_voted_all_vote=False,
+        be_deducted_size_by_review=decimal.Decimal('1.0')
+    ).save()
+
+
+def create_end_cycle_and_mint_3_data(owner_user, icpper_user, mock_users, dao_name):
+    dao = DAO.objects(name=dao_name).first()
+    prev_cycle = Cycle.objects(dao_id=str(dao.id)).first()
+
+    begin_at = prev_cycle.end_at
+    end_at = begin_at + 30 * 24 * 60 * 60
+    pair_begin_at = end_at
+    pair_end_at = pair_begin_at + 1
+    vote_begin_at = pair_end_at
+    vote_end_at = vote_begin_at + 1
 
     # Cycle
     cycle = Cycle(
@@ -2120,10 +2361,7 @@ def create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, dao_na
         pair_begin_at=pair_begin_at,
         pair_end_at=pair_end_at,
         vote_begin_at=vote_begin_at,
-        vote_end_at=vote_end_at,
-        paired_at=pair_begin_at + 1,
-        vote_result_stat_at=vote_end_at + 1,
-        vote_result_published_at=vote_end_at + 2
+        vote_end_at=vote_end_at
     )
     cycle.save()
 
@@ -2554,13 +2792,16 @@ def create_one_empty_cycle(owner_user, dao_name, job_times, pair_times, vote_tim
         desc='{}_{}_{}'.format(dao_name, dao_name, dao_name),
         owner_id=str(owner_user.id),
         github_owner_id=github_owner_id,
-        github_owner_name=dao_name,
+        github_owner_name=dao_name
+    )
+    dao.save()
+    DAOToken(
+        dao_id=str(dao.id),
         token_chain_id="3",
         token_address=web3.Account.create().address,
         token_name=dao_name,
         token_symbol=dao_name
-    )
-    dao.save()
+    ).save()
 
     dao_job_config = DAOJobConfig(
         dao_id=str(dao.id)
@@ -2600,6 +2841,7 @@ def create_tip_cycle_dao(owner_user, icpper_user, mock_users):
 def create_end_cycle_and_mint_dao(owner_user, icpper_user, mock_users):
     create_end_cycle_and_mint_1_data(owner_user, icpper_user, mock_users, 'end-and-mint')
     create_end_cycle_and_mint_2_data(owner_user, icpper_user, mock_users, 'end-and-mint')
+    create_end_cycle_and_mint_3_data(owner_user, icpper_user, mock_users, 'end-and-mint')
 
 
 def init_mock_data(owner_github_user_login, icpper_github_user_login):
