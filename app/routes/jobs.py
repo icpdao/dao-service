@@ -33,10 +33,6 @@ class JobsStat(ObjectType):
     size = Decimal()
     incomes = List(TokenIncomeSchema)
 
-    # TODO 待删除
-    token_name = String()
-    token_count = Decimal()
-
 
 class Job(ObjectType):
     node = Field(JobSchema)
@@ -113,8 +109,7 @@ class Jobs(ObjectType):
         query_list = getattr(self, 'query_list')
         size = any_to_decimal(query_list.sum('size'))
         incomes = query_list.group_incomes(token_chain_id=token_chain_id)
-        # TODO 待删除
-        return JobsStat(size=size, incomes=incomes, token_name='', token_count=decimal.Decimal('0'))
+        return JobsStat(size=size, incomes=incomes)
 
     def resolve_total(self, info):
         return getattr(self, 'total', 0)
