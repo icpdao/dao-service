@@ -207,6 +207,10 @@ class DAOItem(ObjectType):
     stat = Field(DAOStat, token_chain_id=String(default_value=ICPDAO_MINT_TOKEN_ETH_CHAIN_ID))
     is_following = Boolean(required=True)
     is_owner = Boolean(required=True)
+    token_info = Field(
+        DAOTokenSchema,
+        token_chain_id=String(default_value=ICPDAO_MINT_TOKEN_ETH_CHAIN_ID)
+    )
 
     @staticmethod
     def resolve_datum(parent, info):
@@ -238,6 +242,11 @@ class DAOItem(ObjectType):
         if not current_user:
             return False
         return str(current_user.id) == parent.datum.owner_id
+
+    @staticmethod
+    def resolve_token_info(parent, info, token_chain_id):
+        dt = DAOToken.objects(dao_id=str(parent.datum.id), token_chain_id=token_chain_id).first()
+        return dt
 
 
 class IcppersStatQuery(ObjectType):
