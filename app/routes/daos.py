@@ -583,7 +583,7 @@ class UpdateDAOBaseInfo(Mutation):
                 dt.update_at = int(time.time())
                 dt.save()
             else:
-                DAOToken.objects(
+                DAOToken(
                     dao_id=str(dao.id),
                     token_chain_id=token_info['token_chain_id'],
                     token_address=token_info['token_address'],
