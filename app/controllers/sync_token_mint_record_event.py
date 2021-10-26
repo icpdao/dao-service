@@ -1024,7 +1024,8 @@ def _sync_event(token_mint_record):
             token_mint_record.mint_params_has_diff = not (eq1 and eq2 and eq3 and eq4 and eq5 and eq6)
 
             token_mint_record.mint_value = Web3.fromWei(log["args"]["_mintValue"], "ether")
-            token_mint_record.unit_real_size_value = token_mint_record.mint_value / token_mint_record.total_real_size
+            total_job_value = token_mint_record.mint_value * decimal.Decimal("95") / decimal.Decimal("100")
+            token_mint_record.unit_real_size_value = total_job_value / token_mint_record.total_real_size
 
             token_transfer_event_log_list = []
             rich_logs = token.events.Transfer().processReceipt(tx_receipt)
