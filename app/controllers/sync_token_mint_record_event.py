@@ -1070,7 +1070,7 @@ def _update_mentor_income(token_mint_record):
         job_user_id = record.user_id
         for index, memtor_record in enumerate(record.mentor_list):
             mentor_id = memtor_record.mentor_id
-            icpper_id = job_user_id if index == 0 else record.mentor_list[index-1]
+            icpper_id = job_user_id if index == 0 else record.mentor_list[index-1].mentor_id
             token_count = unit_ratio_token_decimal * memtor_record.mentor_radio
             MentorTokenIncomeStat.objects(
                 mentor_id=mentor_id,
