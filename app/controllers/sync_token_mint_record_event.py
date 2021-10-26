@@ -1024,7 +1024,8 @@ def _sync_event(token_mint_record):
             token_mint_record.mint_params_has_diff = not (eq1 and eq2 and eq3 and eq4 and eq5 and eq6)
 
             token_mint_record.mint_value = Web3.fromWei(log["args"]["_mintValue"], "ether")
-            token_mint_record.unit_real_size_value = token_mint_record.mint_value / token_mint_record.total_real_size
+            total_job_value = token_mint_record.mint_value * decimal.Decimal("95") / decimal.Decimal("100")
+            token_mint_record.unit_real_size_value = total_job_value / token_mint_record.total_real_size
 
             token_transfer_event_log_list = []
             rich_logs = token.events.Transfer().processReceipt(tx_receipt)
@@ -1069,7 +1070,7 @@ def _update_mentor_income(token_mint_record):
         job_user_id = record.user_id
         for index, memtor_record in enumerate(record.mentor_list):
             mentor_id = memtor_record.mentor_id
-            icpper_id = job_user_id if index == 0 else record.mentor_list[index-1]
+            icpper_id = job_user_id if index == 0 else record.mentor_list[index-1].mentor_id
             token_count = unit_ratio_token_decimal * memtor_record.mentor_radio
             MentorTokenIncomeStat.objects(
                 mentor_id=mentor_id,
