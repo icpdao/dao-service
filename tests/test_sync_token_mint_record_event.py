@@ -8,7 +8,7 @@
 # from app.common.models.icpdao.user import User
 # from app.controllers.sync_token_mint_record_event import _update_mentor_income
 # from tests.base import Base
-# from settings import ICPDAO_ETH_DAOSTAKING_ADDRESS
+# from settings import ICPDAO_ETH_DAO_FACTORY_OWNER_ADDRESS
 #
 #
 # class TestSyncTokenMintRecordEvent(Base):
@@ -124,7 +124,7 @@
 #             self.mock_user_5.erc20_address,
 #             self.mock_user_6.erc20_address,
 #             self.mock_user_7.erc20_address,
-#             ICPDAO_ETH_DAOSTAKING_ADDRESS
+#             ICPDAO_ETH_DAO_FACTORY_OWNER_ADDRESS
 #         ]
 #         mint_token_amount_ratio_list = [
 #             decimal.Decimal("328750"),
