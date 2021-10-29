@@ -20,7 +20,7 @@ from app.common.utils.errors import TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_NO_
 from app.controllers.find_lost_tx_for_droped_token_mint_record import run_find_lost_tx_for_drop_token_mint_record_task
 from app.controllers.sync_token_mint_record_event import run_sync_token_mint_record_event_task, get_eth_node_url, \
     TOKEN_ABI
-from settings import ICPDAO_ETH_DAOSTAKING_ADDRESS, ICPDAO_ETH_TOKEN_FACTORY_DEPLOY_BLACK_NUMBER
+from settings import ICPDAO_ETH_TOKEN_FACTORY_DEPLOY_BLACK_NUMBER, ICPDAO_ETH_DAO_FACTORY_OWNER_ADDRESS
 
 
 class SystemUser:
@@ -29,7 +29,7 @@ class SystemUser:
     github_login = "icpdao"
     github_user_id = "icpdao"
     avatar = ""
-    erc20_address = ICPDAO_ETH_DAOSTAKING_ADDRESS
+    erc20_address = ICPDAO_ETH_DAO_FACTORY_OWNER_ADDRESS
 
 
 def query_cycles_by_params(dao_id, start_cycle_id, end_cycle_id):
