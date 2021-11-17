@@ -57,6 +57,7 @@ jobs:
         ICPDAO_ETH_DAOSTAKING_ADDRESS: "0x1111111111111111111111111111111111111111"
         ICPDAO_MINT_TOKEN_ETH_CHAIN_ID: "3"
         ICPDAO_ETH_DAO_FACTORY_OWNER_ADDRESS: "0x1111111111111111111111111111111111111111"
+        ICPDAO_SENTRY_DSN: ${{secrets.DEV__ICPDAO_SENTRY_DSN}}
       run: |
         npm install
         pip install -r requirements_dev.txt
@@ -109,6 +110,7 @@ jobs:
         ICPDAO_ETH_DAOSTAKING_ADDRESS: ${{secrets.DEV__ICPDAO_ETH_DAOSTAKING_ADDRESS}}
         ICPDAO_MINT_TOKEN_ETH_CHAIN_ID: ${{secrets.DEV__ICPDAO_MINT_TOKEN_ETH_CHAIN_ID}}
         ICPDAO_ETH_DAO_FACTORY_OWNER_ADDRESS: ${{secrets.DEV__ICPDAO_ETH_DAO_FACTORY_OWNER_ADDRESS}}
+        ICPDAO_SENTRY_DSN: ${{secrets.DEV__ICPDAO_SENTRY_DSN}}
       run: |
         npm install -g serverless@2.35.0
         npm install
@@ -161,6 +163,7 @@ jobs:
         ICPDAO_ETH_DAOSTAKING_ADDRESS: ${{secrets.PROD__ICPDAO_ETH_DAOSTAKING_ADDRESS}}
         ICPDAO_MINT_TOKEN_ETH_CHAIN_ID: ${{secrets.PROD__ICPDAO_MINT_TOKEN_ETH_CHAIN_ID}}
         ICPDAO_ETH_DAO_FACTORY_OWNER_ADDRESS: ${{secrets.PROD__ICPDAO_ETH_DAO_FACTORY_OWNER_ADDRESS}}
+        ICPDAO_SENTRY_DSN: ${{secrets.PROD__ICPDAO_SENTRY_DSN}}
       run: |
         npm install -g serverless@2.35.0
         npm install
