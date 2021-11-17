@@ -1,6 +1,8 @@
 import os
 import traceback
 import graphene
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+
 import settings
 import sentry_sdk
 
@@ -15,14 +17,6 @@ from app.common.models.icpdao import init_mongo
 from app.routes import Query, Mutations
 from app.common.schema.icpdao import UserSchema, DAOSchema, DAOJobConfigSchema
 from app.routes.webhooks import GithubWebhooksApp
-
-
-sentry_sdk.init(
-    dsn=settings.ICPDAO_SENTRY_DSN,
-    environment=settings.ICPDAO_APP_ENV,
-    integrations=[AwsLambdaIntegration()],
-    traces_sample_rate=1.0
-)
 
 prefix = ''
 if os.environ.get('IS_UNITEST') != 'yes':
@@ -42,6 +36,15 @@ app.add_route(graph_route, BaseGraphQLApp(
 
 app.add_route(webhooks_route, GithubWebhooksApp())
 
+if settings.ICPDAO_APP_ENV != "TEST":
+    sentry_sdk.init(
+        dsn=settings.ICPDAO_SENTRY_DSN,
+        environment=settings.ICPDAO_APP_ENV,
+        integrations=[AwsLambdaIntegration()],
+        traces_sample_rate=1.0
+    )
+    app.add_middleware(SentryAsgiMiddleware)
+
 
 class UNAUTHError(Exception):
     pass
@@ -49,7 +52,8 @@ class UNAUTHError(Exception):
 
 def set_cors(response):
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent"
+    response.headers[
+        "Access-Control-Allow-Headers"] = "Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent"
     response.headers["Access-Control-Allow-Methods"] = "OPTIONS,DELETE,GET,HEAD,PATCH,POST,PUT"
 
 
@@ -84,6 +88,7 @@ async def add_global_process(request: Request, call_next):
     set_cors(response)
     return response
 
+
 handler = Mangum(app)
 
 init_mongo({
@@ -93,7 +98,7 @@ init_mongo({
     }
 })
 
-
 if __name__ == '__main__':
     import uvicorn
+
     uvicorn.run(app='app:app', port=8087, reload=True)
