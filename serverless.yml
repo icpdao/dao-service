@@ -25,6 +25,7 @@ provider:
     ICPDAO_ETH_DAOSTAKING_ADDRESS: ${env:ICPDAO_ETH_DAOSTAKING_ADDRESS}
     ICPDAO_MINT_TOKEN_ETH_CHAIN_ID: ${env:ICPDAO_MINT_TOKEN_ETH_CHAIN_ID}
     ICPDAO_ETH_DAO_FACTORY_OWNER_ADDRESS: ${env:ICPDAO_ETH_DAO_FACTORY_OWNER_ADDRESS}
+    ICPDAO_SENTRY_DSN: ${env:ICPDAO_SENTRY_DSN}
   region: us-east-1
   stage: ${opt:stage}
   stackName: icpdao-dao-servcie-${self:provider.stage}

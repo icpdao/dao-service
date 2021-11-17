@@ -5,3 +5,4 @@ python-dotenv==0.17.1
 promise==2.3
 web3==5.23.1
 dnspython==2.1.0
+sentry-sdk
