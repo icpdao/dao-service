@@ -2,10 +2,12 @@ import os
 import traceback
 import graphene
 import settings
+import sentry_sdk
 
 from fastapi import FastAPI, Request
 from mangum import Mangum
 from fastapi.responses import JSONResponse
+from sentry_sdk.integrations.aws_lambda import AwsLambdaIntegration
 
 from app.common.utils.base_graphql import BaseGraphQLApp
 from app.common.utils.route_helper import find_current_user, path_join
@@ -13,6 +15,14 @@ from app.common.models.icpdao import init_mongo
 from app.routes import Query, Mutations
 from app.common.schema.icpdao import UserSchema, DAOSchema, DAOJobConfigSchema
 from app.routes.webhooks import GithubWebhooksApp
+
+
+sentry_sdk.init(
+    dsn=settings.ICPDAO_SENTRY_DSN,
+    environment=settings.ICPDAO_APP_ENV,
+    integrations=[AwsLambdaIntegration()],
+    traces_sample_rate=1.0
+)
 
 prefix = ''
 if os.environ.get('IS_UNITEST') != 'yes':
