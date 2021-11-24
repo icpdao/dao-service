@@ -51,7 +51,8 @@ def query_cycles_by_params(dao_id, start_cycle_id, end_cycle_id):
         if start_cycle.begin_at >= end_cycle.begin_at:
             raise ValueError(TOKEN_MINT_RECORD_QUERY_CYCLES_BY_PARAMS_START_CYCLE_NOT_IN_END_CYCLE_BEFORE)
 
-    cycles = [cycle for cycle in Cycle.objects(dao_id=dao_id, begin_at__gte=start_cycle.begin_at, end_at__lte=end_cycle.end_at)]
+    cycles = [cycle for cycle in
+              Cycle.objects(dao_id=dao_id, begin_at__gte=start_cycle.begin_at, end_at__lte=end_cycle.end_at)]
 
     cycles = sorted(cycles, key=lambda cycle: cycle.begin_at)
     return start_cycle, end_cycle, cycles
@@ -61,14 +62,30 @@ class BuildSplitInfo:
     def __init__(self, dao_id, cycles):
         self.dao_id = dao_id
         self.cycles = cycles
+
         self.job_user_id__2__job_size = self._build_job_user_id__2__job_size(self.dao_id, self.cycles)
+
         self.job_user_id_list = self._build_job_user_id_list(self.job_user_id__2__job_size)
+        self.job_user_id__2__level7_mentor_id_list = self._build_job_user_id__2__level7_mentor_id_list(
+            self.job_user_id_list)
+        self.all_user_id_list = self._build_all_user_id_list(self.job_user_id__2__level7_mentor_id_list,
+                                                             self.job_user_id_list)
+
+        self.user_id__2__user = self._build_user_id__2__user(self.all_user_id_list)
+        self.no_erc20_address_mentor_id_list = self._build_no_erc20_address_mentor_id_list(
+            self.job_user_id__2__level7_mentor_id_list, self.user_id__2__user)
+
         self.job_user_id__2__job_size_ratio = self._build_job_user_id__2__job_size_ratio(self.job_user_id__2__job_size)
-        self.job_user_id__2__level7_mentor_id_list = self._build_job_user_id__2__level7_mentor_id_list(self.job_user_id_list)
-        self.job_user_id__2__level7_mentor_id_2_ratio = self._build_job_user_id__2__level7_mentor_id_2_ratio(self.job_user_id__2__job_size, self.job_user_id__2__level7_mentor_id_list)
-        self.user_id__2__ratio = self._build_user_id__2__ratio(self.job_user_id__2__job_size, self.job_user_id__2__level7_mentor_id_list)
-        self.split_user_id_list = self._build_split_user_id_list(self.job_user_id__2__level7_mentor_id_list, self.job_user_id_list, self.user_id__2__ratio)
-        self.user_id__2__user = self._build_user_id__2__user(self.split_user_id_list)
+        self.job_user_id__2__level7_mentor_id_2_ratio = self._build_job_user_id__2__level7_mentor_id_2_ratio(
+            self.job_user_id__2__job_size, self.job_user_id__2__level7_mentor_id_list,
+            self.no_erc20_address_mentor_id_list)
+        self.user_id__2__ratio = self._build_user_id__2__ratio(self.job_user_id__2__job_size,
+                                                               self.job_user_id__2__level7_mentor_id_list,
+                                                               self.no_erc20_address_mentor_id_list)
+        self.split_user_id_list = self._build_split_user_id_list(self.job_user_id_list,
+                                                                 self.job_user_id__2__level7_mentor_id_list,
+                                                                 self.user_id__2__ratio,
+                                                                 self.no_erc20_address_mentor_id_list)
 
     @staticmethod
     def _build_job_user_id__2__job_size(dao_id, cycles):
@@ -91,7 +108,9 @@ class BuildSplitInfo:
         current_query_user_id_list = job_user_id_list
         next_query_user_id_list = []
         for index in range(0, 7):
-            for icppership in Icppership.objects(progress=IcppershipProgress.ACCEPT.value, status=IcppershipStatus.ICPPER.value, icpper_user_id__in=current_query_user_id_list):
+            for icppership in Icppership.objects(progress=IcppershipProgress.ACCEPT.value,
+                                                 status=IcppershipStatus.ICPPER.value,
+                                                 icpper_user_id__in=current_query_user_id_list):
                 icppership_list.append(icppership)
                 next_query_user_id_list.append(icppership.mentor_user_id)
             current_query_user_id_list = next_query_user_id_list
@@ -124,7 +143,8 @@ class BuildSplitInfo:
         return job_user_id__2__job_size_ratio
 
     @staticmethod
-    def _build_job_user_id__2__level7_mentor_id_2_ratio(job_user_id__2__job_size, job_user_id__2__level7_mentor_id_list):
+    def _build_job_user_id__2__level7_mentor_id_2_ratio(job_user_id__2__job_size, job_user_id__2__level7_mentor_id_list,
+                                                        no_erc20_address_mentor_id_list):
         job_user_id__2__level7_mentor_id_2_ratio = {}
 
         for job_user_id in job_user_id__2__level7_mentor_id_list:
@@ -132,15 +152,20 @@ class BuildSplitInfo:
             level7_mentor_id_2_ratio = {}
             for index, parent_user_id in enumerate(parent_user_ids):
                 job_size_base_ratio = job_user_id__2__job_size[job_user_id] * decimal.Decimal('100000')
-                size = job_size_base_ratio * \
-                    MintRadtio.MENTOR_BASE_ALL_RATIO * \
-                    MintRadtio.MENTOR_7_LELVES_RATIO_LIST[index]
+
+                size = decimal.Decimal('0')
+                if parent_user_id not in no_erc20_address_mentor_id_list:
+                    size = job_size_base_ratio * \
+                           MintRadtio.MENTOR_BASE_ALL_RATIO * \
+                           MintRadtio.MENTOR_7_LELVES_RATIO_LIST[index]
+
                 level7_mentor_id_2_ratio[parent_user_id] = int(size)
             job_user_id__2__level7_mentor_id_2_ratio[job_user_id] = level7_mentor_id_2_ratio
         return job_user_id__2__level7_mentor_id_2_ratio
 
     @staticmethod
-    def _build_user_id__2__ratio(job_user_id__2__job_size, job_user_id__2__level7_mentor_id_list):
+    def _build_user_id__2__ratio(job_user_id__2__job_size, job_user_id__2__level7_mentor_id_list,
+                                 no_erc20_address_mentor_id_list):
         user_id__2__ratio = {}
         for user_id in job_user_id__2__job_size:
             job_size_base_ratio = job_user_id__2__job_size[user_id] * decimal.Decimal('100000')
@@ -150,12 +175,16 @@ class BuildSplitInfo:
             parent_user_ids = job_user_id__2__level7_mentor_id_list[user_id]
             for index in range(0, 7):
                 parent_user_id = SystemUser.id
-                if index+1 <= len(parent_user_ids):
-                    parent_user_id = parent_user_ids[index]
+                size = job_size_base_ratio * \
+                       MintRadtio.MENTOR_BASE_ALL_RATIO * \
+                       MintRadtio.MENTOR_7_LELVES_RATIO_LIST[index]
+                if index + 1 <= len(parent_user_ids):
+                    mentor_id = parent_user_ids[index]
+                    if mentor_id not in no_erc20_address_mentor_id_list:
+                        parent_user_id = mentor_id
+
                 user_id__2__ratio.setdefault(parent_user_id, decimal.Decimal('0'))
-                user_id__2__ratio[parent_user_id] += job_size_base_ratio * \
-                    MintRadtio.MENTOR_BASE_ALL_RATIO * \
-                    MintRadtio.MENTOR_7_LELVES_RATIO_LIST[index]
+                user_id__2__ratio[parent_user_id] += size
 
         for user_id in user_id__2__ratio:
             user_id__2__ratio[user_id] = int(user_id__2__ratio[user_id])
@@ -163,7 +192,7 @@ class BuildSplitInfo:
         return user_id__2__ratio
 
     @staticmethod
-    def _build_split_user_id_list(job_user_id__2__level7_mentor_id_list, job_user_id_list, user_id__2__ratio):
+    def _build_split_user_id_list(job_user_id_list, job_user_id__2__level7_mentor_id_list, user_id__2__ratio, no_erc20_address_mentor_id_list):
         split_user_id_list = []
         for user_id in job_user_id_list:
             if user_id not in split_user_id_list:
@@ -172,29 +201,58 @@ class BuildSplitInfo:
         for user_id in job_user_id_list:
             parent_user_ids = job_user_id__2__level7_mentor_id_list[user_id]
             for parent_user_id in parent_user_ids:
-                if parent_user_id not in split_user_id_list:
+                if parent_user_id not in no_erc20_address_mentor_id_list and parent_user_id not in split_user_id_list:
                     split_user_id_list.append(parent_user_id)
 
         if SystemUser.id in list(user_id__2__ratio.keys()):
             split_user_id_list.append(SystemUser.id)
         return split_user_id_list
 
+
     @staticmethod
-    def _build_user_id__2__user(split_user_id_list):
+    def _build_all_user_id_list(job_user_id__2__level7_mentor_id_list, job_user_id_list):
+        all_user_id_list = []
+        for user_id in job_user_id_list:
+            if user_id not in all_user_id_list:
+                all_user_id_list.append(user_id)
+
+        for user_id in job_user_id_list:
+            parent_user_ids = job_user_id__2__level7_mentor_id_list[user_id]
+            for parent_user_id in parent_user_ids:
+                if parent_user_id not in all_user_id_list:
+                    all_user_id_list.append(parent_user_id)
+        all_user_id_list.append(SystemUser.id)
+        return all_user_id_list
+
+    @staticmethod
+    def _build_user_id__2__user(all_user_id_list):
         user_id__2__user = {}
-        split_user_id_list_have_system_user = False
+        have_system_user = False
         query_user_id = []
-        for user_id in split_user_id_list:
+
+        for user_id in all_user_id_list:
             if user_id != SystemUser.id:
                 query_user_id.append(user_id)
             else:
-                split_user_id_list_have_system_user = True
+                have_system_user = True
 
         for user in User.objects(id__in=query_user_id):
             user_id__2__user[str(user.id)] = user
-        if split_user_id_list_have_system_user:
+
+        if have_system_user:
             user_id__2__user[SystemUser.id] = SystemUser
+
         return user_id__2__user
+
+    @staticmethod
+    def _build_no_erc20_address_mentor_id_list(job_user_id__2__level7_mentor_id_list, user_id__2__user):
+        tmp_set = set()
+        for job_user_id in job_user_id__2__level7_mentor_id_list:
+            for mentor_id in job_user_id__2__level7_mentor_id_list[job_user_id]:
+                if not user_id__2__user[mentor_id].erc20_address:
+                    tmp_set.add(mentor_id)
+
+        return list(tmp_set)
 
     def total_size(self):
         result = decimal.Decimal("0")
@@ -283,7 +341,7 @@ class CreateTokenMintRecord(Mutation):
         start_cycle_id = String(required=True)
         end_cycle_id = String(required=True)
         token_contract_address = String(required=True)
-        token_symbol=String(required=True)
+        token_symbol = String(required=True)
         start_timestamp = Int(required=True)
         end_timestamp = Int(required=True)
         tick_lower = Int(required=True)
@@ -292,7 +350,8 @@ class CreateTokenMintRecord(Mutation):
 
     token_mint_record = Field(TokenMintRecordSchema)
 
-    def mutate(self, info, dao_id, start_cycle_id, end_cycle_id, token_contract_address, start_timestamp, end_timestamp, tick_lower, tick_upper, chain_id, token_symbol):
+    def mutate(self, info, dao_id, start_cycle_id, end_cycle_id, token_contract_address, start_timestamp, end_timestamp,
+               tick_lower, tick_upper, chain_id, token_symbol):
         un_done_record_count = TokenMintRecord.objects(
             dao_id=dao_id,
             token_contract_address=token_contract_address,
@@ -319,7 +378,7 @@ class CreateTokenMintRecord(Mutation):
                 mentor_list.append(MintIcpperRecordMeta(
                     mentor_id=parent_user_id,
                     mentor_eth_address=bsi.user_id__2__user[parent_user_id].erc20_address,
-                    mentor_radio=bsi.job_user_id__2__level7_mentor_id_2_ratio[job_user_id][parent_user_id],
+                    mentor_radio=bsi.job_user_id__2__level7_mentor_id_2_ratio[job_user_id].get(parent_user_id, 0),
                 ))
             mint_icpper_records.append(MintIcpperRecord(
                 user_id=job_user_id,
@@ -452,5 +511,6 @@ class FindLostTxForDropTokenMintRecord(Mutation):
     def mutate(self, info, dao_id, token_contract_address, chain_id):
         if os.environ.get('IS_UNITEST') != 'yes':
             background_tasks = info.context['background']
-            background_tasks.add_task(run_find_lost_tx_for_drop_token_mint_record_task, dao_id, token_contract_address, chain_id)
+            background_tasks.add_task(run_find_lost_tx_for_drop_token_mint_record_task, dao_id, token_contract_address,
+                                      chain_id)
         return DropTokenMintRecord(ok=True)

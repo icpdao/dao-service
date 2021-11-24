@@ -32,16 +32,17 @@ class Base:
         get_db('icpdao').client.drop_database('icpdao')
 
     @staticmethod
-    def create_icpper_user(nickname='test_icpper', github_login='test_github_login'):
+    def create_icpper_user(nickname='test_icpper', github_login='test_github_login', have_erc20_address=True):
         github_user_id = _get_github_user_id(github_login)
         record = User(
             nickname=nickname,
             github_login=github_login,
             github_user_id=github_user_id,
             status=UserStatus.ICPPER.value,
-            avatar='test_avatar',
-            erc20_address=web3.Account.create().address
+            avatar='test_avatar'
         )
+        if have_erc20_address:
+            record.erc20_address = web3.Account.create().address
         record.save()
         return record
 

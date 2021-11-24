@@ -796,6 +796,414 @@ mutation {
         assert record.mint_icpper_records[2].mentor_list[1].mentor_eth_address == self.job_user_1_mentor_7.erc20_address
         assert record.mint_icpper_records[2].mentor_list[1].mentor_radio == 55000
 
+    def test_query_mint_split_infos_have_no_erc20_address_mentor(self):
+        """
+        创建三个有 job 的用户和他们的上级
+        创建一个 dao
+        创建两个 cycle
+        创建多个 cycle_icpper_stat
+        """
+        self.__class__.clear_db()
+        self.job_user_1 = self.create_icpper_user(nickname='job_user_1', github_login='job_user_1')
+        self.job_user_2 = self.create_icpper_user(nickname='job_user_2', github_login='job_user_2')
+        self.job_user_3 = self.create_icpper_user(nickname='job_user_3', github_login='job_user_3')
+
+        self.job_user_1_mentor_1 = self.create_icpper_user(nickname='job_user_1_mentor_1', github_login='job_user_1_mentor_1')
+        self.job_user_1_mentor_2 = self.create_icpper_user(nickname='job_user_1_mentor_2', github_login='job_user_1_mentor_2')
+        self.job_user_1_mentor_3 = self.create_icpper_user(nickname='job_user_1_mentor_3', github_login='job_user_1_mentor_3')
+        self.job_user_1_mentor_4 = self.create_icpper_user(nickname='job_user_1_mentor_4', github_login='job_user_1_mentor_4')
+        self.job_user_1_mentor_5 = self.job_user_3
+        self.job_user_1_mentor_6 = self.create_icpper_user(nickname='job_user_1_mentor_6', github_login='job_user_1_mentor_6', have_erc20_address=False)
+        self.job_user_1_mentor_7 = self.create_icpper_user(nickname='job_user_1_mentor_7', github_login='job_user_1_mentor_7')
+
+        self.job_user_2_mentor_1 = self.create_icpper_user(nickname='job_user_2_mentor_1', github_login='job_user_2_mentor_1')
+        self.job_user_2_mentor_2 = self.create_icpper_user(nickname='job_user_2_mentor_2', github_login='job_user_2_mentor_2')
+
+        self._link_icpper_mentor(self.job_user_1_mentor_1, self.job_user_1)
+        self._link_icpper_mentor(self.job_user_1_mentor_2, self.job_user_1_mentor_1)
+        self._link_icpper_mentor(self.job_user_1_mentor_3, self.job_user_1_mentor_2)
+        self._link_icpper_mentor(self.job_user_1_mentor_4, self.job_user_1_mentor_3)
+        self._link_icpper_mentor(self.job_user_1_mentor_5, self.job_user_1_mentor_4)
+        self._link_icpper_mentor(self.job_user_1_mentor_6, self.job_user_1_mentor_5)
+        self._link_icpper_mentor(self.job_user_1_mentor_7, self.job_user_1_mentor_6)
+
+        self._link_icpper_mentor(self.job_user_2_mentor_1, self.job_user_2)
+        self._link_icpper_mentor(self.job_user_2_mentor_2, self.job_user_2_mentor_1)
+
+        self.mock_dao = DAO(
+            name="dao_name",
+            owner_id=str(self.job_user_1_mentor_7.id),
+            github_owner_id=1,
+            github_owner_name="1"
+        ).save()
+
+        begin_at_1 = int(time.time()) - 100 * 24 * 60 * 60
+        end_at_1 = begin_at_1 + 30 * 24 * 60 * 60
+        begin_at_2 = end_at_1
+        end_at_2 = begin_at_2 + 30 * 24 * 60 * 60
+
+        self.mock_cycle_1 = Cycle(
+            dao_id=str(self.mock_dao.id),
+            begin_at=begin_at_1,
+            end_at=end_at_1,
+            pair_begin_at=end_at_1,
+            pair_end_at=end_at_1+1,
+            vote_begin_at=end_at_1+1,
+            vote_end_at=end_at_1+2,
+            vote_result_published_at=end_at_1+10
+        ).save()
+
+        self.mock_cycle_2 = Cycle(
+            dao_id=str(self.mock_dao.id),
+            begin_at=begin_at_2,
+            end_at=end_at_2,
+            pair_begin_at=end_at_2,
+            pair_end_at=end_at_2+1,
+            vote_begin_at=end_at_2+1,
+            vote_end_at=end_at_2+2,
+            vote_result_published_at=end_at_2+10
+        ).save()
+
+        CycleIcpperStat(
+            dao_id=str(self.mock_dao.id),
+            cycle_id=str(self.mock_cycle_1.id),
+            user_id=str(self.job_user_1.id),
+            job_count=20,
+            job_size=decimal.Decimal('19'),
+            size=decimal.Decimal('19'),
+            vote_ei=1,
+            owner_ei=decimal.Decimal('0.1'),
+            ei=decimal.Decimal('1.1')
+        ).save()
+        CycleIcpperStat(
+            dao_id=str(self.mock_dao.id),
+            cycle_id=str(self.mock_cycle_1.id),
+            user_id=str(self.job_user_2.id),
+            job_count=20,
+            job_size=decimal.Decimal('17'),
+            size=decimal.Decimal('17'),
+            vote_ei=1,
+            owner_ei=decimal.Decimal('0.1'),
+            ei=decimal.Decimal('1.1')
+        ).save()
+        CycleIcpperStat(
+            dao_id=str(self.mock_dao.id),
+            cycle_id=str(self.mock_cycle_1.id),
+            user_id=str(self.job_user_3.id),
+            job_count=20,
+            job_size=decimal.Decimal('21.5'),
+            size=decimal.Decimal('21.5'),
+            vote_ei=1,
+            owner_ei=decimal.Decimal('0.1'),
+            ei=decimal.Decimal('1.1')
+        ).save()
+
+        CycleIcpperStat(
+            dao_id=str(self.mock_dao.id),
+            cycle_id=str(self.mock_cycle_2.id),
+            user_id=str(self.job_user_1.id),
+            job_count=20,
+            job_size=decimal.Decimal('17'),
+            size=decimal.Decimal('17'),
+            vote_ei=1,
+            owner_ei=decimal.Decimal('0.1'),
+            ei=decimal.Decimal('1.1')
+        ).save()
+        CycleIcpperStat(
+            dao_id=str(self.mock_dao.id),
+            cycle_id=str(self.mock_cycle_2.id),
+            user_id=str(self.job_user_2.id),
+            job_count=20,
+            job_size=decimal.Decimal('18.5'),
+            size=decimal.Decimal('18.5'),
+            vote_ei=1,
+            owner_ei=decimal.Decimal('0.1'),
+            ei=decimal.Decimal('1.1')
+        ).save()
+        CycleIcpperStat(
+            dao_id=str(self.mock_dao.id),
+            cycle_id=str(self.mock_cycle_2.id),
+            user_id=str(self.job_user_3.id),
+            job_count=20,
+            job_size=decimal.Decimal('22.5'),
+            size=decimal.Decimal('22.5'),
+            vote_ei=1,
+            owner_ei=decimal.Decimal('0.1'),
+            ei=decimal.Decimal('1.1')
+        ).save()
+
+        ret = self.graph_query(self.job_user_1_mentor_7.id, self.query_mint_split_infos % (str(self.mock_dao.id), self.mock_cycle_1.id, self.mock_cycle_2.id))
+        res = ret.json()
+        split_infos = res["data"]["dao"]["tokenMintSplitInfo"]["splitInfos"]
+
+        assert len(split_infos) == 11
+
+        assert split_infos[0]["userId"] == str(self.job_user_1.id)
+        assert split_infos[1]["userId"] == str(self.job_user_2.id)
+        assert split_infos[2]["userId"] == str(self.job_user_3.id)
+
+        assert split_infos[3]["userId"] == str(self.job_user_1_mentor_1.id)
+        assert split_infos[4]["userId"] == str(self.job_user_1_mentor_2.id)
+        assert split_infos[5]["userId"] == str(self.job_user_1_mentor_3.id)
+        assert split_infos[6]["userId"] == str(self.job_user_1_mentor_4.id)
+        assert split_infos[7]["userId"] == str(self.job_user_1_mentor_7.id)
+
+        assert split_infos[8]["userId"] == str(self.job_user_2_mentor_1.id)
+        assert split_infos[9]["userId"] == str(self.job_user_2_mentor_2.id)
+        assert split_infos[10]["userId"] == SystemUser.id
+
+        assert split_infos[0]["ratio"] == 3420000  # 360 * 100 * 95
+        assert split_infos[1]["ratio"] == 3372500  # 355 * 100 * 95
+        assert split_infos[2]["ratio"] == 4185400  # 440 * 100 * 95 + 360 * 5 * 3
+
+        assert split_infos[3]["ratio"] == 90000  # 360 * 5 * 50
+        assert split_infos[4]["ratio"] == 45000  # 360 * 5 * 25
+        assert split_infos[5]["ratio"] == 23400  # 360 * 5 * 13
+        assert split_infos[6]["ratio"] == 10800  # 360 * 5 * 6
+        # 360 * 5 * 2 + 440 * 5 * 50 no erc20_address_mentor
+        assert split_infos[7]["ratio"] == 56800  # 360 * 5 * 1 + 440 * 5 * 25
+
+        assert split_infos[8]["ratio"] == 88750  # 355 * 5 * 50
+        assert split_infos[9]["ratio"] == 44375  # 355 * 5 * 25
+        assert split_infos[10]["ratio"] == 99375 + 113600  #  355 * 5 * 25 + 440 * 5 * 25 and (360 * 5 * 2 + 440 * 5 * 50)
+
+    def test_create_token_mint_record_have_no_erc20_address_mentor(self):
+        """
+        创建三个有 job 的用户和他们的上级
+        创建一个 dao
+        创建两个 cycle
+        创建多个 cycle_icpper_stat
+        """
+        self.__class__.clear_db()
+        self.job_user_1 = self.create_icpper_user(nickname='job_user_1', github_login='job_user_1')
+        self.job_user_2 = self.create_icpper_user(nickname='job_user_2', github_login='job_user_2')
+        self.job_user_3 = self.create_icpper_user(nickname='job_user_3', github_login='job_user_3')
+
+        self.job_user_1_mentor_1 = self.create_icpper_user(nickname='job_user_1_mentor_1', github_login='job_user_1_mentor_1')
+        self.job_user_1_mentor_2 = self.create_icpper_user(nickname='job_user_1_mentor_2', github_login='job_user_1_mentor_2')
+        self.job_user_1_mentor_3 = self.create_icpper_user(nickname='job_user_1_mentor_3', github_login='job_user_1_mentor_3')
+        self.job_user_1_mentor_4 = self.create_icpper_user(nickname='job_user_1_mentor_4', github_login='job_user_1_mentor_4')
+        self.job_user_1_mentor_5 = self.job_user_3
+        self.job_user_1_mentor_6 = self.create_icpper_user(nickname='job_user_1_mentor_6', github_login='job_user_1_mentor_6')
+        self.job_user_1_mentor_7 = self.create_icpper_user(nickname='job_user_1_mentor_7', github_login='job_user_1_mentor_7')
+
+        self.job_user_2_mentor_1 = self.create_icpper_user(nickname='job_user_2_mentor_1', github_login='job_user_2_mentor_1')
+        self.job_user_2_mentor_2 = self.create_icpper_user(nickname='job_user_2_mentor_2', github_login='job_user_2_mentor_2', have_erc20_address=False)
+
+        self._link_icpper_mentor(self.job_user_1_mentor_1, self.job_user_1)
+        self._link_icpper_mentor(self.job_user_1_mentor_2, self.job_user_1_mentor_1)
+        self._link_icpper_mentor(self.job_user_1_mentor_3, self.job_user_1_mentor_2)
+        self._link_icpper_mentor(self.job_user_1_mentor_4, self.job_user_1_mentor_3)
+        self._link_icpper_mentor(self.job_user_1_mentor_5, self.job_user_1_mentor_4)
+        self._link_icpper_mentor(self.job_user_1_mentor_6, self.job_user_1_mentor_5)
+        self._link_icpper_mentor(self.job_user_1_mentor_7, self.job_user_1_mentor_6)
+
+        self._link_icpper_mentor(self.job_user_2_mentor_1, self.job_user_2)
+        self._link_icpper_mentor(self.job_user_2_mentor_2, self.job_user_2_mentor_1)
+
+        self.mock_dao = DAO(
+            name="dao_name",
+            owner_id=str(self.job_user_1_mentor_7.id),
+            github_owner_id=1,
+            github_owner_name="1"
+        ).save()
+
+        begin_at_1 = int(time.time()) - 100 * 24 * 60 * 60
+        end_at_1 = begin_at_1 + 30 * 24 * 60 * 60
+        begin_at_2 = end_at_1
+        end_at_2 = begin_at_2 + 30 * 24 * 60 * 60
+
+        self.mock_cycle_1 = Cycle(
+            dao_id=str(self.mock_dao.id),
+            begin_at=begin_at_1,
+            end_at=end_at_1,
+            pair_begin_at=end_at_1,
+            pair_end_at=end_at_1+1,
+            vote_begin_at=end_at_1+1,
+            vote_end_at=end_at_1+2,
+            vote_result_published_at=end_at_1+10
+        ).save()
+
+        self.mock_cycle_2 = Cycle(
+            dao_id=str(self.mock_dao.id),
+            begin_at=begin_at_2,
+            end_at=end_at_2,
+            pair_begin_at=end_at_2,
+            pair_end_at=end_at_2+1,
+            vote_begin_at=end_at_2+1,
+            vote_end_at=end_at_2+2,
+            vote_result_published_at=end_at_2+10
+        ).save()
+
+        CycleIcpperStat(
+            dao_id=str(self.mock_dao.id),
+            cycle_id=str(self.mock_cycle_1.id),
+            user_id=str(self.job_user_1.id),
+            job_count=20,
+            job_size=decimal.Decimal('19'),
+            size=decimal.Decimal('19'),
+            vote_ei=1,
+            owner_ei=decimal.Decimal('0.1'),
+            ei=decimal.Decimal('1.1')
+        ).save()
+        CycleIcpperStat(
+            dao_id=str(self.mock_dao.id),
+            cycle_id=str(self.mock_cycle_1.id),
+            user_id=str(self.job_user_2.id),
+            job_count=20,
+            job_size=decimal.Decimal('17'),
+            size=decimal.Decimal('17'),
+            vote_ei=1,
+            owner_ei=decimal.Decimal('0.1'),
+            ei=decimal.Decimal('1.1')
+        ).save()
+        CycleIcpperStat(
+            dao_id=str(self.mock_dao.id),
+            cycle_id=str(self.mock_cycle_1.id),
+            user_id=str(self.job_user_3.id),
+            job_count=20,
+            job_size=decimal.Decimal('21.5'),
+            size=decimal.Decimal('21.5'),
+            vote_ei=1,
+            owner_ei=decimal.Decimal('0.1'),
+            ei=decimal.Decimal('1.1')
+        ).save()
+
+        CycleIcpperStat(
+            dao_id=str(self.mock_dao.id),
+            cycle_id=str(self.mock_cycle_2.id),
+            user_id=str(self.job_user_1.id),
+            job_count=20,
+            job_size=decimal.Decimal('17'),
+            size=decimal.Decimal('17'),
+            vote_ei=1,
+            owner_ei=decimal.Decimal('0.1'),
+            ei=decimal.Decimal('1.1')
+        ).save()
+        CycleIcpperStat(
+            dao_id=str(self.mock_dao.id),
+            cycle_id=str(self.mock_cycle_2.id),
+            user_id=str(self.job_user_2.id),
+            job_count=20,
+            job_size=decimal.Decimal('18.5'),
+            size=decimal.Decimal('18.5'),
+            vote_ei=1,
+            owner_ei=decimal.Decimal('0.1'),
+            ei=decimal.Decimal('1.1')
+        ).save()
+        CycleIcpperStat(
+            dao_id=str(self.mock_dao.id),
+            cycle_id=str(self.mock_cycle_2.id),
+            user_id=str(self.job_user_3.id),
+            job_count=20,
+            job_size=decimal.Decimal('22.5'),
+            size=decimal.Decimal('22.5'),
+            vote_ei=1,
+            owner_ei=decimal.Decimal('0.1'),
+            ei=decimal.Decimal('1.1')
+        ).save()
+
+        self.token_contract_address = "0xb7e390864a90b7b923c9f9310c6f98aafe43f707"
+
+        ret = self.graph_query(
+            self.job_user_1_mentor_7.id,
+            self.create_token_mint_record % (str(self.mock_dao.id), self.mock_cycle_1.id, self.mock_cycle_2.id, self.token_contract_address, begin_at_1, end_at_2, 0, 1000, "1")
+        )
+        res = ret.json()["data"]["createTokenMintRecord"]["tokenMintRecord"]
+        assert res["daoId"] == str(self.mock_dao.id)
+        assert res["totalRealSize"] == decimal.Decimal("115.5")
+
+        record = TokenMintRecord.objects().first()
+        assert record.mint_token_address_list == [
+            self.job_user_1.erc20_address,
+            self.job_user_2.erc20_address,
+            self.job_user_3.erc20_address,
+            self.job_user_1_mentor_1.erc20_address,
+            self.job_user_1_mentor_2.erc20_address,
+            self.job_user_1_mentor_3.erc20_address,
+            self.job_user_1_mentor_4.erc20_address,
+            self.job_user_1_mentor_6.erc20_address,
+            self.job_user_1_mentor_7.erc20_address,
+            self.job_user_2_mentor_1.erc20_address,
+            SystemUser.erc20_address,
+        ]
+
+        assert record.mint_token_amount_ratio_list == [
+            3420000,
+            3372500,
+            4185400,
+            90000,
+            45000,
+            23400,
+            10800,
+            113600,
+            56800,
+            88750,
+            99375 + 44375,
+        ]
+
+        assert len(record.mint_icpper_records) == 3
+
+        assert record.mint_icpper_records[0].user_id == str(self.job_user_1.id)
+        assert record.mint_icpper_records[0].user_eth_address == str(self.job_user_1.erc20_address)
+        assert record.mint_icpper_records[0].user_ratio == 3420000
+        assert len(record.mint_icpper_records[0].mentor_list) == 7
+
+        assert record.mint_icpper_records[0].mentor_list[0].mentor_id == str(self.job_user_1_mentor_1.id)
+        assert record.mint_icpper_records[0].mentor_list[0].mentor_eth_address == self.job_user_1_mentor_1.erc20_address
+        assert record.mint_icpper_records[0].mentor_list[0].mentor_radio == 90000
+
+        assert record.mint_icpper_records[0].mentor_list[1].mentor_id == str(self.job_user_1_mentor_2.id)
+        assert record.mint_icpper_records[0].mentor_list[1].mentor_eth_address == self.job_user_1_mentor_2.erc20_address
+        assert record.mint_icpper_records[0].mentor_list[1].mentor_radio == 45000
+
+        assert record.mint_icpper_records[0].mentor_list[2].mentor_id == str(self.job_user_1_mentor_3.id)
+        assert record.mint_icpper_records[0].mentor_list[2].mentor_eth_address == self.job_user_1_mentor_3.erc20_address
+        assert record.mint_icpper_records[0].mentor_list[2].mentor_radio == 23400
+
+        assert record.mint_icpper_records[0].mentor_list[3].mentor_id == str(self.job_user_1_mentor_4.id)
+        assert record.mint_icpper_records[0].mentor_list[3].mentor_eth_address == self.job_user_1_mentor_4.erc20_address
+        assert record.mint_icpper_records[0].mentor_list[3].mentor_radio == 10800
+
+        assert record.mint_icpper_records[0].mentor_list[4].mentor_id == str(self.job_user_3.id)
+        assert record.mint_icpper_records[0].mentor_list[4].mentor_eth_address == self.job_user_3.erc20_address
+        assert record.mint_icpper_records[0].mentor_list[4].mentor_radio == 5400
+
+        assert record.mint_icpper_records[0].mentor_list[5].mentor_id == str(self.job_user_1_mentor_6.id)
+        assert record.mint_icpper_records[0].mentor_list[5].mentor_eth_address == self.job_user_1_mentor_6.erc20_address
+        assert record.mint_icpper_records[0].mentor_list[5].mentor_radio == 3600
+
+        assert record.mint_icpper_records[0].mentor_list[6].mentor_id == str(self.job_user_1_mentor_7.id)
+        assert record.mint_icpper_records[0].mentor_list[6].mentor_eth_address == self.job_user_1_mentor_7.erc20_address
+        assert record.mint_icpper_records[0].mentor_list[6].mentor_radio == 1800
+
+        assert record.mint_icpper_records[1].user_id == str(self.job_user_2.id)
+        assert record.mint_icpper_records[1].user_eth_address == str(self.job_user_2.erc20_address)
+        assert record.mint_icpper_records[1].user_ratio == 3372500
+        assert len(record.mint_icpper_records[1].mentor_list) == 2
+
+        assert record.mint_icpper_records[1].mentor_list[0].mentor_id == str(self.job_user_2_mentor_1.id)
+        assert record.mint_icpper_records[1].mentor_list[0].mentor_eth_address == self.job_user_2_mentor_1.erc20_address
+        assert record.mint_icpper_records[1].mentor_list[0].mentor_radio == 88750
+
+        assert record.mint_icpper_records[1].mentor_list[1].mentor_id == str(self.job_user_2_mentor_2.id)
+        assert record.mint_icpper_records[1].mentor_list[1].mentor_eth_address == self.job_user_2_mentor_2.erc20_address
+        assert record.mint_icpper_records[1].mentor_list[1].mentor_eth_address is None
+        assert record.mint_icpper_records[1].mentor_list[1].mentor_radio == 0 # not is 44375
+
+        assert record.mint_icpper_records[2].user_id == str(self.job_user_3.id)
+        assert record.mint_icpper_records[2].user_eth_address == str(self.job_user_3.erc20_address)
+        assert record.mint_icpper_records[2].user_ratio == 4180000
+        assert len(record.mint_icpper_records[2].mentor_list) == 2
+
+        assert record.mint_icpper_records[2].mentor_list[0].mentor_id == str(self.job_user_1_mentor_6.id)
+        assert record.mint_icpper_records[2].mentor_list[0].mentor_eth_address == self.job_user_1_mentor_6.erc20_address
+        assert record.mint_icpper_records[2].mentor_list[0].mentor_radio == 110000
+
+        assert record.mint_icpper_records[2].mentor_list[1].mentor_id == str(self.job_user_1_mentor_7.id)
+        assert record.mint_icpper_records[2].mentor_list[1].mentor_eth_address == self.job_user_1_mentor_7.erc20_address
+        assert record.mint_icpper_records[2].mentor_list[1].mentor_radio == 55000
+
     def test_link_tx_hash_for_token_mint_record(self):
         """
         创建三个有 job 的用户和他们的上级
