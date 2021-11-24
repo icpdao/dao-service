@@ -2867,7 +2867,9 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
         "mock_user_4",
         "mock_user_5",
         "mock_user_6",
-        "mock_user_7"
+        "mock_user_7",
+        "mock_user_7_mentor_1",
+        "mock_user_7_mentor_2"
     ]
 
     for dao_name in delete_dao_name_list:
@@ -2917,3 +2919,19 @@ def init_mock_data(owner_github_user_login, icpper_github_user_login):
     create_end_and_in_stat_time_cycle_dao(owner_user, icpper_user)
     create_tip_cycle_dao(owner_user, icpper_user, mock_users)
     create_end_cycle_and_mint_dao(owner_user, icpper_user, mock_users)
+    Icppership.objects(
+        mentor_user_id=str(mock_users[7].id),
+        icpper_user_id=str(mock_users[6].id)
+    ).upsert_one(
+        progress=IcppershipProgress.ACCEPT.value,
+        status=IcppershipStatus.ICPPER.value,
+        icpper_github_login=mock_users[6].github_login,
+    )
+    Icppership.objects(
+        mentor_user_id=str(mock_users[8].id),
+        icpper_user_id=str(mock_users[7].id)
+    ).upsert_one(
+        progress=IcppershipProgress.ACCEPT.value,
+        status=IcppershipStatus.ICPPER.value,
+        icpper_github_login=mock_users[7].github_login,
+    )
