@@ -32,6 +32,13 @@ mutation {
   }
 }
 """
+    update_pair_vote_with_repeat = """
+    mutation {
+      updatePairVoteWithRepeat(id: "%s", voteJobId: "%s") {
+        ok
+      }
+    }
+    """
 
     @staticmethod
     def create_job(dao_id, user_id, cycle_id, pair_type=0):
@@ -90,11 +97,13 @@ mutation {
             github_owner_name='mockdao'
         )
         mockdao.save()
+        self.dao = mockdao
         dao_id = str(mockdao.id)
         cycle = Cycle(
             dao_id=dao_id, vote_begin_at=0, vote_end_at=33180161000,
             paired_at=time.time())
         cycle.save()
+        self.cycle = cycle
         cycle_id = str(cycle.id)
         self.job1 = self.create_job(str(mockdao.id), str(self.icpper1.id), str(cycle.id))
         self.job2 = self.create_job(str(mockdao.id), str(self.icpper2.id), str(cycle.id))
@@ -116,6 +125,10 @@ mutation {
             dao_id, cycle_id, 0, self.job6, self.job7, self.icpper2)
         self.vote7 = self.create_cycle_vote(
             dao_id, cycle_id, 0, self.job7, self.job4, self.icpper2)
+        self.vote8 = self.create_cycle_vote(
+            dao_id, cycle_id, 0, self.job7, self.job4, self.icpper2)
+        self.vote8.is_repeat = True
+        self.vote8.save()
         self.create_cycle_confirm(dao_id, cycle_id, self.icpper1)
         self.create_cycle_confirm(dao_id, cycle_id, self.icpper2)
         self.create_cycle_confirm(dao_id, cycle_id, self.icpper3)
@@ -223,4 +236,31 @@ mutation {
         assert res.count() == CycleVote.objects(vote_type=CycleVoteType.ALL.value).count() - 1
         res = CycleVote.objects.filter(
             Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id=str(self.icpper4.id)))
+
+    def test_update_pair_vote_with_repeat(self):
+        self.clear_db()
+        self.create_vote()
+        self.cycle.vote_end_at = int(time.time()) - 60 * 60
+        self.cycle.save()
+
+        res = self.graph_query(
+            str(self.dao.owner_id),
+            self.update_pair_vote_with_repeat % (str(self.vote4.id), str(self.job4.id))
+        )
+        data = res.json()
+        assert data['errors'][0]['message'] == 'NOT REPEAT VOTE'
+
+        res = self.graph_query(
+            str(self.icpper4.id),
+            self.update_pair_vote_with_repeat % (str(self.vote8.id), str(self.job4.id))
+        )
+        data = res.json()
+        assert data['errors'][0]['message'] == 'NOT PERMISSION VOTE'
+
+        res = self.graph_query(
+            str(self.dao.owner_id),
+            self.update_pair_vote_with_repeat % (str(self.vote8.id), str(self.job4.id))
+        )
+        data = res.json()
+        assert data['data']['updatePairVoteWithRepeat']['ok'] is True
 

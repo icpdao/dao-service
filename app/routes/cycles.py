@@ -359,6 +359,14 @@ class CycleVotesQuery(ObjectType):
         setattr(self, '_is_myself', is_myself)
 
     @property
+    def is_repeat(self):
+        return getattr(self, '_is_repeat')
+
+    @is_repeat.setter
+    def is_repeat(self, is_repeat):
+        setattr(self, '_is_repeat', is_repeat)
+
+    @property
     def filter(self):
         return getattr(self, '_filter')
 
@@ -376,6 +384,8 @@ class CycleVotesQuery(ObjectType):
                 query = query.filter(Q(is_result_public=self.is_public) | Q(vote_type=CycleVoteType.ALL.value))
             else:
                 query = query.filter(is_result_public=self.is_public, vote_type=CycleVoteType.PAIR.value)
+        if self.is_repeat:
+            query = query.filter(is_repeat=True)
         # NOTICE: filter all type belongs current_user.id
         if self.filter == CycleVoteFilterEnum.un_vote:
             query = query.filter(
@@ -521,6 +531,7 @@ class CycleQuery(ObjectType):
         CycleVotesQuery,
         is_public=Boolean(),
         is_myself=Boolean(),
+        is_repeat=Boolean(),
         filter=CycleVoteFilterEnum(default_value=0),
         first=Int(default_value=20),
         offset=Int(default_value=0)
@@ -589,10 +600,11 @@ class CycleQuery(ObjectType):
         offset = kwargs.get('offset')
         is_public = kwargs.get('is_public', None)
         is_myself = kwargs.get('is_myself', None)
+        is_repeat = kwargs.get('is_repeat', None)
         _filter = kwargs.get('filter')
         return CycleVotesQuery(
             cycle_id=self.cycle_id, first=first, offset=offset,
-            is_public=is_public, is_myself=is_myself, filter=_filter)
+            is_public=is_public, is_myself=is_myself, is_repeat=is_repeat, filter=_filter)
 
     def resolve_pair_task(self, info):
         cycle = Cycle.objects(id=self.cycle_id).first()
