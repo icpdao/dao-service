@@ -359,14 +359,6 @@ class CycleVotesQuery(ObjectType):
         setattr(self, '_is_myself', is_myself)
 
     @property
-    def need_repeat(self):
-        return getattr(self, '_need_repeat')
-
-    @need_repeat.setter
-    def need_repeat(self, need_repeat):
-        setattr(self, '_need_repeat', need_repeat)
-
-    @property
     def filter(self):
         return getattr(self, '_filter')
 
@@ -384,10 +376,6 @@ class CycleVotesQuery(ObjectType):
                 query = query.filter(Q(is_result_public=self.is_public) | Q(vote_type=CycleVoteType.ALL.value))
             else:
                 query = query.filter(is_result_public=self.is_public, vote_type=CycleVoteType.PAIR.value)
-        if self.need_repeat:
-            query = query.filter(
-                Q(vote_type=CycleVoteType.PAIR.value) & (Q(is_repeat=True) | Q(vote_job_id__exists=False))
-            )
         # NOTICE: filter all type belongs current_user.id
         if self.filter == CycleVoteFilterEnum.un_vote:
             query = query.filter(
@@ -398,6 +386,14 @@ class CycleVotesQuery(ObjectType):
             query = query.filter(
                 Q(voter_id=str(current_user.id), vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=True) |
                 Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id=str(current_user.id))
+            )
+        if self.filter == CycleVoteFilterEnum.need_repeat_all:
+            query = query.filter(
+                Q(vote_type=CycleVoteType.PAIR.value) & (Q(is_repeat=True) | Q(vote_job_id__exists=False))
+            )
+        if self.filter == CycleVoteFilterEnum.need_repeat_un_vote:
+            query = query.filter(
+                Q(vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=False)
             )
         query = query.order_by('-vote_type', '_id')
         return query
@@ -440,11 +436,11 @@ class CycleVotesQuery(ObjectType):
 
     def resolve_confirm(self, info):
         cycle = Cycle.objects(id=self.cycle_id).first()
-        if self.is_myself and self.need_repeat:
+        if self.filter in [CycleVoteFilterEnum.need_repeat_all, CycleVoteFilterEnum.need_repeat_un_vote]:
             current_user = get_current_user_by_graphql(info)
             assert current_user, CYCLE_VOTE_CONFIRM_INVALID_ERROR
             dao = DAO.objects(id=cycle.dao_id).first()
-            assert str(current_user.id) == dao.owner_id
+            assert str(current_user.id) == dao.owner_id, COMMON_NOT_PERMISSION_ERROR
             cvc = CycleVoteConfirm.objects(
                 dao_id=cycle.dao_id,
                 cycle_id=self.cycle_id,
@@ -614,11 +610,10 @@ class CycleQuery(ObjectType):
         offset = kwargs.get('offset')
         is_public = kwargs.get('is_public', None)
         is_myself = kwargs.get('is_myself', None)
-        need_repeat = kwargs.get('need_repeat', None)
         _filter = kwargs.get('filter')
         return CycleVotesQuery(
             cycle_id=self.cycle_id, first=first, offset=offset,
-            is_public=is_public, is_myself=is_myself, need_repeat=need_repeat, filter=_filter)
+            is_public=is_public, is_myself=is_myself, filter=_filter)
 
     def resolve_pair_task(self, info):
         cycle = Cycle.objects(id=self.cycle_id).first()

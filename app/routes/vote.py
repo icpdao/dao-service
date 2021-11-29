@@ -69,8 +69,6 @@ class UpdatePairVoteWithRepeat(Mutation):
             raise ValueError('NOT FOUND VOTE')
         if cycle_vote.vote_type != CycleVoteType.PAIR.value:
             raise ValueError('NOT PAIR VOTE')
-        if not cycle_vote.is_repeat:
-            raise ValueError('NOT REPEAT VOTE')
         dao = DAO.objects(id=cycle_vote.dao_id).first()
         if dao.owner_id != str(current_user.id):
             raise ValueError('NOT PERMISSION VOTE')
@@ -85,9 +83,10 @@ class UpdatePairVoteWithRepeat(Mutation):
         if vote_job_id != cycle_vote.left_job_id and vote_job_id != cycle_vote.right_job_id:
             raise ValueError('NOT RIGHT VOTE')
         cycle_vote.vote_job_id = vote_job_id
+        cycle_vote.is_repeat = True
         cycle_vote.updated_at = now_at
         cycle_vote.save()
-        return UpdatePairVote(ok=True)
+        return UpdatePairVoteWithRepeat(ok=True)
 
 
 class UpdateALLVote(Mutation):
@@ -197,7 +196,7 @@ class UpdateVoteConfirmWithRepeat(Mutation):
         assert str(current_user.id) == dao.owner_id, COMMON_NOT_PERMISSION_ERROR
 
         cvc = CycleVoteConfirm.objects(is_repeat=True, cycle_id=cycle_id, voter_id=str(current_user.id)).first()
-        assert cvc, "errors.vote_confirm.found"
+        assert cvc is None, "errors.vote_confirm.found"
 
         cycle_pair_unvote_count = CycleVote.objects(
             cycle_id=cycle_id,
@@ -217,4 +216,4 @@ class UpdateVoteConfirmWithRepeat(Mutation):
             is_repeat=True,
             status=CycleVoteConfirmStatus.CONFIRM.value
         ).save()
-        return UpdateVoteConfirm(ok=True)
+        return UpdateVoteConfirmWithRepeat(ok=True)
