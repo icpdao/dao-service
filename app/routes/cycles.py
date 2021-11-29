@@ -541,7 +541,6 @@ class CycleQuery(ObjectType):
         CycleVotesQuery,
         is_public=Boolean(),
         is_myself=Boolean(),
-        need_repeat=Boolean(),
         filter=CycleVoteFilterEnum(default_value=0),
         first=Int(default_value=20),
         offset=Int(default_value=0)

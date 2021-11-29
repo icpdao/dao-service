@@ -244,13 +244,6 @@ mutation {
         self.cycle.save()
 
         res = self.graph_query(
-            str(self.dao.owner_id),
-            self.update_pair_vote_with_repeat % (str(self.vote4.id), str(self.job4.id))
-        )
-        data = res.json()
-        assert data['errors'][0]['message'] == 'NOT REPEAT VOTE'
-
-        res = self.graph_query(
             str(self.icpper4.id),
             self.update_pair_vote_with_repeat % (str(self.vote8.id), str(self.job4.id))
         )
