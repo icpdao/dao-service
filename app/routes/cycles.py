@@ -614,11 +614,11 @@ class CycleQuery(ObjectType):
         offset = kwargs.get('offset')
         is_public = kwargs.get('is_public', None)
         is_myself = kwargs.get('is_myself', None)
-        is_repeat = kwargs.get('is_repeat', None)
+        need_repeat = kwargs.get('need_repeat', None)
         _filter = kwargs.get('filter')
         return CycleVotesQuery(
             cycle_id=self.cycle_id, first=first, offset=offset,
-            is_public=is_public, is_myself=is_myself, is_repeat=is_repeat, filter=_filter)
+            is_public=is_public, is_myself=is_myself, need_repeat=need_repeat, filter=_filter)
 
     def resolve_pair_task(self, info):
         cycle = Cycle.objects(id=self.cycle_id).first()
