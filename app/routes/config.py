@@ -99,7 +99,7 @@ class DAOTokenConfig(BaseObjectType):
     def resolve_eth_dao_id(self, info):
         current_user = get_current_user_by_graphql(info)
         assert current_user, 'NOT LOGIN'
-        check_is_dao_owner(current_user, dao_id=self._args.dao_id)
+        # check_is_dao_owner(current_user, dao_id=self._args.dao_id)
         dk = hashlib.pbkdf2_hmac(
             'sha256',
             bytes(self._args.dao_id, encoding='utf-8'),
