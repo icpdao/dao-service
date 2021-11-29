@@ -177,3 +177,44 @@ class UpdateVoteConfirm(Mutation):
         cvc.status = CycleVoteConfirmStatus.CONFIRM.value
         cvc.save()
         return UpdateVoteConfirm(ok=True)
+
+
+class UpdateVoteConfirmWithRepeat(Mutation):
+    class Arguments:
+        cycle_id = String(required=True)
+        signature_msg = String(required=True)
+        signature_address = String(required=True)
+        signature = String(required=True)
+
+    ok = Boolean()
+
+    def mutate(self, info, cycle_id, signature_msg, signature_address, signature):
+        current_user = get_current_user_by_graphql(info)
+        assert current_user, "errors.common.not_login"
+
+        cycle = Cycle.objects(id=cycle_id).first()
+        dao = DAO.objects(id=cycle.dao_id).first()
+        assert str(current_user.id) == dao.owner_id, COMMON_NOT_PERMISSION_ERROR
+
+        cvc = CycleVoteConfirm.objects(is_repeat=True, cycle_id=cycle_id, voter_id=str(current_user.id)).first()
+        assert cvc, "errors.vote_confirm.found"
+
+        cycle_pair_unvote_count = CycleVote.objects(
+            cycle_id=cycle_id,
+            vote_job_id__exists=False,
+            vote_type=CycleVoteType.PAIR.value
+        ).count()
+
+        assert cycle_pair_unvote_count == 0, 'errors.vote_confirm.had_un_vote'
+
+        CycleVoteConfirm(
+            dao_id=cycle.dao_id,
+            cycle_id=cycle_id,
+            voter_id=str(current_user.id),
+            signature_address=signature_address,
+            signature_msg=signature_msg,
+            signature=signature,
+            is_repeat=True,
+            status=CycleVoteConfirmStatus.CONFIRM.value
+        ).save()
+        return UpdateVoteConfirm(ok=True)

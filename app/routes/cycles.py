@@ -359,12 +359,12 @@ class CycleVotesQuery(ObjectType):
         setattr(self, '_is_myself', is_myself)
 
     @property
-    def is_repeat(self):
-        return getattr(self, '_is_repeat')
+    def need_repeat(self):
+        return getattr(self, '_need_repeat')
 
-    @is_repeat.setter
-    def is_repeat(self, is_repeat):
-        setattr(self, '_is_repeat', is_repeat)
+    @need_repeat.setter
+    def need_repeat(self, need_repeat):
+        setattr(self, '_need_repeat', need_repeat)
 
     @property
     def filter(self):
@@ -384,8 +384,10 @@ class CycleVotesQuery(ObjectType):
                 query = query.filter(Q(is_result_public=self.is_public) | Q(vote_type=CycleVoteType.ALL.value))
             else:
                 query = query.filter(is_result_public=self.is_public, vote_type=CycleVoteType.PAIR.value)
-        if self.is_repeat:
-            query = query.filter(is_repeat=True)
+        if self.need_repeat:
+            query = query.filter(
+                Q(vote_type=CycleVoteType.PAIR.value) & (Q(is_repeat=True) | Q(vote_job_id__exists=False))
+            )
         # NOTICE: filter all type belongs current_user.id
         if self.filter == CycleVoteFilterEnum.un_vote:
             query = query.filter(
@@ -438,6 +440,18 @@ class CycleVotesQuery(ObjectType):
 
     def resolve_confirm(self, info):
         cycle = Cycle.objects(id=self.cycle_id).first()
+        if self.is_myself and self.need_repeat:
+            current_user = get_current_user_by_graphql(info)
+            assert current_user, CYCLE_VOTE_CONFIRM_INVALID_ERROR
+            dao = DAO.objects(id=cycle.dao_id).first()
+            assert str(current_user.id) == dao.owner_id
+            cvc = CycleVoteConfirm.objects(
+                dao_id=cycle.dao_id,
+                cycle_id=self.cycle_id,
+                voter_id=str(current_user.id),
+                is_repeat=True
+            ).first()
+            return cvc and cvc.status == CycleVoteConfirmStatus.CONFIRM.value
         if self.is_myself:
             current_user = get_current_user_by_graphql(info)
             assert current_user, CYCLE_VOTE_CONFIRM_INVALID_ERROR
@@ -531,7 +545,7 @@ class CycleQuery(ObjectType):
         CycleVotesQuery,
         is_public=Boolean(),
         is_myself=Boolean(),
-        is_repeat=Boolean(),
+        need_repeat=Boolean(),
         filter=CycleVoteFilterEnum(default_value=0),
         first=Int(default_value=20),
         offset=Int(default_value=0)
