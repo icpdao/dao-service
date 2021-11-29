@@ -647,13 +647,13 @@ class UpdateDaoLastCycleStep(Mutation):
         current_user = get_current_user_by_graphql(info)
         if str(current_user.id) != dao.owner_id:
             raise ValueError(COMMON_NOT_PERMISSION_ERROR)
+        current_at = int(time.time())
 
-        last_cycle = Cycle.objects(dao_id=dao_id).order_by("-begin_at").first()
+        last_cycle = Cycle.objects(dao_id=str(dao.id), vote_end_at__gt=current_at).order_by("begin_at").first()
 
         if not last_cycle:
             raise ValueError(COMMON_PARAMS_INVALID)
 
-        current_at = int(time.time())
         if next_step == UpdateDaoLastCycleStepEnum.PAIR:
             if not (last_cycle.begin_at < current_at and last_cycle.end_at > current_at):
                 raise ValueError(COMMON_PARAMS_INVALID)
