@@ -387,6 +387,14 @@ class CycleVotesQuery(ObjectType):
                 Q(voter_id=str(current_user.id), vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=True) |
                 Q(vote_type=CycleVoteType.ALL.value, vote_result_type_all__voter_id=str(current_user.id))
             )
+        if self.filter == CycleVoteFilterEnum.need_repeat_all:
+            query = query.filter(
+                Q(vote_type=CycleVoteType.PAIR.value) & (Q(is_repeat=True) | Q(vote_job_id__exists=False))
+            )
+        if self.filter == CycleVoteFilterEnum.need_repeat_un_vote:
+            query = query.filter(
+                Q(vote_type=CycleVoteType.PAIR.value, vote_job_id__exists=False)
+            )
         query = query.order_by('-vote_type', '_id')
         return query
 
@@ -428,6 +436,18 @@ class CycleVotesQuery(ObjectType):
 
     def resolve_confirm(self, info):
         cycle = Cycle.objects(id=self.cycle_id).first()
+        if self.filter in [CycleVoteFilterEnum.need_repeat_all, CycleVoteFilterEnum.need_repeat_un_vote]:
+            current_user = get_current_user_by_graphql(info)
+            assert current_user, CYCLE_VOTE_CONFIRM_INVALID_ERROR
+            dao = DAO.objects(id=cycle.dao_id).first()
+            assert str(current_user.id) == dao.owner_id, COMMON_NOT_PERMISSION_ERROR
+            cvc = CycleVoteConfirm.objects(
+                dao_id=cycle.dao_id,
+                cycle_id=self.cycle_id,
+                voter_id=str(current_user.id),
+                is_repeat=True
+            ).first()
+            return cvc and cvc.status == CycleVoteConfirmStatus.CONFIRM.value
         if self.is_myself:
             current_user = get_current_user_by_graphql(info)
             assert current_user, CYCLE_VOTE_CONFIRM_INVALID_ERROR

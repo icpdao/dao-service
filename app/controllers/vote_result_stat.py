@@ -230,11 +230,17 @@ def run_vote_result_stat_task(task_id):
 
         # 查询所有投票
         cycle_vote_list = list(CycleVote.objects(dao_id=dao_id, cycle_id=str(cycle.id)))
+        # 标记没有投票的投票为 is_repeat = True
+        for cycle_vote in cycle_vote_list:
+            if cycle_vote.vote_type == CycleVoteType.PAIR.value:
+                if not cycle_vote.vote_job_id:
+                    cycle_vote.is_repeat = True
+                    cycle_vote.save()
         # 找到谁没有投完票
         un_voted_all_vote_user_id_set = set()
         for cycle_vote in cycle_vote_list:
             if cycle_vote.vote_type == CycleVoteType.PAIR.value:
-                if not cycle_vote.vote_job_id:
+                if not cycle_vote.vote_job_id or cycle_vote.is_repeat:
                     un_voted_all_vote_user_id_set.add(cycle_vote.voter_id)
                     continue
             if cycle_vote.vote_type == CycleVoteType.ALL.value:

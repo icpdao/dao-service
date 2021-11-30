@@ -26,7 +26,8 @@ from app.routes.schema import DAOsFilterEnum, DAOsSortedEnum, \
 from app.routes.token_mint_records import CreateTokenMintRecord, LinkTxHashForTokenMintRecord, DropTokenMintRecord, \
     SyncTokenMintRecordEvent, FindLostTxForInitTokenMintRecord, FindLostTxForDropTokenMintRecord, \
     FindLostTxForDropTokenMintRecord
-from app.routes.vote import UpdatePairVote, UpdateALLVote, UpdateVoteConfirm
+from app.routes.vote import UpdatePairVote, UpdateALLVote, UpdateVoteConfirm, UpdatePairVoteWithRepeat, \
+    UpdateVoteConfirmWithRepeat
 
 
 class Query(ObjectType):
@@ -209,8 +210,10 @@ class Mutations(ObjectType):
     update_job_vote_type_by_owner = UpdateJobVoteTypeByOwner.Field()
     update_icpper_stat_owner_ei = UpdateIcpperStatOwnerEi.Field()
     update_pair_vote = UpdatePairVote.Field()
+    update_pair_vote_with_repeat = UpdatePairVoteWithRepeat.Field()
     update_all_vote = UpdateALLVote.Field()
     update_vote_confirm = UpdateVoteConfirm.Field()
+    update_vote_confirm_with_repeat = UpdateVoteConfirmWithRepeat.Field()
     create_cycle_vote_pair_task_by_owner = CreateCycleVotePairTaskByOwner.Field()
     change_vote_result_public = ChangeVoteResultPublic.Field()
     update_dao_last_cycle_step = UpdateDaoLastCycleStep.Field()

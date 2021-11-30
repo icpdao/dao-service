@@ -4,6 +4,7 @@ from graphene import Mutation, String, Boolean
 
 from app.common.models.icpdao.cycle import CycleVote, CycleVoteType, Cycle, \
     VoteResultTypeAllResultType, CycleVoteConfirm, CycleVoteConfirmStatus
+from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.job import Job
 from app.common.models.icpdao.user import UserStatus
 from app.common.utils.errors import COMMON_NOT_AUTH_ERROR, CYCLE_NOT_FOUND_ERROR, CYCLE_VOTE_TIME_ERROR, \
@@ -48,6 +49,44 @@ class UpdatePairVote(Mutation):
         cycle_vote.updated_at = now_at
         cycle_vote.save()
         return UpdatePairVote(ok=True)
+
+
+class UpdatePairVoteWithRepeat(Mutation):
+    class Arguments:
+        id = String(required=True)
+        vote_job_id = String(required=True)
+
+    ok = Boolean()
+
+    def mutate(self, info, id, vote_job_id):
+        current_user = get_current_user_by_graphql(info)
+        if not current_user:
+            raise PermissionError(COMMON_NOT_AUTH_ERROR)
+        if current_user.status == UserStatus.NORMAL.value:
+            raise PermissionError(COMMON_NOT_PERMISSION_ERROR)
+        cycle_vote = CycleVote.objects(id=id).first()
+        if not cycle_vote:
+            raise ValueError('NOT FOUND VOTE')
+        if cycle_vote.vote_type != CycleVoteType.PAIR.value:
+            raise ValueError('NOT PAIR VOTE')
+        dao = DAO.objects(id=cycle_vote.dao_id).first()
+        if dao.owner_id != str(current_user.id):
+            raise ValueError('NOT PERMISSION VOTE')
+        cycle = Cycle.objects(id=cycle_vote.cycle_id).first()
+        if not cycle:
+            raise ValueError(CYCLE_NOT_FOUND_ERROR)
+        if not cycle.paired_at:
+            raise ValueError('NOT PAIRED THIS CYCLE')
+        now_at = int(time.time())
+        if now_at < cycle.vote_end_at:
+            raise ValueError(CYCLE_VOTE_TIME_ERROR)
+        if vote_job_id != cycle_vote.left_job_id and vote_job_id != cycle_vote.right_job_id:
+            raise ValueError('NOT RIGHT VOTE')
+        cycle_vote.vote_job_id = vote_job_id
+        cycle_vote.is_repeat = True
+        cycle_vote.updated_at = now_at
+        cycle_vote.save()
+        return UpdatePairVoteWithRepeat(ok=True)
 
 
 class UpdateALLVote(Mutation):
@@ -100,7 +139,7 @@ class UpdateALLVote(Mutation):
             result=VoteResultTypeAllResultType.YES.value).count()
 
         cycle_vote.vote_result_stat_type_all = int(
-            (yes_vote * 100) / len(voters))
+            (yes_vote * 100) / len(cycle_vote.vote_result_type_all))
         cycle_vote.updated_at = now_at
         cycle_vote.save()
         return UpdateALLVote(ok=True)
@@ -137,3 +176,44 @@ class UpdateVoteConfirm(Mutation):
         cvc.status = CycleVoteConfirmStatus.CONFIRM.value
         cvc.save()
         return UpdateVoteConfirm(ok=True)
+
+
+class UpdateVoteConfirmWithRepeat(Mutation):
+    class Arguments:
+        cycle_id = String(required=True)
+        signature_msg = String(required=True)
+        signature_address = String(required=True)
+        signature = String(required=True)
+
+    ok = Boolean()
+
+    def mutate(self, info, cycle_id, signature_msg, signature_address, signature):
+        current_user = get_current_user_by_graphql(info)
+        assert current_user, "errors.common.not_login"
+
+        cycle = Cycle.objects(id=cycle_id).first()
+        dao = DAO.objects(id=cycle.dao_id).first()
+        assert str(current_user.id) == dao.owner_id, COMMON_NOT_PERMISSION_ERROR
+
+        cvc = CycleVoteConfirm.objects(is_repeat=True, cycle_id=cycle_id, voter_id=str(current_user.id)).first()
+        assert cvc is None, "errors.vote_confirm.found"
+
+        cycle_pair_unvote_count = CycleVote.objects(
+            cycle_id=cycle_id,
+            vote_job_id__exists=False,
+            vote_type=CycleVoteType.PAIR.value
+        ).count()
+
+        assert cycle_pair_unvote_count == 0, 'errors.vote_confirm.had_un_vote'
+
+        CycleVoteConfirm(
+            dao_id=cycle.dao_id,
+            cycle_id=cycle_id,
+            voter_id=str(current_user.id),
+            signature_address=signature_address,
+            signature_msg=signature_msg,
+            signature=signature,
+            is_repeat=True,
+            status=CycleVoteConfirmStatus.CONFIRM.value
+        ).save()
+        return UpdateVoteConfirmWithRepeat(ok=True)
