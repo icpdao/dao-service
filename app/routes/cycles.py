@@ -447,7 +447,7 @@ class CycleVotesQuery(ObjectType):
                 voter_id=str(current_user.id),
                 is_repeat=True
             ).first()
-            return cvc and cvc.status == CycleVoteConfirmStatus.CONFIRM.value
+            return bool(cvc and cvc.status == CycleVoteConfirmStatus.CONFIRM.value)
         if self.is_myself:
             current_user = get_current_user_by_graphql(info)
             assert current_user, CYCLE_VOTE_CONFIRM_INVALID_ERROR
