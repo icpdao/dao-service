@@ -28,6 +28,8 @@ class CycleVoteFilterEnum(Enum):
     all = 0
     voted = 1
     un_vote = 2
+    need_repeat_all = 3
+    need_repeat_un_vote = 4
 
 
 class DAOQueryArgs(BaseObjectArgs):

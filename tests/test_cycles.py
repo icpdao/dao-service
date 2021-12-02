@@ -14,7 +14,7 @@ from tests.base import Base
 from app.common.models.icpdao.dao import DAO
 from app.common.models.icpdao.cycle import Cycle, CycleIcpperStat, CycleVote, CycleVoteType, VoteResultTypeAll, \
     VoteResultTypeAllResultType, CycleVotePairTask, CycleVotePairTaskStatus, CycleVoteResultStatTask, \
-    CycleVoteResultStatTaskStatus, CycleVoteResultPublishTask, CycleVoteResultPublishTaskStatus
+    CycleVoteResultStatTaskStatus, CycleVoteResultPublishTask, CycleVoteResultPublishTaskStatus, CycleVoteConfirm
 
 
 def _get_github_user_id(github_login):
@@ -579,6 +579,37 @@ query{
     }
     """
 
+    get_cycle_vote_list_need_repeat_all = """
+    query{
+        cycle(id: "%s"){
+            votes(filter: need_repeat_all){
+                nodes{
+                    datum{
+                        id
+                    }
+                }
+                total
+                confirm
+            }
+        }
+    }
+    """
+
+    get_cycle_vote_list_need_repeat_un_vote = """
+    query{
+        cycle(id: "%s"){
+            votes(filter: need_repeat_un_vote){
+                nodes{
+                    datum{
+                        id
+                    }
+                }
+                total
+            }
+        }
+    }
+    """
+
     get_cycle_vote_list_role = """
     query{
         cycle(id: "%s"){
@@ -812,6 +843,23 @@ mutation{
     }
 }
     """
+
+    update_pair_vote_with_repeat = """
+    mutation {
+      updatePairVoteWithRepeat(id: "%s", voteJobId: "%s") {
+        ok
+      }
+    }
+    """
+
+    update_vote_confirm_with_repeat = """
+    mutation {
+      updateVoteConfirmWithRepeat(cycleId: "%s", signatureMsg: "x", signatureAddress: "x", signature: "x") {
+        ok
+      }
+    }    
+    """
+
 
     @staticmethod
     def get_cycle_time_by_end_at(end_at):
@@ -2597,3 +2645,268 @@ mutation{
         assert last_cycle["datum"]["endAt"] == last_cycle["datum"]["pairBeginAt"]
         assert last_cycle["datum"]["endAt"] < 2147483647
         assert last_cycle["step"]["status"] == "PAIR"
+
+    def test_get_cycle_vote_list_need_repeat(self):
+        # get_cycle_vote_list_need_repeat_all
+        # 创建 dao
+        # 创建 cycle
+        self.__class__.clear_db()
+        self.owner = self.__class__.create_icpper_user()
+        self.icpper1 = self.__class__.create_icpper_user(nickname='icpper1', github_login='iccper1')
+        test_dao = DAO(
+            name='test_dao',
+            logo='xxx.png',
+            desc='test_dao_desc',
+            owner_id=str(self.owner.id),
+            github_owner_id=_get_github_user_id('test_dao'),
+            github_owner_name='test_dao'
+        )
+        test_dao.save()
+
+        now_at = int(time.time())
+        test_cycle_1 = Cycle(
+            dao_id=str(test_dao.id),
+            begin_at=now_at - 6 * 60 * 60,
+            end_at=now_at - 5 * 60 * 60,
+            pair_begin_at=now_at - 4 * 60 * 60,
+            pair_end_at=now_at - 3 * 60 * 60,
+            vote_begin_at=now_at - 2 * 60 * 60,
+            vote_end_at=now_at - 1 * 60 * 60,
+            paired_at=now_at - 2 * 60 * 60
+        )
+        test_cycle_1.save()
+        # 创建投票
+
+        job_1 = Job(
+            dao_id=str(test_dao.id),
+            user_id=str(self.icpper1.id),
+            title="test_dao_icpper1_title1",
+            size=Decimal("1.0"),
+            github_repo_owner="icpdao",
+            github_repo_name="public",
+            github_repo_owner_id=_get_github_user_id('icpdao'),
+            github_repo_id=1,
+            github_issue_number=1,
+            bot_comment_database_id=1,
+            status=JobStatusEnum.MERGED.value,
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('10'))],
+            pair_type=JobPairTypeEnum.PAIR.value,
+            cycle_id=str(test_cycle_1.id)
+        )
+        job_1.save()
+
+        job_2 = Job(
+            dao_id=str(test_dao.id),
+            user_id=str(self.owner.id),
+            title="test_dao_owner_title1",
+            size=Decimal("1.1"),
+            github_repo_owner="icpdao",
+            github_repo_name="public",
+            github_repo_owner_id=_get_github_user_id('icpdao'),
+            github_repo_id=2,
+            github_issue_number=2,
+            bot_comment_database_id=2,
+            status=JobStatusEnum.MERGED.value,
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('20'))],
+            pair_type=JobPairTypeEnum.PAIR.value,
+            cycle_id=str(test_cycle_1.id)
+        )
+        job_2.save()
+
+        job_3 = Job(
+            dao_id=str(test_dao.id),
+            user_id=str(self.icpper1.id),
+            title="test_dao_icpper1_title2",
+            size=Decimal("1.2"),
+            github_repo_owner="icpdao",
+            github_repo_name="public",
+            github_repo_owner_id=_get_github_user_id('icpdao'),
+            github_repo_id=3,
+            github_issue_number=3,
+            bot_comment_database_id=3,
+            status=JobStatusEnum.MERGED.value,
+            incomes=[TokenIncome(token_chain_id="3", token_address=web3.Account.create().address, token_symbol="TEST", income=Decimal('30'))],
+            pair_type=JobPairTypeEnum.ALL.value,
+            cycle_id=str(test_cycle_1.id)
+        )
+        job_3.save()
+
+        cycle_vote_1 = CycleVote(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_1.id),
+            left_job_id=str(job_1.id),
+            right_job_id=str(job_2.id),
+            vote_type=CycleVoteType.PAIR.value,
+            vote_job_id=str(job_1.id),
+            voter_id=str(self.icpper1.id),
+            is_result_public=True
+        )
+        cycle_vote_1.save()
+
+        cycle_vote_2 = CycleVote(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_1.id),
+            left_job_id=str(job_1.id),
+            right_job_id=str(job_2.id),
+            vote_type=CycleVoteType.PAIR.value,
+            voter_id=str(self.icpper1.id),
+            is_result_public=True
+        )
+        cycle_vote_2.save()
+
+        cycle_vote_3 = CycleVote(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_1.id),
+            left_job_id=str(job_1.id),
+            right_job_id=str(job_2.id),
+            vote_type=CycleVoteType.PAIR.value,
+            vote_job_id=str(job_1.id),
+            voter_id=str(self.owner.id),
+            is_result_public=True
+        )
+        cycle_vote_3.save()
+
+        cycle_vote_4 = CycleVote(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_1.id),
+            left_job_id=str(job_1.id),
+            right_job_id=str(job_2.id),
+            vote_type=CycleVoteType.PAIR.value,
+            voter_id=str(self.owner.id),
+            is_result_public=True
+        )
+        cycle_vote_4.save()
+
+        cycle_vote_5 = CycleVote(
+            dao_id=str(test_dao.id),
+            cycle_id=str(test_cycle_1.id),
+            left_job_id=str(job_3.id),
+            right_job_id=str(job_3.id),
+            vote_type=CycleVoteType.ALL.value,
+            is_result_public=True,
+            vote_result_type_all=[]
+        )
+        cycle_vote_5.save()
+
+        res = self.graph_query(
+            self.owner.id, self.get_cycle_vote_list_need_repeat_all % test_cycle_1.id
+        )
+        assert res.json()["data"]["cycle"]["votes"]["total"] == 2
+        
+        ids = []
+        for item in res.json()["data"]["cycle"]["votes"]["nodes"]:
+            ids.append(item["datum"]["id"])
+        assert str(cycle_vote_2.id) in ids
+        assert str(cycle_vote_4.id) in ids
+
+        res = self.graph_query(
+            self.owner.id, self.get_cycle_vote_list_need_repeat_un_vote % test_cycle_1.id
+        )
+        assert res.json()["data"]["cycle"]["votes"]["total"] == 2
+
+        ids = []
+        for item in res.json()["data"]["cycle"]["votes"]["nodes"]:
+            ids.append(item["datum"]["id"])
+        assert str(cycle_vote_2.id) in ids
+        assert str(cycle_vote_4.id) in ids
+
+        res = self.graph_query(
+            str(self.owner.id),
+            self.update_pair_vote_with_repeat % (str(cycle_vote_2.id), str(job_1.id))
+        )
+        data = res.json()
+        assert data['data']['updatePairVoteWithRepeat']['ok'] is True
+
+        cycle_vote_2 = CycleVote.objects(id=str(cycle_vote_2.id)).first()
+        assert cycle_vote_2.is_repeat
+        assert cycle_vote_2.vote_job_id == str(job_1.id)
+        assert cycle_vote_2.voter_id == str(self.icpper1.id)
+
+        res = self.graph_query(
+            self.owner.id, self.get_cycle_vote_list_need_repeat_all % test_cycle_1.id
+        )
+        assert res.json()["data"]["cycle"]["votes"]["total"] == 2
+
+        ids = []
+        for item in res.json()["data"]["cycle"]["votes"]["nodes"]:
+            ids.append(item["datum"]["id"])
+        assert str(cycle_vote_2.id) in ids
+        assert str(cycle_vote_4.id) in ids
+
+        res = self.graph_query(
+            self.owner.id, self.get_cycle_vote_list_need_repeat_un_vote % test_cycle_1.id
+        )
+        assert res.json()["data"]["cycle"]["votes"]["total"] == 1
+
+        ids = []
+        for item in res.json()["data"]["cycle"]["votes"]["nodes"]:
+            ids.append(item["datum"]["id"])
+        assert str(cycle_vote_4.id) in ids
+
+        res = self.graph_query(
+            str(self.icpper1.id),
+            self.update_vote_confirm_with_repeat % str(test_cycle_1.id)
+        )
+        data = res.json()
+        assert data["errors"][0]["message"] == "error.common.not_permission"
+
+        res = self.graph_query(
+            str(self.owner.id),
+            self.update_vote_confirm_with_repeat % str(test_cycle_1.id)
+        )
+        data = res.json()
+        assert data["errors"][0]["message"] == "errors.vote_confirm.had_un_vote"
+
+        res = self.graph_query(
+            str(self.owner.id),
+            self.update_pair_vote_with_repeat % (str(cycle_vote_4.id), str(job_1.id))
+        )
+        data = res.json()
+        assert data['data']['updatePairVoteWithRepeat']['ok'] is True
+
+        cycle_vote_4 = CycleVote.objects(id=str(cycle_vote_4.id)).first()
+        assert cycle_vote_4.is_repeat
+        assert cycle_vote_4.vote_job_id == str(job_1.id)
+        assert cycle_vote_4.voter_id == str(self.owner.id)
+
+
+        res = self.graph_query(
+            self.owner.id, self.get_cycle_vote_list_need_repeat_all % test_cycle_1.id
+        )
+        assert res.json()["data"]["cycle"]["votes"]["total"] == 2
+        assert res.json()["data"]["cycle"]["votes"]["confirm"] is False
+
+
+        ids = []
+        for item in res.json()["data"]["cycle"]["votes"]["nodes"]:
+            ids.append(item["datum"]["id"])
+        assert str(cycle_vote_2.id) in ids
+        assert str(cycle_vote_4.id) in ids
+
+        res = self.graph_query(
+            self.owner.id, self.get_cycle_vote_list_need_repeat_un_vote % test_cycle_1.id
+        )
+        assert res.json()["data"]["cycle"]["votes"]["total"] == 0
+
+        res = self.graph_query(
+            str(self.icpper1.id),
+            self.update_vote_confirm_with_repeat % str(test_cycle_1.id)
+        )
+        data = res.json()
+        assert data["errors"][0]["message"] == "error.common.not_permission"
+
+        res = self.graph_query(
+            str(self.owner.id),
+            self.update_vote_confirm_with_repeat % str(test_cycle_1.id)
+        )
+        data = res.json()
+        assert data['data']['updateVoteConfirmWithRepeat']['ok'] is True
+
+        cvc = CycleVoteConfirm.objects(is_repeat=True, cycle_id=str(test_cycle_1.id), voter_id=str(self.owner.id)).first()
+        assert cvc.signature == 'x'
+
+        res = self.graph_query(
+            self.owner.id, self.get_cycle_vote_list_need_repeat_all % test_cycle_1.id
+        )
+        assert res.json()["data"]["cycle"]["votes"]["total"] == 2
+        assert res.json()["data"]["cycle"]["votes"]["confirm"] is True
