@@ -2874,7 +2874,7 @@ mutation{
             self.owner.id, self.get_cycle_vote_list_need_repeat_all % test_cycle_1.id
         )
         assert res.json()["data"]["cycle"]["votes"]["total"] == 2
-        assert res.json()["data"]["cycle"]["votes"]["confirm"] is not True
+        assert res.json()["data"]["cycle"]["votes"]["confirm"] is False
 
 
         ids = []
