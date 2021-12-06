@@ -248,7 +248,7 @@ mutation {
             self.update_pair_vote_with_repeat % (str(self.vote8.id), str(self.job4.id))
         )
         data = res.json()
-        # assert data['errors'][0]['message'] == 'NOT PERMISSION VOTE'
+        assert data['errors'][0]['message'] == 'NOT PERMISSION VOTE'
 
         res = self.graph_query(
             str(self.dao.owner_id),
