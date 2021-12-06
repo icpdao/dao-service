@@ -440,7 +440,7 @@ class CycleVotesQuery(ObjectType):
             current_user = get_current_user_by_graphql(info)
             assert current_user, CYCLE_VOTE_CONFIRM_INVALID_ERROR
             dao = DAO.objects(id=cycle.dao_id).first()
-            assert str(current_user.id) == dao.owner_id, COMMON_NOT_PERMISSION_ERROR
+            # assert str(current_user.id) == dao.owner_id, COMMON_NOT_PERMISSION_ERROR
             cvc = CycleVoteConfirm.objects(
                 dao_id=cycle.dao_id,
                 cycle_id=self.cycle_id,
