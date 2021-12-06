@@ -70,8 +70,8 @@ class UpdatePairVoteWithRepeat(Mutation):
         if cycle_vote.vote_type != CycleVoteType.PAIR.value:
             raise ValueError('NOT PAIR VOTE')
         dao = DAO.objects(id=cycle_vote.dao_id).first()
-        # if dao.owner_id != str(current_user.id):
-        #     raise ValueError('NOT PERMISSION VOTE')
+        if dao.owner_id != str(current_user.id):
+            raise ValueError('NOT PERMISSION VOTE')
         cycle = Cycle.objects(id=cycle_vote.cycle_id).first()
         if not cycle:
             raise ValueError(CYCLE_NOT_FOUND_ERROR)

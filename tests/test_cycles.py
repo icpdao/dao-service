@@ -587,6 +587,11 @@ query{
                     datum{
                         id
                     }
+                    voteJob {
+                      datum {
+                        id
+                      }
+                    }
                 }
                 total
                 confirm
@@ -2863,6 +2868,11 @@ mutation{
         )
         data = res.json()
         assert data['data']['updatePairVoteWithRepeat']['ok'] is True
+
+        res = self.graph_query(
+            self.owner.id, self.get_cycle_vote_list_need_repeat_all % test_cycle_1.id
+        )
+        assert res.json()['data']['cycle']['votes']['nodes'][0]['voteJob']['datum']['id'] == str(job_1.id)
 
         cycle_vote_4 = CycleVote.objects(id=str(cycle_vote_4.id)).first()
         assert cycle_vote_4.is_repeat
