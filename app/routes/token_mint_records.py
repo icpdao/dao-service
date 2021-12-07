@@ -94,7 +94,13 @@ class BuildSplitInfo:
         for stat in CycleIcpperStat.objects(dao_id=dao_id, cycle_id__in=cycle_id_list):
             job_user_id__2__job_size.setdefault(stat.user_id, decimal.Decimal("0"))
             job_user_id__2__job_size[stat.user_id] += stat.size
-        return job_user_id__2__job_size
+
+        have_job_user_id__2__job_size = {}
+        for user_id in job_user_id__2__job_size:
+            value = job_user_id__2__job_size[user_id]
+            if value != 0:
+                have_job_user_id__2__job_size[user_id] = value
+        return have_job_user_id__2__job_size
 
     @staticmethod
     def _build_job_user_id_list(job_user_id__2__job_size):
