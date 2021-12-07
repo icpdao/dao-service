@@ -569,6 +569,7 @@ mutation {
         self.job_user_1 = self.create_icpper_user(nickname='job_user_1', github_login='job_user_1')
         self.job_user_2 = self.create_icpper_user(nickname='job_user_2', github_login='job_user_2')
         self.job_user_3 = self.create_icpper_user(nickname='job_user_3', github_login='job_user_3')
+        self.job_user_4 = self.create_icpper_user(nickname='job_user_4', github_login='job_user_4')
 
         self.job_user_1_mentor_1 = self.create_icpper_user(nickname='job_user_1_mentor_1', github_login='job_user_1_mentor_1')
         self.job_user_1_mentor_2 = self.create_icpper_user(nickname='job_user_1_mentor_2', github_login='job_user_1_mentor_2')
@@ -659,6 +660,17 @@ mutation {
             owner_ei=decimal.Decimal('0.1'),
             ei=decimal.Decimal('1.1')
         ).save()
+        CycleIcpperStat(
+            dao_id=str(self.mock_dao.id),
+            cycle_id=str(self.mock_cycle_1.id),
+            user_id=str(self.job_user_4.id),
+            job_count=20,
+            job_size=decimal.Decimal('21.5'),
+            size=decimal.Decimal('0'),
+            vote_ei=0,
+            owner_ei=decimal.Decimal('0.1'),
+            ei=decimal.Decimal('0.1')
+        ).save()
 
         CycleIcpperStat(
             dao_id=str(self.mock_dao.id),
@@ -705,6 +717,7 @@ mutation {
         assert res["totalRealSize"] == decimal.Decimal("115.5")
 
         record = TokenMintRecord.objects().first()
+        assert len(record.mint_token_address_list) == 12
         assert record.mint_token_address_list == [
             self.job_user_1.erc20_address,
             self.job_user_2.erc20_address,
