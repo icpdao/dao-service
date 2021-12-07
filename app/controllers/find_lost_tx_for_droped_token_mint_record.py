@@ -51,7 +51,14 @@ def run_find_lost_tx_for_drop_token_mint_record_task(dao_id, token_contract_addr
             eq6 = _tickUpper == record.tick_upper
 
             if eq1 and eq2 and eq3 and eq4 and eq5 and eq6:
-                record.mint_tx_hash = mint_tx_hash
-                record.status = MintRecordStatusEnum.PENDING.value
-                record.save()
-                break
+                tr = TokenMintRecord.objects(
+                    dao_id=dao_id,
+                    token_contract_address=token_contract_address,
+                    chain_id=chain_id,
+                    mint_tx_hash=mint_tx_hash,
+                ).first()
+                if not tr:
+                    record.mint_tx_hash = mint_tx_hash
+                    record.status = MintRecordStatusEnum.PENDING.value
+                    record.save()
+                    break

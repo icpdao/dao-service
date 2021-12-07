@@ -422,6 +422,10 @@ class LinkTxHashForTokenMintRecord(Mutation):
     token_mint_record = Field(TokenMintRecordSchema)
 
     def mutate(self, info, id, mint_tx_hash):
+        tr = TokenMintRecord.objects(mint_tx_hash=mint_tx_hash).first()
+        if tr:
+            raise ValueError("error.link_tx_hash_for_token_mint_record.repeat_mint_tx_hash")
+
         record = TokenMintRecord.objects(id=id).first()
         record.mint_tx_hash = mint_tx_hash
         record.status = MintRecordStatusEnum.PENDING.value
@@ -492,16 +496,31 @@ class FindLostTxForInitTokenMintRecord(Mutation):
 
         for log in tef.get_all_entries():
             mint_tx_hash = Web3.toHex(log["transactionHash"])
+            _mintTokenAddressList = log["args"]["_mintTokenAddressList"]
+            _mintTokenAmountRatioList = log["args"]["_mintTokenAmountRatioList"]
             _startTimestamp = log["args"]["_startTimestamp"]
             _endTimestamp = log["args"]["_endTimestamp"]
+            _tickLower = log["args"]["_tickLower"]
+            _tickUpper = log["args"]["_tickUpper"]
 
-            eq1 = _startTimestamp == token_mint_record.start_timestamp
-            eq2 = _endTimestamp == token_mint_record.end_timestamp
+            eq1 = _mintTokenAddressList == token_mint_record.mint_token_address_list
+            eq2 = _mintTokenAmountRatioList == token_mint_record.mint_token_amount_ratio_list
+            eq3 = _startTimestamp == token_mint_record.start_timestamp
+            eq4 = _endTimestamp == token_mint_record.end_timestamp
+            eq5 = _tickLower == token_mint_record.tick_lower
+            eq6 = _tickUpper == token_mint_record.tick_upper
 
-            if eq1 and eq2:
-                token_mint_record.mint_tx_hash = mint_tx_hash
-                token_mint_record.status = MintRecordStatusEnum.PENDING.value
-                token_mint_record.save()
+            if eq1 and eq2 and eq3 and eq4 and eq5 and eq6:
+                tr = TokenMintRecord.objects(
+                    dao_id=token_mint_record.dao_id,
+                    token_contract_address=token_mint_record.token_contract_address,
+                    chain_id=token_mint_record.chain_id,
+                    mint_tx_hash=mint_tx_hash,
+                ).first()
+                if not tr:
+                    token_mint_record.mint_tx_hash = mint_tx_hash
+                    token_mint_record.status = MintRecordStatusEnum.PENDING.value
+                    token_mint_record.save()
 
         return FindLostTxForInitTokenMintRecord(token_mint_record=token_mint_record)
 
