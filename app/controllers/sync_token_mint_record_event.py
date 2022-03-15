@@ -949,13 +949,13 @@ CHAIN_ID_INFO = {
 }
 
 CHAIN_ID_2_ALCHEMYAPI_INFO = {
-    "1": "https://eth-mainnet.alchemyapi.io/v2/",
-    "3": "https://eth-ropsten.alchemyapi.io/v2/",
-    "5": "https://eth-goerli.alchemyapi.io/v2/",
-    "4": "https://eth-rinkeby.alchemyapi.io/v2/",
-    "42": "https://eth-kovan.alchemyapi.io/v2/",
-    "137": "https://polygon-mainnet.g.alchemy.com/v2/",
-    "80001": "https://polygon-mumbai.g.alchemy.com/v2/",
+    "1": "wss://eth-mainnet.alchemyapi.io/v2/",
+    "3": "wss://eth-ropsten.alchemyapi.io/v2/",
+    "5": "wss://eth-goerli.alchemyapi.io/v2/",
+    "4": "wss://eth-rinkeby.alchemyapi.io/v2/",
+    "42": "wss://eth-kovan.alchemyapi.io/v2/",
+    "137": "wss://polygon-mainnet.g.alchemy.com/v2/",
+    "80001": "wss://polygon-mumbai.g.alchemy.com/v2/",
 }
 
 
