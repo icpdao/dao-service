@@ -14,7 +14,7 @@ from app.common.models.icpdao.job import Job, JobStatusEnum
 from app.common.models.icpdao.token import TokenMintRecord, MintRecordStatusEnum, TokenTransferEventLog, \
     MentorTokenIncomeStat
 from app.common.utils.errors import COMMON_NOT_FOUND_DAO_ERROR, DAO_NOT_TOKEN_ADDRESS_ERROR
-from settings import ICPDAO_MINT_TOKEN_ETH_CHAIN_ID
+from settings import ICPDAO_MINT_TOKEN_ETH_CHAIN_ID, ICPDAO_ALCHEMYAPI_KEY
 
 TOKEN_ABI = """
   [
@@ -944,14 +944,26 @@ CHAIN_ID_INFO = {
     "5": "goerli",
     "4": "rinkeby",
     "42": "kovan",
+    "137": "polygon",
+    "80001": "mumbai",
+}
+
+CHAIN_ID_2_ALCHEMYAPI_INFO = {
+    "1": "wss://eth-mainnet.alchemyapi.io/v2/",
+    "3": "wss://eth-ropsten.alchemyapi.io/v2/",
+    "5": "wss://eth-goerli.alchemyapi.io/v2/",
+    "4": "wss://eth-rinkeby.alchemyapi.io/v2/",
+    "42": "wss://eth-kovan.alchemyapi.io/v2/",
+    "137": "wss://polygon-mainnet.g.alchemy.com/v2/",
+    "80001": "wss://polygon-mumbai.g.alchemy.com/v2/",
 }
 
 
 def get_eth_node_url(chain_id):
-    if chain_id not in list(CHAIN_ID_INFO.keys()):
+    if chain_id not in list(CHAIN_ID_2_ALCHEMYAPI_INFO.keys()):
         return None
-    name = CHAIN_ID_INFO[chain_id]
-    return "wss://{}.infura.io/ws/v3/99a79f80961b4db7aab7c9f54375eda7".format(name)
+    base_url = CHAIN_ID_2_ALCHEMYAPI_INFO[chain_id]
+    return "{}{}".format(base_url, ICPDAO_ALCHEMYAPI_KEY)
 
 
 def run_sync_token_mint_record_event_task(token_mint_record_id):
