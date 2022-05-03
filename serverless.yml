@@ -35,11 +35,6 @@ provider:
   timeout: 30
   deploymentBucket:
     name: icpdao.9527.${self:provider.region}.deploys
-  vpc:
-    securityGroupIds:
-      - sg-1d9d291e
-    subnetIds:
-      - subnet-0d6c61be4990b97cd
 
 functions:
   app:
